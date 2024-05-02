@@ -355,11 +355,11 @@ public partial class SteamNetwork : Node
     internal void sendChatMessage(string text)
     {
         NetMsg msg = new NetMsg(MessageType.Chat, SteamClient.SteamId, new ChatMsg(text));
-        connection.SendMessageToSocketServer(msg.box());
+        connection.SendMessageToSocketServer(msg.box(), 1);
     }
     public void sendMessage(MessageType type, ulong sender, INetMsgData data)
     {
         NetMsg msg = new NetMsg(type, sender, data);
-        connection.SendMessageToSocketServer(msg.box());
+        connection.SendMessageToSocketServer(msg.box(), 1);
     }
 }

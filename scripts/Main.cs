@@ -174,7 +174,7 @@ public partial class Main : Node
         }
         if (network.hosting || network.offline)
         {
-            network.connection.SendMessageToSocketServer(new NetMsg(MessageType.Gamestate, SteamClient.SteamId, new GamestateMsg(Main.Gamestate.LOBBYSTART)).box());
+            network.connection.SendMessageToSocketServer(new NetMsg(MessageType.Gamestate, SteamClient.SteamId, new GamestateMsg(Main.Gamestate.LOBBYSTART)).box(), 1);
         }
     }
     //Below are a bunch of trash helper functions I'm too lazy to document.
