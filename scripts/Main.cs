@@ -25,6 +25,7 @@ public partial class Main : Node
         PREGAME = 1,
         LOBBY = 2,
         LOBBYSTART = 20,
+        DEBUGSTART = 21,
         LOADING = 3,
         LOADWAITING = 30,
         GAME = 5,
@@ -97,16 +98,42 @@ public partial class Main : Node
                     players.AddChild(tempPlayer);
                     tempPlayer.Position = new Vector3(1,1,1);
 
+                    //Node3D car = ResourceLoader.Load<PackedScene>("res://import/vehicles/car_base.tscn").Instantiate<Node3D>();
+                    //Global.level.AddChild(car);
+                    //car.Position = new Vector3(500, 25, 500);
+                }
+
+                //TODO: load startarea
+                Global.level.AddChild(ResourceLoader.Load<PackedScene>("res://scenes/proc.tscn").Instantiate());
+                
+                //Tell everyone I'm done loading
+                network.sendMessage(MessageType.Gamestate, steamID, new GamestateMsg(Gamestate.LOADWAITING));
+                break;
+
+            case Gamestate.DEBUGSTART:
+                
+                Steam.debugLog("Host started Terrain game.");
+                clearUI();
+                clearLevel();
+                
+                //TODO: Show Loading screen
+                
+                foreach (Friend f in lobby.lobbyMembers)
+                {
+
+                    tempPlayer = ResourceLoader.Load<PackedScene>("res://scenes/Player.tscn").Instantiate<Player>();
+                    tempPlayer.init(f);
+                    players.AddChild(tempPlayer);
+                    tempPlayer.Position = new Vector3(1,1,1);
 
                     //Node3D car = ResourceLoader.Load<PackedScene>("res://import/vehicles/car_base.tscn").Instantiate<Node3D>();
                     //Global.level.AddChild(car);
                     //car.Position = new Vector3(500, 25, 500);
                 }
 
-
                 //TODO: load startarea
-                Global.level.AddChild(ResourceLoader.Load<PackedScene>("res://scenes/proc.tscn").Instantiate());
-                //Global.level.AddChild(ResourceLoader.Load<PackedScene>("res://scenes/TerrainGeneration.tscn").Instantiate());
+                Global.level.AddChild(ResourceLoader.Load<PackedScene>("res://scenes/TerrainGeneration.tscn").Instantiate());
+                
                 //Tell everyone I'm done loading
                 network.sendMessage(MessageType.Gamestate, steamID, new GamestateMsg(Gamestate.LOADWAITING));
                 break;
@@ -177,6 +204,23 @@ public partial class Main : Node
             network.connection.SendMessageToSocketServer(new NetMsg(MessageType.Gamestate, SteamClient.SteamId, new GamestateMsg(Main.Gamestate.LOBBYSTART)).box(), 1);
         }
     }
+
+    /// <summary>
+    /// Called when we should actually start the terrain generation
+    /// </summary>
+    public void terrainGenLaunch()
+    {
+        if (network.offline)
+        {
+            network.startOffline();
+        }
+        if (network.hosting || network.offline)
+        {
+            network.connection.SendMessageToSocketServer(new NetMsg(MessageType.Gamestate, SteamClient.SteamId, new GamestateMsg(Main.Gamestate.DEBUGSTART)).box(), 1);
+        }
+    }
+    
+
     //Below are a bunch of trash helper functions I'm too lazy to document.
     public void switchUIControl(Control to)
     {
