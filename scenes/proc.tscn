@@ -26,7 +26,8 @@ fog_aerial_perspective = 0.75
 fog_sky_affect = 0.05
 fog_height_density = -0.001
 
-[sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_hh6ic"]
+[sub_resource type="ConcavePolygonShape3D" id="ConcavePolygonShape3D_7xr0i"]
+data = PackedVector3Array(-25, 2.5, 25, 25, 2.5, 25, -25, -2.5, 25, 25, 2.5, 25, 25, -2.5, 25, -25, -2.5, 25, 25, 2.5, -25, -25, 2.5, -25, 25, -2.5, -25, -25, 2.5, -25, -25, -2.5, -25, 25, -2.5, -25, 25, 2.5, 25, 25, 2.5, -25, 25, -2.5, 25, 25, 2.5, -25, 25, -2.5, -25, 25, -2.5, 25, -25, 2.5, -25, -25, 2.5, 25, -25, -2.5, -25, -25, 2.5, 25, -25, -2.5, 25, -25, -2.5, -25, 25, 2.5, 25, -25, 2.5, 25, 25, 2.5, -25, -25, 2.5, 25, -25, 2.5, -25, 25, 2.5, -25, -25, -2.5, 25, 25, -2.5, 25, -25, -2.5, -25, 25, -2.5, 25, 25, -2.5, -25, -25, -2.5, -25)
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_yvren"]
 
@@ -43,7 +44,7 @@ roughness_texture = SubResource("NoiseTexture2D_4af8s")
 
 [sub_resource type="BoxMesh" id="BoxMesh_q004q"]
 material = SubResource("StandardMaterial3D_fs3hs")
-size = Vector3(50, 1, 50)
+size = Vector3(50, 5, 50)
 
 [node name="proc" type="Node3D"]
 
@@ -54,15 +55,13 @@ environment = SubResource("Environment_epxka")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.406008, -0.648097, 4.12336)
 
 [node name="StaticBody3D" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -6.68224, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -10, 0)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
-shape = SubResource("WorldBoundaryShape3D_hh6ic")
+shape = SubResource("ConcavePolygonShape3D_7xr0i")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="StaticBody3D"]
 mesh = SubResource("BoxMesh_q004q")
-skeleton = NodePath("../..")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 0.96441, 0.264412, 0, -0.264412, 0.96441, 0, -2.99305, 5.30765)
