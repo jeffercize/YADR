@@ -157,7 +157,7 @@ public partial class CodeGenerated : Node
 				{
 					height = height * (x / 200.0f);
 				}
-/*				else if (end_height)
+/*				else if (end_height)cfvcf
 				{
 					height = height * (1.0f + (x / x_axis));
 				}*/

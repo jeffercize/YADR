@@ -89,7 +89,7 @@ public class SteamConnectionManager : ConnectionManager
     /// <param name="channel"></param>
     public override void OnMessage(IntPtr data, int size, long messageNum, long recvTime, int channel)
     {
-        ProcessMessage(data, size);
+        ProcessRawMessage(data, size);
         Steam.debugLog("ConnectionManager OnMessage");
     }
 
@@ -97,7 +97,7 @@ public class SteamConnectionManager : ConnectionManager
 
     //Below here lies my network code. May god have mercy on my soul.
 
-    public bool SendMessageToSocketServer(byte[] messageToSend)
+    public bool SendMessageToSocketServer(byte[] messageToSend, int retryAttempts = 0)
     {
         try
         {
@@ -105,8 +105,9 @@ public class SteamConnectionManager : ConnectionManager
             int sizeOfMessage = messageToSend.Length;
             IntPtr intPtrMessage = System.Runtime.InteropServices.Marshal.AllocHGlobal(sizeOfMessage);
             System.Runtime.InteropServices.Marshal.Copy(messageToSend, 0, intPtrMessage, sizeOfMessage);
-            if (network.offline) { ProcessMessage(intPtrMessage, sizeOfMessage); return true; }
+            if (network.offline) { ProcessRawMessage(intPtrMessage, sizeOfMessage); return true; }
             Result success = Connection.SendMessage(intPtrMessage, sizeOfMessage, SendType.Reliable);
+            
             if (success == Result.OK)
             {
                 System.Runtime.InteropServices.Marshal.FreeHGlobal(intPtrMessage); // Free up memory at pointer
@@ -114,15 +115,20 @@ public class SteamConnectionManager : ConnectionManager
             }
             else
             {
-                // RETRY
-                Result retry = Connection.SendMessage(intPtrMessage, sizeOfMessage, SendType.Reliable);
-                System.Runtime.InteropServices.Marshal.FreeHGlobal(intPtrMessage); // Free up memory at pointer
-                if (retry == Result.OK)
+                int curRetry = 0;
+                while (retryAttempts > curRetry)
                 {
-                    return true;
+                    // RETRY
+                    Result retry = Connection.SendMessage(intPtrMessage, sizeOfMessage, SendType.Reliable);
+                    System.Runtime.InteropServices.Marshal.FreeHGlobal(intPtrMessage); // Free up memory at pointer
+                    if (retry == Result.OK)
+                    {
+                        return true;
+                    }
+                    curRetry++;
                 }
-                return false;
             }
+            return false;
         }
         catch (Exception e)
         {
@@ -133,7 +139,7 @@ public class SteamConnectionManager : ConnectionManager
         }
     }
 
-    public void ProcessMessage(IntPtr data, int size)
+    public void ProcessRawMessage(IntPtr data, int size)
     {
         try
         {

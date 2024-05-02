@@ -41,10 +41,10 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_1d7f8")
 
 [node name="launch" type="Button" parent="Panel" groups=["ClickyButtons"]]
 layout_mode = 0
-offset_left = 22.0
-offset_top = 288.0
-offset_right = 365.0
-offset_bottom = 372.0
+offset_left = 25.0
+offset_top = 294.0
+offset_right = 368.0
+offset_bottom = 378.0
 theme_override_fonts/font = ExtResource("2_wk154")
 theme_override_font_sizes/font_size = 55
 text = "Launch!"
@@ -70,6 +70,16 @@ theme = SubResource("Theme_dv2m0")
 theme_override_fonts/font = ExtResource("2_wk154")
 theme_override_font_sizes/font_size = 24
 text = "Host Game"
+
+[node name="terrain" type="Button" parent="Panel" groups=["ClickyButtons"]]
+offset_left = 27.0
+offset_top = 198.0
+offset_right = 370.0
+offset_bottom = 282.0
+theme_override_fonts/font = ExtResource("2_wk154")
+theme_override_font_sizes/font_size = 30
+text = "Launch Terrain Gen"
+text_overrun_behavior = 3
 
 [node name="chat" type="Panel" parent="."]
 layout_mode = 1
