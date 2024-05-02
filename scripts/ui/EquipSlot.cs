@@ -21,11 +21,7 @@ public partial class EquipSlot : Control
     public Vector2 startMousePos = Vector2.Zero;
 
 
-    public delegate void equipMessageHandler(EquipSlot slot, Item item);
-    public static event equipMessageHandler equipMessage = delegate { };
 
-    public delegate void unequipMessageHandler(EquipSlot slot, Item item);
-    public static event unequipMessageHandler unequipMessage = delegate { };
 
 
     public EquipSlot()
@@ -103,7 +99,7 @@ public partial class EquipSlot : Control
                     GetNode<AudioStreamPlayer>("/root/main/uisfx").Play();
                     item = Item.NONE;
                     startMousePos = Vector2.Zero;
-                    unequipMessage.Invoke(this,Global.ui.gameUI.dragItem);
+                    connectedEquipment.unequip(this.Name, Global.ui.gameUI.dragItem);
                     QueueRedraw();
                 }
                 else if (Global.ui.gameUI.dragItem != Item.NONE && item == Item.NONE)
@@ -116,7 +112,7 @@ public partial class EquipSlot : Control
                         item = Global.ui.gameUI.dragItem;
                         Global.ui.gameUI.dragItem = Item.NONE;
                         startMousePos = Vector2.Zero;
-                        equipMessage.Invoke(this,item);
+                        connectedEquipment.equip(this.Name,item as Equipable);
                         QueueRedraw();
                     }
                     else
@@ -151,7 +147,7 @@ public partial class EquipSlot : Control
                 Global.ui.gameUI.dragItem = item;
                 item = Item.NONE;
                 startMousePos = Vector2.Zero;
-                unequipMessage.Invoke(this, Global.ui.gameUI.dragItem);
+                connectedEquipment.unequip(this.Name, Global.ui.gameUI.dragItem);
                 QueueRedraw();
             }
         }

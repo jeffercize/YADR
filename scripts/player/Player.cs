@@ -152,8 +152,8 @@ public partial class Player : Character
         pointing = GetNode<RayCast3D>("CameraOf_Canb/pointing");
         PlayerInput.input_jump += jump;
 
-        EquipSlot.equipMessage += onEquip;
-        EquipSlot.unequipMessage += onUnequip;
+        Equipment.equipMessage += onEquip;
+        Equipment.unequipMessage += onUnequip;
     }
 
     private void onUnequip(EquipSlot slot, Item item)
