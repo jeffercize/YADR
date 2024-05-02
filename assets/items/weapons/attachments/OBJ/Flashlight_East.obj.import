@@ -1,0 +1,22 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://dstrc4rxot5hk"
+path="res://.godot/imported/Flashlight_East.obj-05f057521c8fc35f4dbc0b041ea4e5da.mesh"
+
+[deps]
+
+files=["res://.godot/imported/Flashlight_East.obj-05f057521c8fc35f4dbc0b041ea4e5da.mesh"]
+
+source_file="res://assets/items/weapons/attachments/OBJ/Flashlight_East.obj"
+dest_files=["res://.godot/imported/Flashlight_East.obj-05f057521c8fc35f4dbc0b041ea4e5da.mesh", "res://.godot/imported/Flashlight_East.obj-05f057521c8fc35f4dbc0b041ea4e5da.mesh"]
+
+[params]
+
+generate_tangents=true
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+optimize_mesh=true
+force_disable_mesh_compression=false

@@ -1,0 +1,22 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://cbosgarbdbxcd"
+path="res://.godot/imported/Suppressor_West.obj-5736f3c937b04513a9276eb43681b1ba.mesh"
+
+[deps]
+
+files=["res://.godot/imported/Suppressor_West.obj-5736f3c937b04513a9276eb43681b1ba.mesh"]
+
+source_file="res://assets/items/weapons/attachments/OBJ/Suppressor_West.obj"
+dest_files=["res://.godot/imported/Suppressor_West.obj-5736f3c937b04513a9276eb43681b1ba.mesh", "res://.godot/imported/Suppressor_West.obj-5736f3c937b04513a9276eb43681b1ba.mesh"]
+
+[params]
+
+generate_tangents=true
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+optimize_mesh=true
+force_disable_mesh_compression=false

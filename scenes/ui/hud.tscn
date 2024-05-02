@@ -1,0 +1,42 @@
+[gd_scene format=3 uid="uid://c5blodn213j26"]
+
+[node name="hud" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="debugPanel" type="PanelContainer" parent="."]
+layout_mode = 0
+offset_right = 464.0
+offset_bottom = 212.0
+
+[node name="debugLabel" type="Label" parent="debugPanel"]
+layout_mode = 2
+
+[node name="bottomLeft" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -104.0
+offset_right = 444.0
+grow_vertical = 0
+
+[node name="bottomRight" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -614.0
+offset_top = -208.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="equipped" type="Label" parent="bottomRight"]
+layout_mode = 2
+text = "Equipped Item: "

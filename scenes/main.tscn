@@ -1,0 +1,38 @@
+[gd_scene load_steps=6 format=3 uid="uid://gpvkhmphgswl"]
+
+[ext_resource type="Script" path="res://scripts/Main.cs" id="1_wiw4r"]
+[ext_resource type="AudioStream" uid="uid://m1qnnxntnkq" path="res://import/click4.wav" id="2_aicxg"]
+[ext_resource type="Script" path="res://scenes/ui.cs" id="2_gdcb3"]
+[ext_resource type="AudioStream" uid="uid://dsadnt3yyjesu" path="res://import/Gregoire Lourme - Commando Team (Action) [loop cut].ogg" id="3_lhhe4"]
+[ext_resource type="Script" path="res://scenes/level.cs" id="4_w3l1c"]
+
+[node name="main" type="Node"]
+script = ExtResource("1_wiw4r")
+
+[node name="ui" type="CanvasLayer" parent="."]
+script = ExtResource("2_gdcb3")
+
+[node name="level" type="Node3D" parent="."]
+script = ExtResource("4_w3l1c")
+
+[node name="players" type="Node" parent="."]
+
+[node name="network" type="Node" parent="."]
+
+[node name="server" type="Node" parent="network"]
+
+[node name="client" type="Node" parent="network"]
+
+[node name="lobby" type="Node" parent="network"]
+
+[node name="clients" type="Node" parent="network/lobby"]
+
+[node name="uisfx" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("2_aicxg")
+volume_db = -20.0
+max_polyphony = 5
+
+[node name="music" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("3_lhhe4")
+volume_db = -35.0
+autoplay = true

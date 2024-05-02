@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="Equipable" load_steps=4 format=3 uid="uid://cy1w25wj7aem2"]
+
+[ext_resource type="Script" path="res://scripts/items/Equipable.cs" id="1_ckcdp"]
+[ext_resource type="Texture2D" uid="uid://ban1laahmvurl" path="res://assets/items/longgun.png" id="1_nh6hg"]
+[ext_resource type="ArrayMesh" uid="uid://djao2aut32lh8" path="res://assets/items/weapons/guns/OBJ/Rifle_Assault_West.obj" id="2_0sksw"]
+
+[resource]
+script = ExtResource("1_ckcdp")
+type = 8
+physWeight = 5.0
+weight = 5.0
+height = 2
+width = 4
+name = "TestGun"
+description = "I am a Test Gun!"
+stackable = false
+count = 1
+mesh = ExtResource("2_0sksw")
+icon = ExtResource("1_nh6hg")

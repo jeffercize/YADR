@@ -1,0 +1,19 @@
+[gd_scene load_steps=4 format=3 uid="uid://cg0d0p7hheugc"]
+
+[ext_resource type="PackedScene" uid="uid://c4ikja0jcw4p4" path="res://scenes/MPPlayer.tscn" id="1_yrt4k"]
+[ext_resource type="PackedScene" uid="uid://b4npmxa8f1l33" path="res://assets/items/weapons/guns/GLB/Rifle_Assault_West.glb" id="2_ephby"]
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_misyr"]
+points = PackedVector3Array(0.381273, 0.68024, 0.0854862, -0.386297, -0.677896, -0.062053, -0.354573, -0.702947, -0.149547, -0.327982, 0.767858, -0.150773, -0.120186, 0.643834, 0.377279, 0.233476, -0.739652, 0.292657, 0.17189, -0.671298, -0.353378, 0.0557998, 0.679, -0.386921, -0.29506, -0.671439, 0.259515, 0.377279, -0.643834, -0.120186, 0.0577118, -0.975423, -0.125025, -0.178314, -0.642315, -0.353529, -0.382332, 0.612583, 0.113438, 0.0578165, 0.977101, 0.118885, 0.288929, 0.671941, -0.266061, 0.198794, 0.634854, 0.34311, -0.0915974, -0.678415, 0.380241, -0.233782, 0.634238, -0.320288, -0.123716, -0.934723, 0.177677, 0.373661, -0.57977, 0.141717, 0.11723, 0.933656, -0.183819, -0.244174, 0.903895, 0.0871524, 0.238924, -0.908017, 0.0875643, 0.114373, -0.646787, 0.379025, -0.0941544, 0.940852, -0.185212, -0.381568, 0.582167, -0.119552, -0.153225, -0.90062, -0.213276, -0.29506, 0.671439, 0.259515, 0.380241, 0.678415, -0.0915974, -0.0620538, -0.677905, -0.386302, 0.318118, 0.671881, 0.230473, 0.0854861, 0.68024, 0.381273)
+
+[node name="Player" instance=ExtResource("1_yrt4k")]
+
+[node name="Rifle_Assault_West" parent="Hold" index="0" instance=ExtResource("2_ephby")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." index="3"]
+shape = SubResource("ConvexPolygonShape3D_misyr")
+
+[node name="cam" type="Camera3D" parent="." index="5"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -0.247223)
+fov = 90.0
+near = 0.001

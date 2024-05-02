@@ -1,0 +1,22 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://n1wfwpxv1ujr"
+path="res://.godot/imported/Holographic_East.obj-f74e412db270207ee0c95cab1dae7542.mesh"
+
+[deps]
+
+files=["res://.godot/imported/Holographic_East.obj-f74e412db270207ee0c95cab1dae7542.mesh"]
+
+source_file="res://assets/items/weapons/attachments/OBJ/Holographic_East.obj"
+dest_files=["res://.godot/imported/Holographic_East.obj-f74e412db270207ee0c95cab1dae7542.mesh", "res://.godot/imported/Holographic_East.obj-f74e412db270207ee0c95cab1dae7542.mesh"]
+
+[params]
+
+generate_tangents=true
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+optimize_mesh=true
+force_disable_mesh_compression=false

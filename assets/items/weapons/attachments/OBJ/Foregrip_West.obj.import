@@ -1,0 +1,22 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://clhr1au4651qk"
+path="res://.godot/imported/Foregrip_West.obj-a25131d2fe128ec7329955c158c4dba2.mesh"
+
+[deps]
+
+files=["res://.godot/imported/Foregrip_West.obj-a25131d2fe128ec7329955c158c4dba2.mesh"]
+
+source_file="res://assets/items/weapons/attachments/OBJ/Foregrip_West.obj"
+dest_files=["res://.godot/imported/Foregrip_West.obj-a25131d2fe128ec7329955c158c4dba2.mesh", "res://.godot/imported/Foregrip_West.obj-a25131d2fe128ec7329955c158c4dba2.mesh"]
+
+[params]
+
+generate_tangents=true
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+optimize_mesh=true
+force_disable_mesh_compression=false

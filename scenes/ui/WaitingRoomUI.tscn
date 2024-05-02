@@ -1,0 +1,133 @@
+[gd_scene load_steps=6 format=3 uid="uid://cld6eb08gn0lo"]
+
+[ext_resource type="Script" path="res://scripts/ui/WaitingRoomUI.cs" id="1_v7uro"]
+[ext_resource type="FontFile" uid="uid://ds7dcu3504m2c" path="res://import/Xolonium-Regular-MSDF.ttf" id="2_wk154"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1d7f8"]
+bg_color = Color(0.686275, 0.576471, 0.494118, 0.270588)
+corner_radius_top_left = 50
+corner_radius_top_right = 50
+corner_radius_bottom_right = 50
+corner_radius_bottom_left = 50
+
+[sub_resource type="Theme" id="Theme_dv2m0"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vr86j"]
+bg_color = Color(0.976471, 0.811765, 0.67451, 0.14902)
+corner_radius_top_left = 50
+corner_radius_top_right = 50
+
+[node name="WaitingRoomUI" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_v7uro")
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -388.0
+offset_top = -395.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_1d7f8")
+
+[node name="launch" type="Button" parent="Panel" groups=["ClickyButtons"]]
+layout_mode = 0
+offset_left = 22.0
+offset_top = 288.0
+offset_right = 365.0
+offset_bottom = 372.0
+theme_override_fonts/font = ExtResource("2_wk154")
+theme_override_font_sizes/font_size = 55
+text = "Launch!"
+
+[node name="invite" type="Button" parent="Panel" groups=["ClickyButtons"]]
+layout_mode = 0
+offset_left = 28.0
+offset_top = 126.0
+offset_right = 363.0
+offset_bottom = 190.0
+theme = SubResource("Theme_dv2m0")
+theme_override_font_sizes/font_size = 24
+disabled = true
+text = "Invite Friends"
+
+[node name="host" type="Button" parent="Panel" groups=["ClickyButtons"]]
+layout_mode = 0
+offset_left = 29.0
+offset_top = 23.0
+offset_right = 364.0
+offset_bottom = 112.0
+theme = SubResource("Theme_dv2m0")
+theme_override_fonts/font = ExtResource("2_wk154")
+theme_override_font_sizes/font_size = 24
+text = "Host Game"
+
+[node name="chat" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -390.0
+offset_right = 592.0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_vr86j")
+
+[node name="enter" type="LineEdit" parent="chat"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 9.0
+offset_top = -48.0
+offset_right = 444.0
+offset_bottom = -6.0
+grow_vertical = 0
+placeholder_text = "Enter message here..."
+context_menu_enabled = false
+virtual_keyboard_enabled = false
+caret_blink = true
+
+[node name="send" type="Button" parent="chat" groups=["ClickyButtons"]]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -139.0
+offset_top = -51.0
+offset_right = -8.0
+offset_bottom = -9.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "Send"
+
+[node name="output" type="Panel" parent="chat"]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 25.0
+offset_right = 569.0
+offset_bottom = 330.0
+
+[node name="output" type="RichTextLabel" parent="chat/output"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 3.0
+offset_top = 3.0
+offset_right = -6.0
+offset_bottom = 302.0
+grow_horizontal = 2
+size_flags_vertical = 8
+theme_override_fonts/normal_font = ExtResource("2_wk154")
+bbcode_enabled = true
+fit_content = true
