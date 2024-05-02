@@ -1,0 +1,49 @@
+[gd_resource type="Terrain3DMaterial" load_steps=3 format=3 uid="uid://cpdqxpnrkm2s1"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_rix0b"]
+noise_type = 4
+frequency = 0.0548
+fractal_type = 2
+fractal_octaves = 2
+fractal_lacunarity = 0.0
+cellular_return_type = 2
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_qvm0e"]
+seamless = true
+noise = SubResource("FastNoiseLite_rix0b")
+
+[resource]
+_shader_parameters = {
+"_mouse_layer": 2147483648,
+"auto_base_texture": 0,
+"auto_height_reduction": 0.1,
+"auto_overlay_texture": 1,
+"auto_slope": 1.0,
+"blend_sharpness": 0.87,
+"dual_scale_far": 170.0,
+"dual_scale_near": 100.0,
+"dual_scale_reduction": 0.3,
+"dual_scale_texture": 0,
+"height_blending": true,
+"macro_variation1": Color(0.72301, 0.804818, 0.6923, 1),
+"macro_variation2": Color(0.818198, 0.802353, 0.829507, 1),
+"noise1_angle": 0.96,
+"noise1_offset": Vector2(0.5, 0.5),
+"noise1_scale": 0.04,
+"noise2_scale": 0.076,
+"noise3_scale": 0.225,
+"noise_texture": SubResource("NoiseTexture2D_qvm0e"),
+"tri_scale_reduction": 0.3,
+"vertex_normals_distance": null,
+"world_noise_blend_far": 1.0,
+"world_noise_blend_near": 0.5,
+"world_noise_height": 64.0,
+"world_noise_lod_distance": 7500.0,
+"world_noise_max_octaves": 4,
+"world_noise_min_octaves": 2,
+"world_noise_offset": Vector3(1.485, -1.01, 1.9),
+"world_noise_scale": 5.0
+}
+world_background = 2
+auto_shader = true
+dual_scaling = true

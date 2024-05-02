@@ -1,0 +1,28 @@
+[gd_scene load_steps=4 format=3 uid="uid://c4ikja0jcw4p4"]
+
+[ext_resource type="Script" path="res://scenes/MPPlayer.cs" id="1_5qek7"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_jyj1d"]
+radius = 0.4
+
+[sub_resource type="SphereMesh" id="SphereMesh_jea8y"]
+radius = 0.35
+height = 0.8
+
+[node name="Player" type="Node3D"]
+script = ExtResource("1_5qek7")
+
+[node name="POV" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -0.247223)
+
+[node name="Hold" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.762239, -0.727839)
+
+[node name="Body" type="MeshInstance3D" parent="."]
+mesh = SubResource("CapsuleMesh_jyj1d")
+skeleton = NodePath("")
+
+[node name="Head" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.43023, 0)
+mesh = SubResource("SphereMesh_jea8y")
+skeleton = NodePath("")

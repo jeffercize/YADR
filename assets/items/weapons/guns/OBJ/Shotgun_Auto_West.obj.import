@@ -1,0 +1,22 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://daxw0y3dg5g85"
+path="res://.godot/imported/Shotgun_Auto_West.obj-f6e597fe8b1b6bda9c086e8ad70e0885.mesh"
+
+[deps]
+
+files=["res://.godot/imported/Shotgun_Auto_West.obj-f6e597fe8b1b6bda9c086e8ad70e0885.mesh"]
+
+source_file="res://assets/items/weapons/guns/OBJ/Shotgun_Auto_West.obj"
+dest_files=["res://.godot/imported/Shotgun_Auto_West.obj-f6e597fe8b1b6bda9c086e8ad70e0885.mesh", "res://.godot/imported/Shotgun_Auto_West.obj-f6e597fe8b1b6bda9c086e8ad70e0885.mesh"]
+
+[params]
+
+generate_tangents=true
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+optimize_mesh=true
+force_disable_mesh_compression=false

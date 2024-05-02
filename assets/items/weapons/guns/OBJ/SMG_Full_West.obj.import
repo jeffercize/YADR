@@ -1,0 +1,22 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://bjqlayabein7j"
+path="res://.godot/imported/SMG_Full_West.obj-9f7321c8c4e88d134033cfd5311d431a.mesh"
+
+[deps]
+
+files=["res://.godot/imported/SMG_Full_West.obj-9f7321c8c4e88d134033cfd5311d431a.mesh"]
+
+source_file="res://assets/items/weapons/guns/OBJ/SMG_Full_West.obj"
+dest_files=["res://.godot/imported/SMG_Full_West.obj-9f7321c8c4e88d134033cfd5311d431a.mesh", "res://.godot/imported/SMG_Full_West.obj-9f7321c8c4e88d134033cfd5311d431a.mesh"]
+
+[params]
+
+generate_tangents=true
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+optimize_mesh=true
+force_disable_mesh_compression=false

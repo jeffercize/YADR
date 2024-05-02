@@ -1,0 +1,209 @@
+[gd_scene load_steps=9 format=3 uid="uid://c4m5lhf8s5abh"]
+
+[ext_resource type="Script" path="res://scripts/WaitingRoom.cs" id="1_5auri"]
+[ext_resource type="FontFile" uid="uid://ds7dcu3504m2c" path="res://import/Xolonium-Regular-MSDF.ttf" id="2_5mogi"]
+[ext_resource type="Environment" uid="uid://bky5k3bn06p1k" path="res://scenes/WaitingRoomEnv.tres" id="2_uc82t"]
+[ext_resource type="Script" path="res://scripts/WaitingRoomCam.cs" id="3_7482h"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_uiej7"]
+albedo_color = Color(0.262745, 0.262745, 0.262745, 1)
+albedo_texture_msdf = true
+subsurf_scatter_strength = 0.83
+subsurf_scatter_transmittance_enabled = true
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_cyxr4"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_u5tsk"]
+metallic = 1.0
+metallic_specular = 1.0
+roughness = 0.68
+subsurf_scatter_enabled = true
+
+[sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_v5kgu"]
+size = Vector2(512, 512)
+
+[node name="WaitingRoom" type="Node3D"]
+script = ExtResource("1_5auri")
+
+[node name="cam" type="Camera3D" parent="."]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 5, 1.99627, 5.54814)
+environment = ExtResource("2_uc82t")
+script = ExtResource("3_7482h")
+
+[node name="Darkroom" type="CSGBox3D" parent="."]
+transform = Transform3D(-4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0, 1, -5, 9.82863, 0)
+ignore_occlusion_culling = true
+flip_faces = true
+size = Vector3(18.8956, 28.972, 27.0966)
+material = SubResource("StandardMaterial3D_uiej7")
+
+[node name="fillLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.50924, 3.90654, -0.00121307)
+light_color = Color(0.552941, 0.552941, 0.552941, 1)
+light_energy = 3.332
+light_indirect_energy = 2.163
+light_volumetric_fog_energy = 0.664
+light_size = 0.161
+light_bake_mode = 1
+shadow_enabled = true
+omni_range = 12.3024
+
+[node name="Player1" type="Node3D" parent="."]
+visible = false
+
+[node name="Player1Light" type="SpotLight3D" parent="Player1"]
+transform = Transform3D(0.822477, 0.106802, 0.558682, -0.561896, -2.66685e-09, 0.827208, 0.0883475, -0.99428, 0.0600116, 3.89346, 11.2426, 6.90388)
+light_color = Color(0.982343, 0.982342, 0.982342, 1)
+light_energy = 16.0
+light_volumetric_fog_energy = 24.0
+light_bake_mode = 1
+shadow_enabled = true
+distance_fade_enabled = true
+spot_range = 15.1676
+spot_angle = 7.5
+
+[node name="Player1Mesh" type="MeshInstance3D" parent="Player1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.438, 1.4, 6.131)
+gi_mode = 2
+gi_lightmap_scale = 1
+mesh = SubResource("CapsuleMesh_cyxr4")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_u5tsk")
+
+[node name="Player1Label" type="Label3D" parent="Player1"]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, -2.40937, 3.24967, 6.22816)
+pixel_size = 0.0114
+billboard = 2
+texture_filter = 5
+text = "You!"
+font = ExtResource("2_5mogi")
+font_size = 36
+outline_size = 4
+horizontal_alignment = 0
+
+[node name="Player1Sprite" type="Sprite3D" parent="Player1"]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, -2.45103, 3.30269, 6.94556)
+cast_shadow = 0
+gi_mode = 0
+pixel_size = 0.002
+texture = SubResource("PlaceholderTexture2D_v5kgu")
+
+[node name="Player2" type="Node3D" parent="."]
+visible = false
+
+[node name="Player2Light" type="SpotLight3D" parent="Player2"]
+transform = Transform3D(0.827208, -2.45612e-08, 0.561896, -0.561896, -3.61584e-08, 0.827208, 0, -1, -4.37114e-08, 3.89346, 11.2426, 3.3867)
+light_color = Color(0.982343, 0.982342, 0.982342, 1)
+light_energy = 16.0
+light_volumetric_fog_energy = 24.0
+light_bake_mode = 1
+shadow_enabled = true
+distance_fade_enabled = true
+spot_range = 15.1676
+spot_angle = 7.5
+
+[node name="Player2Mesh" type="MeshInstance3D" parent="Player2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.438, 1.4, 3.299)
+gi_mode = 2
+gi_lightmap_scale = 1
+mesh = SubResource("CapsuleMesh_cyxr4")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_u5tsk")
+
+[node name="Player2Label" type="Label3D" parent="Player2"]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, -2.40937, 3.24967, 3.37683)
+pixel_size = 0.0114
+billboard = 2
+texture_filter = 5
+text = "You!"
+font = ExtResource("2_5mogi")
+font_size = 36
+outline_size = 4
+horizontal_alignment = 0
+
+[node name="Player2Sprite" type="Sprite3D" parent="Player2"]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, -2.45103, 3.30269, 3.99731)
+cast_shadow = 0
+gi_mode = 0
+pixel_size = 0.002
+texture = SubResource("PlaceholderTexture2D_v5kgu")
+
+[node name="Player3" type="Node3D" parent="."]
+visible = false
+
+[node name="Player3Light" type="SpotLight3D" parent="Player3"]
+transform = Transform3D(0.827208, -2.45612e-08, 0.561896, -0.561896, -3.61584e-08, 0.827208, 0, -1, -4.37114e-08, 3.89346, 11.2426, 0.24877)
+light_color = Color(0.982343, 0.982342, 0.982342, 1)
+light_energy = 16.0
+light_volumetric_fog_energy = 24.0
+light_bake_mode = 1
+shadow_enabled = true
+distance_fade_enabled = true
+spot_range = 15.1676
+spot_angle = 7.5
+
+[node name="Player3Mesh" type="MeshInstance3D" parent="Player3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.438, 1.4, 0.161)
+gi_mode = 2
+gi_lightmap_scale = 1
+mesh = SubResource("CapsuleMesh_cyxr4")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_u5tsk")
+
+[node name="Player3Label" type="Label3D" parent="Player3"]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, -2.40937, 3.24967, -0.030498)
+pixel_size = 0.0114
+billboard = 2
+texture_filter = 5
+text = "You!"
+font = ExtResource("2_5mogi")
+font_size = 36
+outline_size = 4
+horizontal_alignment = 0
+
+[node name="Player3Sprite" type="Sprite3D" parent="Player3"]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, -2.45103, 3.30269, 0.675318)
+cast_shadow = 0
+gi_mode = 0
+pixel_size = 0.002
+texture = SubResource("PlaceholderTexture2D_v5kgu")
+
+[node name="Player4" type="Node3D" parent="."]
+visible = false
+
+[node name="Player4Light" type="SpotLight3D" parent="Player4"]
+transform = Transform3D(0.825103, -0.0712886, 0.560467, -0.561896, -2.66678e-09, 0.827208, -0.0589705, -0.997456, -0.0400568, 3.89346, 11.2426, -3.59294)
+light_color = Color(0.982343, 0.982342, 0.982342, 1)
+light_energy = 16.0
+light_volumetric_fog_energy = 24.0
+light_bake_mode = 1
+shadow_enabled = true
+distance_fade_enabled = true
+spot_range = 15.1676
+spot_angle = 7.5
+
+[node name="Player4Mesh" type="MeshInstance3D" parent="Player4"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.438, 1.4, -3.016)
+gi_mode = 2
+gi_lightmap_scale = 1
+mesh = SubResource("CapsuleMesh_cyxr4")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_u5tsk")
+
+[node name="Player4Label" type="Label3D" parent="Player4"]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, -2.40937, 3.24967, -3.08351)
+pixel_size = 0.0114
+billboard = 2
+texture_filter = 5
+text = "You!"
+font = ExtResource("2_5mogi")
+font_size = 36
+outline_size = 4
+horizontal_alignment = 0
+
+[node name="Player4Sprite" type="Sprite3D" parent="Player4"]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, -2.45103, 3.30269, -2.43039)
+cast_shadow = 0
+gi_mode = 0
+pixel_size = 0.002
+texture = SubResource("PlaceholderTexture2D_v5kgu")

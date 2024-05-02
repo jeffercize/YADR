@@ -1,0 +1,22 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://dqncfkxbm4np4"
+path="res://.godot/imported/Magnified_East.obj-d01a48778edc555c1a61656057cac717.mesh"
+
+[deps]
+
+files=["res://.godot/imported/Magnified_East.obj-d01a48778edc555c1a61656057cac717.mesh"]
+
+source_file="res://assets/items/weapons/attachments/OBJ/Magnified_East.obj"
+dest_files=["res://.godot/imported/Magnified_East.obj-d01a48778edc555c1a61656057cac717.mesh", "res://.godot/imported/Magnified_East.obj-d01a48778edc555c1a61656057cac717.mesh"]
+
+[params]
+
+generate_tangents=true
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+optimize_mesh=true
+force_disable_mesh_compression=false
