@@ -18,10 +18,12 @@ public partial class WaitingRoomUI : Control
         if (lobby.IsOwnedBy(SteamClient.SteamId))
         {
             GetNode<Button>("Panel/launch").Pressed += onLaunchPressed;
+            GetNode<Button>("Panel/terrain").Pressed += onTerrainGenPressed;
         }
         else
         {
             GetNode<Button>("Panel/launch").Disabled = true;
+            GetNode<Button>("Panel/terrain").Disabled = true;
         }
         GetNode<Button>("Panel/invite").Pressed += _on_invite_pressed;
         GetNode<Button>("chat/send").Pressed += sendPressed;
@@ -77,6 +79,11 @@ public partial class WaitingRoomUI : Control
     private void onLaunchPressed()
     {
         GetNode<Main>("/root/main").gameLaunch();
+    }
+
+    private void onTerrainGenPressed()
+    {
+        GetNode<Main>("/root/main").terrainGenLaunch();
     }
 
     public void _on_invite_pressed()
