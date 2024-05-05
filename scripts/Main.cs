@@ -115,16 +115,16 @@ public partial class Main : Node
                 Steam.debugLog("Host started Terrain game.");
                 clearUI();
                 clearLevel();
-                
+
                 //TODO: Show Loading screen
-                
+                int player_offset = 0;
                 foreach (Friend f in lobby.lobbyMembers)
                 {
-
-                    tempPlayer = ResourceLoader.Load<PackedScene>("res://scenes/Player.tscn").Instantiate<Player>();
-                    tempPlayer.init(f);
-                    players.AddChild(tempPlayer);
-                    tempPlayer.Position = new Vector3(1,1,1);
+                    GD.Print(f);
+                    CharacterBody3D debugPlayer = ResourceLoader.Load<PackedScene>("res://components/TerrainPlayer.tscn").Instantiate<CharacterBody3D>();
+                    players.AddChild(debugPlayer);
+                    debugPlayer.Position = new Vector3(player_offset*2,1,1);
+                    player_offset++;
 
                     //Node3D car = ResourceLoader.Load<PackedScene>("res://import/vehicles/car_base.tscn").Instantiate<Node3D>();
                     //Global.level.AddChild(car);
@@ -180,12 +180,12 @@ public partial class Main : Node
         if (lobby.lobby.IsOwnedBy(SteamClient.SteamId))//you are the host.
         {
             network.host();
-            Steam.debugLog("I am the host, attempting to establish the server.");
+            Global.debugLog("I am the host, attempting to establish the server.");
             lobby.lobby.SetData("networkStart", "true");
         }
         else//you are not the host.
         {
-            Steam.debugLog("I am NOT the host, attempting to join the server.");
+            Global.debugLog("I am NOT the host, attempting to join the server.");
             network.connect(lobby.lobby.Owner.Id);
         }
     }

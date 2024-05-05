@@ -72,6 +72,7 @@ theme_override_font_sizes/font_size = 24
 text = "Host Game"
 
 [node name="terrain" type="Button" parent="Panel" groups=["ClickyButtons"]]
+layout_mode = 0
 offset_left = 27.0
 offset_top = 198.0
 offset_right = 370.0

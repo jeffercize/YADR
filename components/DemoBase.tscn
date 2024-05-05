@@ -1,12 +1,12 @@
 [gd_scene load_steps=12 format=3 uid="uid://dyt8c2xqmddo2"]
 
 [ext_resource type="Script" path="res://demo/src/DemoScene.gd" id="1_k7qca"]
-[ext_resource type="PackedScene" uid="uid://bb2lp50sjndus" path="res://demo/components/World.tscn" id="2_2yeq8"]
-[ext_resource type="PackedScene" uid="uid://dwnhqfjq7v1pq" path="res://demo/components/Borders.tscn" id="3_cw38j"]
-[ext_resource type="PackedScene" uid="uid://domhm87hbhbg1" path="res://demo/components/Player.tscn" id="3_ht63y"]
-[ext_resource type="PackedScene" uid="uid://d2jihfohphuue" path="res://demo/components/UI.tscn" id="4_gk532"]
-[ext_resource type="Terrain3DStorage" uid="uid://lalq1xnmbjdl" path="res://demo/data/terrain_storage.res" id="5_sl43a"]
-[ext_resource type="Terrain3DTextureList" uid="uid://dal3jhw6241qg" path="res://demo/data/texture_list.tres" id="7_mnexy"]
+[ext_resource type="PackedScene" uid="uid://bb2lp50sjndus" path="res://components/World.tscn" id="2_2yeq8"]
+[ext_resource type="PackedScene" uid="uid://dwnhqfjq7v1pq" path="res://components/Borders.tscn" id="3_cw38j"]
+[ext_resource type="PackedScene" uid="uid://domhm87hbhbg1" path="res://components/TerrainPlayer.tscn" id="3_ht63y"]
+[ext_resource type="PackedScene" uid="uid://d2jihfohphuue" path="res://components/UI.tscn" id="4_gk532"]
+[ext_resource type="Terrain3DStorage" path="res://terrainData/terrain_storage.res" id="5_sl43a"]
+[ext_resource type="Terrain3DTextureList" uid="uid://dal3jhw6241qg" path="res://terrainData/texture_list.tres" id="7_mnexy"]
 
 [sub_resource type="Gradient" id="Gradient_vs32v"]
 offsets = PackedFloat32Array(0.3, 1)

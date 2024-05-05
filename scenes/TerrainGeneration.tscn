@@ -1,11 +1,9 @@
-[gd_scene load_steps=10 format=3 uid="uid://cofnhdcclon1w"]
+[gd_scene load_steps=8 format=3 uid="uid://cofnhdcclon1w"]
 
 [ext_resource type="Script" path="res://scripts/terrain/CodeGenerated.cs" id="1_btvwy"]
 [ext_resource type="PackedScene" uid="uid://bb2lp50sjndus" path="res://components/World.tscn" id="3_71ikj"]
-[ext_resource type="PackedScene" uid="uid://di5fovhcyd7re" path="res://components/Enemy.tscn" id="4_p8qry"]
 [ext_resource type="Script" path="res://scripts/terrain/RuntimeNavigationBaker.gd" id="5_445ur"]
 [ext_resource type="Terrain3DTextureList" uid="uid://dal3jhw6241qg" path="res://terrainData/texture_list.tres" id="6_sj1ir"]
-[ext_resource type="PackedScene" uid="uid://domhm87hbhbg1" path="res://components/Player.tscn" id="7_d53nm"]
 [ext_resource type="Terrain3DMaterial" uid="uid://c7yygu7xtcpun" path="res://terrainData/CodeGenerated.tres" id="7_ov2mj"]
 
 [sub_resource type="NavigationMesh" id="NavigationMesh_vs6am"]
@@ -21,23 +19,12 @@ script = ExtResource("1_btvwy")
 
 [node name="World" parent="." instance=ExtResource("3_71ikj")]
 
-[node name="Enemy" parent="." instance=ExtResource("4_p8qry")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.28216, 50, -1.1526)
-
 [node name="RuntimeNavigationBaker" type="Node" parent="."]
 script = ExtResource("5_445ur")
 enabled = false
 template = SubResource("NavigationMesh_vs6am")
 
-[node name="RunThisSceneLabel3D" type="Label3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 100, 30)
-pixel_size = 1.0
-billboard = 1
-text = "Run This Scene"
-
 [node name="Terrain3D" type="Terrain3D" parent="."]
 storage = SubResource("Terrain3DStorage_5mlyl")
 material = ExtResource("7_ov2mj")
 texture_list = ExtResource("6_sj1ir")
-
-[node name="Player" parent="." instance=ExtResource("7_d53nm")]
