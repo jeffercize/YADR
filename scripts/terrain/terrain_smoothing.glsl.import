@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://covlqffrsbp3h"
+path="res://.godot/imported/terrain_smoothing.glsl-99bcec41225dc19dc0bb5b8e2a9a429c.res"
+
+[deps]
+
+source_file="res://scripts/terrain/terrain_smoothing.glsl"
+dest_files=["res://.godot/imported/terrain_smoothing.glsl-99bcec41225dc19dc0bb5b8e2a9a429c.res"]
+
+[params]
+
