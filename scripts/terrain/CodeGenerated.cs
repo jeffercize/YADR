@@ -156,52 +156,99 @@ public partial class CodeGenerated : Node
         Image img = Image.Create(x_axis, y_axis, false, Image.Format.Rgbaf);
 
 		Curve3D path = new Curve3D();
-        path.AddPoint(new Vector3(0, 0, 0f));
+        /*path.AddPoint(new Vector3(0, 0, 0f));
         path.AddPoint(new Vector3(2048, 1024, 0.1f), new Vector3(-50.0f, -50.0f, 0.0f), new Vector3(500.0f, 500.0f, 0.0f));
         path.AddPoint(new Vector3(3048, 3024, 0.5f), new Vector3(-50.0f, -50.0f, 0.0f), new Vector3(500.0f, 1000.0f, 0.0f));
         path.AddPoint(new Vector3(4096, 2500, 0.3f), new Vector3(-500.0f, -500.0f, 0.0f), new Vector3(50.0f, 50.0f, 0.0f));
-        path.AddPoint(new Vector3(8192, 0, 0.0f));
+        path.AddPoint(new Vector3(8192, 0, 0.0f));*/
+        path.AddPoint(new Vector3(300, 0, 1.0f));
+        path.AddPoint(new Vector3(300, 750, 0.9f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(400, 500, 0.8f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(500, 750, 0.7f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(600, 500, 0.6f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(700, 750, 0.5f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(800, 500, 0.4f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(900, 750, 0.3f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(1000, 500, 0.2f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(1100, 750, 0.1f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(600, 3000, 0.11f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(2600, 1000, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(2600, 3500, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(6600, 3500, 0.33f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(7600, 1500, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(8192, 2048, 0.0f));
 
-        List<Vector3> data = new List<Vector3>(path.Tessellate(16, 1));
-        //List<Vector3> data = new List<Vector3>(path.GetBakedPoints());
-        List<Vector3> sortedData = data.Select(v => new Vector3(MathF.Round(v.X), MathF.Round(v.Y), v.Z))
-                                        .OrderBy(v => v.X)
-                                        .ThenBy(v => v.Y)
-                                        .ToList();
+        List<Vector3> data = new List<Vector3>(path.Tessellate(10, 1));
         List<Vector3> path_result = new List<Vector3>();
-
-        for (int i = 0; i < sortedData.Count - 1; i++)
+        for (int i = 0; i < data.Count - 1; i++)
         {
-            path_result.Add(sortedData[i]);
-            // Check if there is a gap in the x values
-            if (sortedData[i + 1].X - sortedData[i].X > 1)
+            float diff = MathF.Abs(data[i + 1].X - data[i].X) + MathF.Abs(data[i + 1].Y - data[i].Y);
+            float maxGap = 1.0f;
+            //GD.Print(diff);
+            if (diff > maxGap)
             {
-                // Interpolate the y and z values and insert a new row
-                for (float x = sortedData[i].X + 1; x < sortedData[i + 1].X; x++)
+                int steps = (int)MathF.Ceiling(diff/maxGap);
+                for (int step = 0; step <= steps; step++)
                 {
-                    float t = (x - sortedData[i].X) / (sortedData[i + 1].X - sortedData[i].X);
-                    float y = (int)MathF.Round(Lerp(sortedData[i].Y, sortedData[i + 1].Y, t));
-                    float z = Lerp(sortedData[i].Z, sortedData[i + 1].Z, t);
+                    float t = (float)step / steps;
+                    float x = Lerp(data[i].X, data[i + 1].X, t);
+                    float y = Lerp(data[i].Y, data[i + 1].Y, t);
+                    float z = Lerp(data[i].Z, data[i + 1].Z, t);
                     path_result.Add(new Vector3(x, y, z));
                 }
             }
-            // Check if there is a gap in the y values
-/*            if (sortedData[i + 1].Y - sortedData[i].Y > 1)
+            else
             {
-                // Interpolate the x and z values and insert a new row
-                for (float y = sortedData[i].Y + 1; y < sortedData[i + 1].Y; y++)
-                {
-                    float t = (y - sortedData[i].Y) / (sortedData[i + 1].Y - sortedData[i].Y);
-                    float x = sortedData[i].X;
-                    float z = Lerp(sortedData[i].Z, sortedData[i + 1].Z, t);
-                    path_result.Add(new Vector3(x, y, z));
-                }
-            }*/
+                path_result.Add(data[i]);
+            }
         }
-        path_result.Add(sortedData[^1]);
+        GD.Print("path building");
+        //List<Vector3> data = new List<Vector3>(path.GetBakedPoints());
+        /*        List<Vector3> sortedData = data.Select(v => new Vector3(MathF.Round(v.X), MathF.Round(v.Y), v.Z))
+                                                .OrderBy(v => v.X)
+                                                .ThenBy(v => v.Y)
+                                                .ToList();
+                List<Vector3> path_result = new List<Vector3>();
+
+                for (int i = 0; i < sortedData.Count - 1; i++)
+                {
+                    path_result.Add(sortedData[i]);
+                    // Check if there is a gap in the x values
+                    if (sortedData[i + 1].X - sortedData[i].X > 1)
+                    {
+                        // Interpolate the y and z values and insert a new row
+                        for (float x = sortedData[i].X + 1; x < sortedData[i + 1].X; x++)
+                        {
+                            float t = (x - sortedData[i].X) / (sortedData[i + 1].X - sortedData[i].X);
+                            float y = (int)MathF.Round(Lerp(sortedData[i].Y, sortedData[i + 1].Y, t));
+                            float z = Lerp(sortedData[i].Z, sortedData[i + 1].Z, t);
+                            path_result.Add(new Vector3(x, y, z));
+                        }
+                    }
+                    //check if we should be filling on Y because we have gone vertical or nearly vertical
+        *//*            else if(MathF.Abs(sortedData[i + 1].Y - sortedData[i].Y) > 30)
+
+                        float t = (y - sortedData[i].Y) / (sortedData[i + 1].Y - sortedData[i].Y);
+                        float z = Lerp(sortedData[i].Z, sortedData[i + 1].Z, t);
+                        path_result.Add(new Vector3(sortedData[i].X, , z);
+                    }*//*
+                    // Check if there is a gap in the y values
+                    if (sortedData[i + 1].Y - sortedData[i].Y > 1)
+                    {
+                        // Interpolate the x and z values and insert a new row
+                        for (float y = sortedData[i].Y + 1; y < sortedData[i + 1].Y; y++)
+                        {
+                            float t = (y - sortedData[i].Y) / (sortedData[i + 1].Y - sortedData[i].Y);
+                            float x = sortedData[i].X;
+                            float z = Lerp(sortedData[i].Z, sortedData[i + 1].Z, t);
+                            path_result.Add(new Vector3(x, y, z));
+                        }
+                    }
+                }
+                path_result.Add(sortedData[^1]);*/
         //List<Vector3> path_result = sortedData;
-        
-        Image test_img = Image.Create(x_axis, y_axis, false, Image.Format.Rgbaf); ;
+
+        Image test_img = Image.Create(x_axis, y_axis, false, Image.Format.Rgbaf); 
         var pathDict = path_result.GroupBy(p => p.X).ToDictionary(g => g.Key, g => g.Select(p => p.Y).ToList());
         foreach (var key in pathDict.Keys.OrderBy(x => x))
         {
@@ -452,77 +499,86 @@ public partial class CodeGenerated : Node
         var rd = RenderingServer.CreateLocalRenderingDevice();
 
         // Load GLSL shader
-        RDShaderFile shaderFile = GD.Load<RDShaderFile>("res://scripts/terrain/gausianblur.glsl");
-        RDShaderSpirV shaderBytecode = shaderFile.GetSpirV();
-        Rid shader = rd.ShaderCreateFromSpirV(shaderBytecode);
-        
-        //Setup Input Image
-        RDSamplerState samplerState = new RDSamplerState();
-        Rid sampler = rd.SamplerCreate(samplerState);
-        RDTextureFormat inputFmt = new RDTextureFormat();
-        inputFmt.Width = (uint)test_img.GetWidth();
-        inputFmt.Height = (uint)test_img.GetHeight();
-        inputFmt.Format = RenderingDevice.DataFormat.R32G32B32A32Sfloat;
-        inputFmt.UsageBits = RenderingDevice.TextureUsageBits.CanCopyFromBit | RenderingDevice.TextureUsageBits.SamplingBit | RenderingDevice.TextureUsageBits.CanUpdateBit;
-        RDTextureView inputView = new RDTextureView();
-
-        byte[] inputImageData = test_img.GetData();
-        Godot.Collections.Array<byte[]> inputData = new Godot.Collections.Array<byte[]>
-        {
-            inputImageData
+        //RDShaderFile shaderFile = GD.Load<RDShaderFile>("res://scripts/terrain/gausianblur.glsl");
+        RDShaderFile[] shaderList = new RDShaderFile[] {
+            GD.Load<RDShaderFile>("res://scripts/terrain/gausianblur.glsl"),
+            GD.Load<RDShaderFile>("res://scripts/terrain/boxblur.glsl")
         };
-        Rid inputTex = rd.TextureCreate(inputFmt, inputView, inputData);
-        RDUniform samplerUniform = new RDUniform();
-        samplerUniform.UniformType = RenderingDevice.UniformType.SamplerWithTexture;
-        samplerUniform.Binding = 0;
-        samplerUniform.AddId(sampler);
-        samplerUniform.AddId(inputTex);
-
-
-        
-        //Setup Output Image 
-        RDTextureFormat fmt = new RDTextureFormat();
-        fmt.Width = (uint)x_axis;
-        fmt.Height = (uint)y_axis;
-        fmt.Format = RenderingDevice.DataFormat.R32G32B32A32Sfloat;
-        fmt.UsageBits = RenderingDevice.TextureUsageBits.StorageBit | RenderingDevice.TextureUsageBits.CanUpdateBit | RenderingDevice.TextureUsageBits.CanCopyFromBit;
-        RDTextureView view = new RDTextureView();
-        Image output_image = Image.Create(x_axis, y_axis, false, Image.Format.Rgbaf);
-        byte[] outputImageData = output_image.GetData();
-        Godot.Collections.Array<byte[]> tempData = new Godot.Collections.Array<byte[]>
+        foreach (var shaderFile in shaderList)
         {
-            outputImageData
-        };
-        Rid output_tex = rd.TextureCreate(fmt, view, tempData);
-        RDUniform outputTexUniform = new RDUniform();
-        outputTexUniform.UniformType = RenderingDevice.UniformType.Image;
-        outputTexUniform.Binding = 1;
-        outputTexUniform.AddId(output_tex);
+            RDShaderSpirV shaderBytecode = shaderFile.GetSpirV();
+            Rid shader = rd.ShaderCreateFromSpirV(shaderBytecode);
 
-        //create the uniformSet
-        var uniformSet = rd.UniformSetCreate(new Array<RDUniform> { samplerUniform, outputTexUniform }, shader, 0);
+            //Setup Input Image
+            RDSamplerState samplerState = new RDSamplerState();
+            Rid sampler = rd.SamplerCreate(samplerState);
+            RDTextureFormat inputFmt = new RDTextureFormat();
+            inputFmt.Width = (uint)test_img.GetWidth();
+            inputFmt.Height = (uint)test_img.GetHeight();
+            inputFmt.Format = RenderingDevice.DataFormat.R32G32B32A32Sfloat;
+            inputFmt.UsageBits = RenderingDevice.TextureUsageBits.CanCopyFromBit | RenderingDevice.TextureUsageBits.SamplingBit | RenderingDevice.TextureUsageBits.CanUpdateBit;
+            RDTextureView inputView = new RDTextureView();
 
-        // Create a compute pipeline
-        var pipeline = rd.ComputePipelineCreate(shader);
-        var computeList = rd.ComputeListBegin();
-        rd.ComputeListBindComputePipeline(computeList, pipeline);
-        rd.ComputeListBindUniformSet(computeList, uniformSet, 0);
-        int threadsPerGroup = 32;
-        uint xGroups = (uint)(out_img.GetWidth() + threadsPerGroup - 1) / (uint)threadsPerGroup;
-        uint yGroups = (uint)(out_img.GetHeight() + threadsPerGroup - 1) / (uint)threadsPerGroup;
-        rd.ComputeListDispatch(computeList, xGroups, yGroups, 1);
-        rd.ComputeListEnd();
+            byte[] inputImageData = test_img.GetData();
+            Godot.Collections.Array<byte[]> inputData = new Godot.Collections.Array<byte[]>
+            {
+                inputImageData
+            };
+            Rid inputTex = rd.TextureCreate(inputFmt, inputView, inputData);
+            RDUniform samplerUniform = new RDUniform();
+            samplerUniform.UniformType = RenderingDevice.UniformType.SamplerWithTexture;
+            samplerUniform.Binding = 0;
+            samplerUniform.AddId(sampler);
+            samplerUniform.AddId(inputTex);
 
-        // Submit to GPU and wait for sync
-        rd.Submit();
-        rd.Sync();
 
-        //Get Data
-        var byteData = rd.TextureGetData(output_tex, 0);
-        out_img = Image.CreateFromData(x_axis, y_axis, false, Image.Format.Rgbaf, byteData);
+
+            //Setup Output Image 
+            RDTextureFormat fmt = new RDTextureFormat();
+            fmt.Width = (uint)x_axis;
+            fmt.Height = (uint)y_axis;
+            fmt.Format = RenderingDevice.DataFormat.R32G32B32A32Sfloat;
+            fmt.UsageBits = RenderingDevice.TextureUsageBits.StorageBit | RenderingDevice.TextureUsageBits.CanUpdateBit | RenderingDevice.TextureUsageBits.CanCopyFromBit;
+            RDTextureView view = new RDTextureView();
+            Image output_image = Image.Create(x_axis, y_axis, false, Image.Format.Rgbaf);
+            byte[] outputImageData = output_image.GetData();
+            Godot.Collections.Array<byte[]> tempData = new Godot.Collections.Array<byte[]>
+            {
+                outputImageData
+            };
+            Rid output_tex = rd.TextureCreate(fmt, view, tempData);
+            RDUniform outputTexUniform = new RDUniform();
+            outputTexUniform.UniformType = RenderingDevice.UniformType.Image;
+            outputTexUniform.Binding = 1;
+            outputTexUniform.AddId(output_tex);
+
+            //create the uniformSet
+            var uniformSet = rd.UniformSetCreate(new Array<RDUniform> { samplerUniform, outputTexUniform }, shader, 0);
+
+            // Create a compute pipeline
+            var pipeline = rd.ComputePipelineCreate(shader);
+            var computeList = rd.ComputeListBegin();
+            rd.ComputeListBindComputePipeline(computeList, pipeline);
+            rd.ComputeListBindUniformSet(computeList, uniformSet, 0);
+            int threadsPerGroup = 32;
+            uint xGroups = (uint)(out_img.GetWidth() + threadsPerGroup - 1) / (uint)threadsPerGroup;
+            uint yGroups = (uint)(out_img.GetHeight() + threadsPerGroup - 1) / (uint)threadsPerGroup;
+            rd.ComputeListDispatch(computeList, xGroups, yGroups, 1);
+            rd.ComputeListEnd();
+
+            // Submit to GPU and wait for sync
+            rd.Submit();
+            rd.Sync();
+
+            //Get Data
+            var byteData = rd.TextureGetData(output_tex, 0);
+            out_img = Image.CreateFromData(x_axis, y_axis, false, Image.Format.Rgbaf, byteData);
+            test_img = out_img;
+        }
+        
         //Image outputImg = Image.CreateFromData(x_axis, y_axis, false, Image.Format.Rgbaf, rd.TextureGetData(outputImage, 0));
         //outputImg.SavePng("C:\\Users\\jeffe\\test_images\\blur_test.png");
-        out_img.SavePng("C:\\Users\\jeffe\\test_images\\blur_test_GLSL.png");
+        out_img.SavePng("C:\\Users\\jeffe\\test_images\\blur_test_gausbox.png");
 
         GD.Print("loop");
         for (int x = 0; x < x_axis; x++)
