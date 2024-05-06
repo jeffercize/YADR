@@ -156,52 +156,94 @@ public partial class CodeGenerated : Node
         Image img = Image.Create(x_axis, y_axis, false, Image.Format.Rgbaf);
 
 		Curve3D path = new Curve3D();
-        path.AddPoint(new Vector3(0, 0, 0f));
+        /*path.AddPoint(new Vector3(0, 0, 0f));
         path.AddPoint(new Vector3(2048, 1024, 0.1f), new Vector3(-50.0f, -50.0f, 0.0f), new Vector3(500.0f, 500.0f, 0.0f));
         path.AddPoint(new Vector3(3048, 3024, 0.5f), new Vector3(-50.0f, -50.0f, 0.0f), new Vector3(500.0f, 1000.0f, 0.0f));
         path.AddPoint(new Vector3(4096, 2500, 0.3f), new Vector3(-500.0f, -500.0f, 0.0f), new Vector3(50.0f, 50.0f, 0.0f));
+        path.AddPoint(new Vector3(8192, 0, 0.0f));*/
+        path.AddPoint(new Vector3(100, 0, 1.0f));
+        path.AddPoint(new Vector3(100, 1500, 0.9f), new Vector3(-50.0f, 0.0f, 0.0f), new Vector3(50.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(200, 500, 0.8f), new Vector3(-50.0f, 0.0f, 0.0f), new Vector3(50.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(300, 1500, 0.7f), new Vector3(-50.0f, 0.0f, 0.0f), new Vector3(50.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(400, 500, 0.6f), new Vector3(-50.0f, 0.0f, 0.0f), new Vector3(50.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(500, 1500, 0.5f), new Vector3(-50.0f, 0.0f, 0.0f), new Vector3(50.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(600, 500, 0.4f), new Vector3(-50.0f, 0.0f, 0.0f), new Vector3(50.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(700, 1500, 0.3f), new Vector3(-50.0f, 0.0f, 0.0f), new Vector3(50.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(800, 500, 0.2f), new Vector3(-50.0f, 0.0f, 0.0f), new Vector3(50.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(900, 1500, 0.1f), new Vector3(-50.0f, 0.0f, 0.0f), new Vector3(50.0f, 0.0f, 0.0f));
         path.AddPoint(new Vector3(8192, 0, 0.0f));
 
-        List<Vector3> data = new List<Vector3>(path.Tessellate(16, 1));
-        //List<Vector3> data = new List<Vector3>(path.GetBakedPoints());
-        List<Vector3> sortedData = data.Select(v => new Vector3(MathF.Round(v.X), MathF.Round(v.Y), v.Z))
-                                        .OrderBy(v => v.X)
-                                        .ThenBy(v => v.Y)
-                                        .ToList();
+        List<Vector3> data = new List<Vector3>(path.Tessellate(10, 1));
         List<Vector3> path_result = new List<Vector3>();
-
-        for (int i = 0; i < sortedData.Count - 1; i++)
+        for (int i = 0; i < data.Count - 1; i++)
         {
-            path_result.Add(sortedData[i]);
-            // Check if there is a gap in the x values
-            if (sortedData[i + 1].X - sortedData[i].X > 1)
+            float diff = MathF.Abs(data[i + 1].X - data[i].X) + MathF.Abs(data[i + 1].Y - data[i].Y);
+            float maxGap = 1.0f;
+            //GD.Print(diff);
+            if (diff > maxGap)
             {
-                // Interpolate the y and z values and insert a new row
-                for (float x = sortedData[i].X + 1; x < sortedData[i + 1].X; x++)
+                int steps = (int)MathF.Ceiling(diff/maxGap);
+                for (int step = 0; step <= steps; step++)
                 {
-                    float t = (x - sortedData[i].X) / (sortedData[i + 1].X - sortedData[i].X);
-                    float y = (int)MathF.Round(Lerp(sortedData[i].Y, sortedData[i + 1].Y, t));
-                    float z = Lerp(sortedData[i].Z, sortedData[i + 1].Z, t);
+                    float t = (float)step / steps;
+                    float x = Lerp(data[i].X, data[i + 1].X, t);
+                    float y = Lerp(data[i].Y, data[i + 1].Y, t);
+                    float z = Lerp(data[i].Z, data[i + 1].Z, t);
                     path_result.Add(new Vector3(x, y, z));
                 }
             }
-            // Check if there is a gap in the y values
-/*            if (sortedData[i + 1].Y - sortedData[i].Y > 1)
+            else
             {
-                // Interpolate the x and z values and insert a new row
-                for (float y = sortedData[i].Y + 1; y < sortedData[i + 1].Y; y++)
-                {
-                    float t = (y - sortedData[i].Y) / (sortedData[i + 1].Y - sortedData[i].Y);
-                    float x = sortedData[i].X;
-                    float z = Lerp(sortedData[i].Z, sortedData[i + 1].Z, t);
-                    path_result.Add(new Vector3(x, y, z));
-                }
-            }*/
+                path_result.Add(data[i]);
+            }
         }
-        path_result.Add(sortedData[^1]);
+        GD.Print("path building");
+        //List<Vector3> data = new List<Vector3>(path.GetBakedPoints());
+        /*        List<Vector3> sortedData = data.Select(v => new Vector3(MathF.Round(v.X), MathF.Round(v.Y), v.Z))
+                                                .OrderBy(v => v.X)
+                                                .ThenBy(v => v.Y)
+                                                .ToList();
+                List<Vector3> path_result = new List<Vector3>();
+
+                for (int i = 0; i < sortedData.Count - 1; i++)
+                {
+                    path_result.Add(sortedData[i]);
+                    // Check if there is a gap in the x values
+                    if (sortedData[i + 1].X - sortedData[i].X > 1)
+                    {
+                        // Interpolate the y and z values and insert a new row
+                        for (float x = sortedData[i].X + 1; x < sortedData[i + 1].X; x++)
+                        {
+                            float t = (x - sortedData[i].X) / (sortedData[i + 1].X - sortedData[i].X);
+                            float y = (int)MathF.Round(Lerp(sortedData[i].Y, sortedData[i + 1].Y, t));
+                            float z = Lerp(sortedData[i].Z, sortedData[i + 1].Z, t);
+                            path_result.Add(new Vector3(x, y, z));
+                        }
+                    }
+                    //check if we should be filling on Y because we have gone vertical or nearly vertical
+        *//*            else if(MathF.Abs(sortedData[i + 1].Y - sortedData[i].Y) > 30)
+
+                        float t = (y - sortedData[i].Y) / (sortedData[i + 1].Y - sortedData[i].Y);
+                        float z = Lerp(sortedData[i].Z, sortedData[i + 1].Z, t);
+                        path_result.Add(new Vector3(sortedData[i].X, , z);
+                    }*//*
+                    // Check if there is a gap in the y values
+                    if (sortedData[i + 1].Y - sortedData[i].Y > 1)
+                    {
+                        // Interpolate the x and z values and insert a new row
+                        for (float y = sortedData[i].Y + 1; y < sortedData[i + 1].Y; y++)
+                        {
+                            float t = (y - sortedData[i].Y) / (sortedData[i + 1].Y - sortedData[i].Y);
+                            float x = sortedData[i].X;
+                            float z = Lerp(sortedData[i].Z, sortedData[i + 1].Z, t);
+                            path_result.Add(new Vector3(x, y, z));
+                        }
+                    }
+                }
+                path_result.Add(sortedData[^1]);*/
         //List<Vector3> path_result = sortedData;
-        
-        Image test_img = Image.Create(x_axis, y_axis, false, Image.Format.Rgbaf); ;
+
+        Image test_img = Image.Create(x_axis, y_axis, false, Image.Format.Rgbaf); 
         var pathDict = path_result.GroupBy(p => p.X).ToDictionary(g => g.Key, g => g.Select(p => p.Y).ToList());
         foreach (var key in pathDict.Keys.OrderBy(x => x))
         {
