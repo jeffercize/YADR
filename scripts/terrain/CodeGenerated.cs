@@ -161,17 +161,22 @@ public partial class CodeGenerated : Node
         path.AddPoint(new Vector3(3048, 3024, 0.5f), new Vector3(-50.0f, -50.0f, 0.0f), new Vector3(500.0f, 1000.0f, 0.0f));
         path.AddPoint(new Vector3(4096, 2500, 0.3f), new Vector3(-500.0f, -500.0f, 0.0f), new Vector3(50.0f, 50.0f, 0.0f));
         path.AddPoint(new Vector3(8192, 0, 0.0f));*/
-        path.AddPoint(new Vector3(100, 0, 1.0f));
-        path.AddPoint(new Vector3(100, 1500, 0.9f), new Vector3(-50.0f, 0.0f, 0.0f), new Vector3(50.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(200, 500, 0.8f), new Vector3(-50.0f, 0.0f, 0.0f), new Vector3(50.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(300, 1500, 0.7f), new Vector3(-50.0f, 0.0f, 0.0f), new Vector3(50.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(400, 500, 0.6f), new Vector3(-50.0f, 0.0f, 0.0f), new Vector3(50.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(500, 1500, 0.5f), new Vector3(-50.0f, 0.0f, 0.0f), new Vector3(50.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(600, 500, 0.4f), new Vector3(-50.0f, 0.0f, 0.0f), new Vector3(50.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(700, 1500, 0.3f), new Vector3(-50.0f, 0.0f, 0.0f), new Vector3(50.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(800, 500, 0.2f), new Vector3(-50.0f, 0.0f, 0.0f), new Vector3(50.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(900, 1500, 0.1f), new Vector3(-50.0f, 0.0f, 0.0f), new Vector3(50.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(8192, 0, 0.0f));
+        path.AddPoint(new Vector3(300, 0, 1.0f));
+        path.AddPoint(new Vector3(300, 750, 0.9f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(400, 500, 0.8f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(500, 750, 0.7f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(600, 500, 0.6f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(700, 750, 0.5f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(800, 500, 0.4f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(900, 750, 0.3f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(1000, 500, 0.2f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(1100, 750, 0.1f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(600, 3000, 0.11f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(2600, 1000, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(2600, 3500, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(6600, 3500, 0.33f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(7600, 1500, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(8192, 2048, 0.0f));
 
         List<Vector3> data = new List<Vector3>(path.Tessellate(10, 1));
         List<Vector3> path_result = new List<Vector3>();
@@ -494,77 +499,86 @@ public partial class CodeGenerated : Node
         var rd = RenderingServer.CreateLocalRenderingDevice();
 
         // Load GLSL shader
-        RDShaderFile shaderFile = GD.Load<RDShaderFile>("res://scripts/terrain/gausianblur.glsl");
-        RDShaderSpirV shaderBytecode = shaderFile.GetSpirV();
-        Rid shader = rd.ShaderCreateFromSpirV(shaderBytecode);
-        
-        //Setup Input Image
-        RDSamplerState samplerState = new RDSamplerState();
-        Rid sampler = rd.SamplerCreate(samplerState);
-        RDTextureFormat inputFmt = new RDTextureFormat();
-        inputFmt.Width = (uint)test_img.GetWidth();
-        inputFmt.Height = (uint)test_img.GetHeight();
-        inputFmt.Format = RenderingDevice.DataFormat.R32G32B32A32Sfloat;
-        inputFmt.UsageBits = RenderingDevice.TextureUsageBits.CanCopyFromBit | RenderingDevice.TextureUsageBits.SamplingBit | RenderingDevice.TextureUsageBits.CanUpdateBit;
-        RDTextureView inputView = new RDTextureView();
-
-        byte[] inputImageData = test_img.GetData();
-        Godot.Collections.Array<byte[]> inputData = new Godot.Collections.Array<byte[]>
-        {
-            inputImageData
+        //RDShaderFile shaderFile = GD.Load<RDShaderFile>("res://scripts/terrain/gausianblur.glsl");
+        RDShaderFile[] shaderList = new RDShaderFile[] {
+            GD.Load<RDShaderFile>("res://scripts/terrain/gausianblur.glsl"),
+            GD.Load<RDShaderFile>("res://scripts/terrain/boxblur.glsl")
         };
-        Rid inputTex = rd.TextureCreate(inputFmt, inputView, inputData);
-        RDUniform samplerUniform = new RDUniform();
-        samplerUniform.UniformType = RenderingDevice.UniformType.SamplerWithTexture;
-        samplerUniform.Binding = 0;
-        samplerUniform.AddId(sampler);
-        samplerUniform.AddId(inputTex);
-
-
-        
-        //Setup Output Image 
-        RDTextureFormat fmt = new RDTextureFormat();
-        fmt.Width = (uint)x_axis;
-        fmt.Height = (uint)y_axis;
-        fmt.Format = RenderingDevice.DataFormat.R32G32B32A32Sfloat;
-        fmt.UsageBits = RenderingDevice.TextureUsageBits.StorageBit | RenderingDevice.TextureUsageBits.CanUpdateBit | RenderingDevice.TextureUsageBits.CanCopyFromBit;
-        RDTextureView view = new RDTextureView();
-        Image output_image = Image.Create(x_axis, y_axis, false, Image.Format.Rgbaf);
-        byte[] outputImageData = output_image.GetData();
-        Godot.Collections.Array<byte[]> tempData = new Godot.Collections.Array<byte[]>
+        foreach (var shaderFile in shaderList)
         {
-            outputImageData
-        };
-        Rid output_tex = rd.TextureCreate(fmt, view, tempData);
-        RDUniform outputTexUniform = new RDUniform();
-        outputTexUniform.UniformType = RenderingDevice.UniformType.Image;
-        outputTexUniform.Binding = 1;
-        outputTexUniform.AddId(output_tex);
+            RDShaderSpirV shaderBytecode = shaderFile.GetSpirV();
+            Rid shader = rd.ShaderCreateFromSpirV(shaderBytecode);
 
-        //create the uniformSet
-        var uniformSet = rd.UniformSetCreate(new Array<RDUniform> { samplerUniform, outputTexUniform }, shader, 0);
+            //Setup Input Image
+            RDSamplerState samplerState = new RDSamplerState();
+            Rid sampler = rd.SamplerCreate(samplerState);
+            RDTextureFormat inputFmt = new RDTextureFormat();
+            inputFmt.Width = (uint)test_img.GetWidth();
+            inputFmt.Height = (uint)test_img.GetHeight();
+            inputFmt.Format = RenderingDevice.DataFormat.R32G32B32A32Sfloat;
+            inputFmt.UsageBits = RenderingDevice.TextureUsageBits.CanCopyFromBit | RenderingDevice.TextureUsageBits.SamplingBit | RenderingDevice.TextureUsageBits.CanUpdateBit;
+            RDTextureView inputView = new RDTextureView();
 
-        // Create a compute pipeline
-        var pipeline = rd.ComputePipelineCreate(shader);
-        var computeList = rd.ComputeListBegin();
-        rd.ComputeListBindComputePipeline(computeList, pipeline);
-        rd.ComputeListBindUniformSet(computeList, uniformSet, 0);
-        int threadsPerGroup = 32;
-        uint xGroups = (uint)(out_img.GetWidth() + threadsPerGroup - 1) / (uint)threadsPerGroup;
-        uint yGroups = (uint)(out_img.GetHeight() + threadsPerGroup - 1) / (uint)threadsPerGroup;
-        rd.ComputeListDispatch(computeList, xGroups, yGroups, 1);
-        rd.ComputeListEnd();
+            byte[] inputImageData = test_img.GetData();
+            Godot.Collections.Array<byte[]> inputData = new Godot.Collections.Array<byte[]>
+            {
+                inputImageData
+            };
+            Rid inputTex = rd.TextureCreate(inputFmt, inputView, inputData);
+            RDUniform samplerUniform = new RDUniform();
+            samplerUniform.UniformType = RenderingDevice.UniformType.SamplerWithTexture;
+            samplerUniform.Binding = 0;
+            samplerUniform.AddId(sampler);
+            samplerUniform.AddId(inputTex);
 
-        // Submit to GPU and wait for sync
-        rd.Submit();
-        rd.Sync();
 
-        //Get Data
-        var byteData = rd.TextureGetData(output_tex, 0);
-        out_img = Image.CreateFromData(x_axis, y_axis, false, Image.Format.Rgbaf, byteData);
+
+            //Setup Output Image 
+            RDTextureFormat fmt = new RDTextureFormat();
+            fmt.Width = (uint)x_axis;
+            fmt.Height = (uint)y_axis;
+            fmt.Format = RenderingDevice.DataFormat.R32G32B32A32Sfloat;
+            fmt.UsageBits = RenderingDevice.TextureUsageBits.StorageBit | RenderingDevice.TextureUsageBits.CanUpdateBit | RenderingDevice.TextureUsageBits.CanCopyFromBit;
+            RDTextureView view = new RDTextureView();
+            Image output_image = Image.Create(x_axis, y_axis, false, Image.Format.Rgbaf);
+            byte[] outputImageData = output_image.GetData();
+            Godot.Collections.Array<byte[]> tempData = new Godot.Collections.Array<byte[]>
+            {
+                outputImageData
+            };
+            Rid output_tex = rd.TextureCreate(fmt, view, tempData);
+            RDUniform outputTexUniform = new RDUniform();
+            outputTexUniform.UniformType = RenderingDevice.UniformType.Image;
+            outputTexUniform.Binding = 1;
+            outputTexUniform.AddId(output_tex);
+
+            //create the uniformSet
+            var uniformSet = rd.UniformSetCreate(new Array<RDUniform> { samplerUniform, outputTexUniform }, shader, 0);
+
+            // Create a compute pipeline
+            var pipeline = rd.ComputePipelineCreate(shader);
+            var computeList = rd.ComputeListBegin();
+            rd.ComputeListBindComputePipeline(computeList, pipeline);
+            rd.ComputeListBindUniformSet(computeList, uniformSet, 0);
+            int threadsPerGroup = 32;
+            uint xGroups = (uint)(out_img.GetWidth() + threadsPerGroup - 1) / (uint)threadsPerGroup;
+            uint yGroups = (uint)(out_img.GetHeight() + threadsPerGroup - 1) / (uint)threadsPerGroup;
+            rd.ComputeListDispatch(computeList, xGroups, yGroups, 1);
+            rd.ComputeListEnd();
+
+            // Submit to GPU and wait for sync
+            rd.Submit();
+            rd.Sync();
+
+            //Get Data
+            var byteData = rd.TextureGetData(output_tex, 0);
+            out_img = Image.CreateFromData(x_axis, y_axis, false, Image.Format.Rgbaf, byteData);
+            test_img = out_img;
+        }
+        
         //Image outputImg = Image.CreateFromData(x_axis, y_axis, false, Image.Format.Rgbaf, rd.TextureGetData(outputImage, 0));
         //outputImg.SavePng("C:\\Users\\jeffe\\test_images\\blur_test.png");
-        out_img.SavePng("C:\\Users\\jeffe\\test_images\\blur_test_GLSL.png");
+        out_img.SavePng("C:\\Users\\jeffe\\test_images\\blur_test_gausbox.png");
 
         GD.Print("loop");
         for (int x = 0; x < x_axis; x++)
