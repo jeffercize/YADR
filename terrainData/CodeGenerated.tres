@@ -39,14 +39,14 @@ _shader_parameters = {
 "noise3_scale": 0.225,
 "noise_texture": SubResource("NoiseTexture2D_hnqx3"),
 "vertex_normals_distance": null,
-"world_noise_blend_far": null,
-"world_noise_blend_near": null,
-"world_noise_height": null,
+"world_noise_blend_far": 1.0,
+"world_noise_blend_near": 0.85,
+"world_noise_height": 20.0,
 "world_noise_lod_distance": null,
-"world_noise_max_octaves": null,
-"world_noise_min_octaves": null,
+"world_noise_max_octaves": 4,
+"world_noise_min_octaves": 2,
 "world_noise_offset": null,
-"world_noise_scale": null
+"world_noise_scale": 5.0
 }
 world_background = 2
 auto_shader = true

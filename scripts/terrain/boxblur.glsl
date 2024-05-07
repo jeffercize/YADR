@@ -4,7 +4,7 @@
 layout(local_size_x = 32, local_size_y = 32) in;
 
 layout(set = 0, binding = 0) uniform sampler2D inputImage;
-layout(set = 0, binding = 1, rgba32f) uniform image2D outputImage;
+layout(set = 0, binding = 1, rg32f) uniform image2D outputImage;
 
 void main() {
     ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
