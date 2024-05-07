@@ -44,7 +44,7 @@ public partial class CodeGenerated : Node
     {
         // Create a local rendering device.
         var rd = RenderingServer.CreateLocalRenderingDevice();
-        Image pathImg = Image.Create(image.GetWidth(), image.GetHeight(), false, Image.Format.Rgf);
+        Image pathImg = Image.Create(image.GetWidth(), image.GetHeight(), false, Image.Format.Rgbaf);
         RDShaderFile[] shaderList = new RDShaderFile[] {
             GD.Load<RDShaderFile>("res://scripts/terrain/gausianblur.glsl"),
             GD.Load<RDShaderFile>("res://scripts/terrain/boxblur.glsl")
@@ -81,10 +81,10 @@ public partial class CodeGenerated : Node
             RDTextureFormat fmt = new RDTextureFormat();
             fmt.Width = (uint)image.GetWidth();
             fmt.Height = (uint)image.GetHeight();
-            fmt.Format = RenderingDevice.DataFormat.R32G32Sfloat;
+            fmt.Format = RenderingDevice.DataFormat.R32G32B32A32Sfloat;
             fmt.UsageBits = RenderingDevice.TextureUsageBits.StorageBit | RenderingDevice.TextureUsageBits.CanUpdateBit | RenderingDevice.TextureUsageBits.CanCopyFromBit;
             RDTextureView view = new RDTextureView();
-            Image output_image = Image.Create(image.GetWidth(), image.GetHeight(), false, Image.Format.Rgf);
+            Image output_image = Image.Create(image.GetWidth(), image.GetHeight(), false, Image.Format.Rgbaf);
             byte[] outputImageData = output_image.GetData();
             Godot.Collections.Array<byte[]> tempData = new Godot.Collections.Array<byte[]>
             {
@@ -116,16 +116,16 @@ public partial class CodeGenerated : Node
 
             //Get Data
             var byteData = rd.TextureGetData(output_tex, 0);
-            pathImg = Image.CreateFromData(image.GetWidth(), image.GetHeight(), false, Image.Format.Rgf, byteData);
+            pathImg = Image.CreateFromData(image.GetWidth(), image.GetHeight(), false, Image.Format.Rgbaf, byteData);
             image = pathImg;
-            imageFormat = RenderingDevice.DataFormat.R32G32Sfloat;
+            pathImg.SavePng("C:\\Users\\jeffe\\test_images\\blur_test_gausbox" + byteData[2] + ".png");
+            imageFormat = RenderingDevice.DataFormat.R32G32B32A32Sfloat;
         }
         return pathImg;
     }
 
     public void GenerateTerrain()
 	{
-        Stopwatch stopwatch = Stopwatch.StartNew();
 		var terrain = (Variant)GetNode("Terrain3D");
 		terrain.AsGodotObject().Call("set_collision_enabled", false);
 		terrain.AsGodotObject().Set("storage", ClassDB.Instantiate("Terrain3DStorage"));
@@ -141,14 +141,13 @@ public partial class CodeGenerated : Node
 		//AddChild((Node)terrain, true);
 
 		GD.Print("start");
-        
 
 		FastNoiseLite noise = new FastNoiseLite();
 		noise.Frequency = 0.0005f;
-		noise.Seed = 1;
+		noise.Seed = 2;
 		int x_axis = 8192;//16000; //if you change these a lot of shaders need re-coded
         int y_axis = 4096;//6000; //if you change these a lot of shaders need re-coded
-        Image img = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
+        Image img = Image.Create(x_axis, y_axis, false, Image.Format.Rgbaf);
 
 		Curve3D path = new Curve3D();
         /*path.AddPoint(new Vector3(0, 0, 0f));
@@ -198,12 +197,9 @@ public partial class CodeGenerated : Node
                 path_result.Add(data[i]);
             }
         }
-        GD.Print($"Time elapsed: {stopwatch.Elapsed}");
         GD.Print("path building");
 
-
-        Image pathImg = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
-        Image innerPathImg = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
+        Image pathImg = Image.Create(x_axis, y_axis, false, Image.Format.Rgbaf);
         var pathDict = path_result.GroupBy(p => p.X).ToDictionary(g => g.Key, g => g.Select(p => p.Y).ToList());
         foreach (var key in pathDict.Keys.OrderBy(x => x))
         {
@@ -227,19 +223,19 @@ public partial class CodeGenerated : Node
                             height = pathHeight;
                             mainPath = 1.0f;
                             weight = 1.0f;
-                            innerPathImg.SetPixel((int)key, (int)innerY, new Color(height, weight, 0, 0));
                         }
+
                         else if (innerY > yVal - 300.0f && innerY < yVal + 300.0f)
                         {
                             height = pathHeight;
-                            weight = Lerp(0.9f, 0.0f, (diff - 30.0f) / 270.0f);
+                            weight = Lerp(1.0f, 0.0f, (diff - 30.0f) / 270.0f);
                         }
                         Color pixel = pathImg.GetPixel((int)key, (int)innerY);
                         if (pixel.G != 1)
                         {
-                            float weightedHeight = (pixel.R * pixel.G + height * weight) / (pixel.G + weight);
-                            float newWeight = Math.Max(pixel.G, weight);
-                            pathImg.SetPixel((int)key, (int)innerY, new Color(height, newWeight, 0, 0));
+                            float weightedHeight = (pixel.R * pixel.B + height * weight) / (pixel.B + weight);
+                            float newWeight = Math.Max(pixel.B, weight);
+                            pathImg.SetPixel((int)key, (int)innerY, new Color(height, mainPath, newWeight, 1));
                         }
                     }
                 }
@@ -255,20 +251,18 @@ public partial class CodeGenerated : Node
                             height = pathHeight;
                             mainPath = 1.0f;
                             weight = 1.0f;
-                            innerPathImg.SetPixel(innerX, (int)MathF.Round(yVal), new Color(height, weight, 0, 0));
-
                         }
                         else if (innerX > key - 300.0f && innerX < key + 300.0f)
                         {
                             height = pathHeight;
-                            weight = Lerp(0.9f, 0.0f, (diff - 30.0f) / 270.0f);
+                            weight = Lerp(1.0f, 0.0f, (diff - 30.0f) / 270.0f);
                         }
                         Color pixel = pathImg.GetPixel(innerX, (int)MathF.Round(yVal));
                         if (pixel.G != 1)
                         {
-                            float weightedHeight = (pixel.R * pixel.G + height * weight) / (pixel.G + weight);
-                            float newWeight = Math.Max(pixel.G, weight);
-                            pathImg.SetPixel(innerX, (int)MathF.Round(yVal), new Color(height, newWeight, 0, 0));
+                            float weightedHeight = (pixel.R * pixel.B + height * weight) / (pixel.B + weight);
+                            float newWeight = Math.Max(pixel.B, weight);
+                            pathImg.SetPixel(innerX, (int)MathF.Round(yVal), new Color(height, mainPath, newWeight, 1));
                         }
                     }
                 }
@@ -287,20 +281,18 @@ public partial class CodeGenerated : Node
                             height = pathHeight;
                             mainPath = 1.0f;
                             weight = 1.0f;
-                            innerPathImg.SetPixel((int)innerX, (int)innerY, new Color(height, weight, 0, 0));
-
                         }
                         else if (innerX > key - 300.0f && innerX < key + 300.0f)
                         {
                             height = pathHeight;
-                            weight = Lerp(0.9f, 0.0f, (diff - 30.0f) / 270.0f);
+                            weight = Lerp(1.0f, 0.0f, (diff - 30.0f) / 270.0f);
                         }
                         Color pixel = pathImg.GetPixel(innerX, innerY);
                         if (pixel.G != 1)
                         {
-                            float weightedHeight = (pixel.R * pixel.G + height * weight) / (pixel.G + weight);
-                            float newWeight = Math.Max(pixel.G, weight);
-                            pathImg.SetPixel(innerX, innerY, new Color(height, newWeight, 0, 0));
+                            float weightedHeight = (pixel.R * pixel.B + height * weight) / (pixel.B + weight);
+                            float newWeight = Math.Max(pixel.B, weight);
+                            pathImg.SetPixel(innerX, innerY, new Color(height, mainPath, newWeight, 1));
                         }
                     }
                 }
@@ -320,19 +312,18 @@ public partial class CodeGenerated : Node
                             height = pathHeight;
                             mainPath = 1.0f;
                             weight = 1.0f;
-                            innerPathImg.SetPixel((int)innerX, (int)innerY, new Color(height, weight, 0, 0));
                         }
                         else if (innerX > key - 300.0f && innerX < key + 300.0f)
                         {
                             height = pathHeight;
-                            weight = Lerp(0.9f, 0.0f, (diff - 30.0f) / 270.0f);
+                            weight = Lerp(1.0f, 0.0f, (diff - 30.0f) / 270.0f);
                         }
                         Color pixel = pathImg.GetPixel(innerX, innerY);
-                        if (pixel.G  != 1)
+                        if (pixel.G != 1)
                         {
-                            float weightedHeight = (pixel.R * pixel.G + height * weight) / (pixel.G + weight);
-                            float newWeight = Math.Max(pixel.G, weight);
-                            pathImg.SetPixel(innerX, innerY, new Color(height, newWeight, 0, 0));
+                            float weightedHeight = (pixel.R * pixel.B + height * weight) / (pixel.B + weight);
+                            float newWeight = Math.Max(pixel.B, weight);
+                            pathImg.SetPixel(innerX, innerY, new Color(height, mainPath, newWeight, 1));
                         }
                     }
                 }
@@ -352,19 +343,18 @@ public partial class CodeGenerated : Node
                             height = pathHeight;
                             mainPath = 1.0f;
                             weight = 1.0f;
-                            innerPathImg.SetPixel((int)innerX, (int)innerY, new Color(height, weight, 0, 0));
                         }
                         else if (innerX > key - 300.0f && innerX < key + 300.0f)
                         {
                             height = pathHeight;
-                            weight = Lerp(0.9f, 0.0f, (diff - 30.0f) / 270.0f);
+                            weight = Lerp(1.0f, 0.0f, (diff - 30.0f) / 270.0f);
                         }
                         Color pixel = pathImg.GetPixel(innerX, innerY);
-                        if (pixel.G  != 1)
+                        if (pixel.G != 1)
                         {
-                            float weightedHeight = (pixel.R * pixel.G + height * weight) / (pixel.G + weight);
-                            float newWeight = Math.Max(pixel.G, weight);
-                            pathImg.SetPixel(innerX, innerY, new Color(height, newWeight, 0, 0));
+                            float weightedHeight = (pixel.R * pixel.B + height * weight) / (pixel.B + weight);
+                            float newWeight = Math.Max(pixel.B, weight);
+                            pathImg.SetPixel(innerX, innerY, new Color(height, mainPath, newWeight, 1));
                         }
                     }
                 }
@@ -384,19 +374,18 @@ public partial class CodeGenerated : Node
                             height = pathHeight;
                             mainPath = 1.0f;
                             weight = 1.0f;
-                            innerPathImg.SetPixel((int)innerX, (int)innerY, new Color(height, weight, 0, 0));
                         }
                         else if (innerX > key - 300.0f && innerX < key + 300.0f)
                         {
                             height = pathHeight;
-                            weight = Lerp(0.9f, 0.0f, (diff - 30.0f) / 270.0f);
+                            weight = Lerp(1.0f, 0.0f, (diff - 30.0f) / 270.0f);
                         }
                         Color pixel = pathImg.GetPixel(innerX, innerY);
-                        if (pixel.G  != 1)
+                        if (pixel.G != 1)
                         {
-                            float weightedHeight = (pixel.R * pixel.G + height * weight) / (pixel.G + weight);
-                            float newWeight = Math.Max(pixel.G, weight);
-                            pathImg.SetPixel(innerX, innerY, new Color(height, newWeight, 0, 0));
+                            float weightedHeight = (pixel.R * pixel.B + height * weight) / (pixel.B + weight);
+                            float newWeight = Math.Max(pixel.B, weight);
+                            pathImg.SetPixel(innerX, innerY, new Color(height, mainPath, newWeight, 1));
                         }
                     }
                 }
@@ -405,23 +394,20 @@ public partial class CodeGenerated : Node
         }
 
         pathImg.SavePng("C:\\Users\\jeffe\\test_images\\path_test.png");
-        GD.Print($"Time elapsed: {stopwatch.Elapsed}");
+                
         GD.Print("blur");
 
 
         // Run the blur shader
-        pathImg = ApplyGassianAndBoxBlur(pathImg, RenderingDevice.DataFormat.R32G32Sfloat);
-        GD.Print($"Time elapsed: {stopwatch.Elapsed}");
-        GD.Print("get noise");
+        pathImg = ApplyGassianAndBoxBlur(pathImg, RenderingDevice.DataFormat.R32G32B32A32Sfloat);
         Image noiseImage = noise.GetImage(x_axis, y_axis);
-        GD.Print($"Time elapsed: {stopwatch.Elapsed}");
-        GD.Print("blur noise");
+        GD.Print("hello");
         noiseImage = ApplyGassianAndBoxBlur(noiseImage, RenderingDevice.DataFormat.R8Unorm);
 
        
         pathImg.SavePng("C:\\Users\\jeffe\\test_images\\blur_test_gausbox.png");
-        GD.Print($"Time elapsed: {stopwatch.Elapsed}");
-        GD.Print("full combine");
+
+        GD.Print("loop");
         var rd = RenderingServer.CreateLocalRenderingDevice();
         RDShaderFile blendShaderFile = GD.Load<RDShaderFile>("res://scripts/terrain/terrainblend.glsl");
         RDShaderSpirV blendShaderBytecode = blendShaderFile.GetSpirV();
@@ -433,7 +419,7 @@ public partial class CodeGenerated : Node
         RDTextureFormat pathInputFmt = new RDTextureFormat();
         pathInputFmt.Width = (uint)pathImg.GetWidth();
         pathInputFmt.Height = (uint)pathImg.GetHeight();
-        pathInputFmt.Format = RenderingDevice.DataFormat.R32G32Sfloat;
+        pathInputFmt.Format = RenderingDevice.DataFormat.R32G32B32A32Sfloat;
         pathInputFmt.UsageBits = RenderingDevice.TextureUsageBits.CanCopyFromBit | RenderingDevice.TextureUsageBits.SamplingBit | RenderingDevice.TextureUsageBits.CanUpdateBit;
         RDTextureView pathInputView = new RDTextureView();
         
@@ -450,12 +436,13 @@ public partial class CodeGenerated : Node
         pathSamplerUniform.AddId(pathTex);
 
         //Setup Noise Image
+        GD.Print("noiseImage Start");
         RDSamplerState noiseSamplerState = new RDSamplerState();
         Rid noiseSampler = rd.SamplerCreate(noiseSamplerState);
         RDTextureFormat noiseInputFmt = new RDTextureFormat();
         noiseInputFmt.Width = (uint)noiseImage.GetWidth();
         noiseInputFmt.Height = (uint)noiseImage.GetHeight();
-        noiseInputFmt.Format = RenderingDevice.DataFormat.R32G32Sfloat;
+        noiseInputFmt.Format = RenderingDevice.DataFormat.R32G32B32A32Sfloat;
         noiseInputFmt.UsageBits = RenderingDevice.TextureUsageBits.CanCopyFromBit | RenderingDevice.TextureUsageBits.SamplingBit | RenderingDevice.TextureUsageBits.CanUpdateBit;
         RDTextureView noiseInputView = new RDTextureView();
         byte[] noiseInputImageData = noiseImage.GetData();
@@ -477,10 +464,10 @@ public partial class CodeGenerated : Node
         RDTextureFormat blendfmt = new RDTextureFormat();
         blendfmt.Width = (uint)x_axis;
         blendfmt.Height = (uint)y_axis;
-        blendfmt.Format = RenderingDevice.DataFormat.R32G32Sfloat;
+        blendfmt.Format = RenderingDevice.DataFormat.R32G32B32A32Sfloat;
         blendfmt.UsageBits = RenderingDevice.TextureUsageBits.StorageBit | RenderingDevice.TextureUsageBits.CanUpdateBit | RenderingDevice.TextureUsageBits.CanCopyFromBit;
         RDTextureView blendview = new RDTextureView();
-        Image blend_image = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
+        Image blend_image = Image.Create(x_axis, y_axis, false, Image.Format.Rgbaf);
         byte[] blendOutputImageData = blend_image.GetData();
         Godot.Collections.Array<byte[]> blendTempData = new Godot.Collections.Array<byte[]>
             {
@@ -512,13 +499,12 @@ public partial class CodeGenerated : Node
 
         //Get Data
         var blendbyteData = rd.TextureGetData(blendOutputTex, 0);
-        Image final_img = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
-        final_img = Image.CreateFromData(x_axis, y_axis, false, Image.Format.Rgf, blendbyteData);
+        Image final_img = Image.Create(x_axis, y_axis, false, Image.Format.Rgbaf);
+        final_img = Image.CreateFromData(x_axis, y_axis, false, Image.Format.Rgbaf, blendbyteData);
 
 
         final_img.SavePng("C:\\Users\\jeffe\\test_images\\final_output.png");
-        GD.Print($"Time elapsed: {stopwatch.Elapsed}");
-        GD.Print("import");
+		GD.Print("import");
 		terrain.AsGodotObject().Get("storage").AsGodotObject().Call("import_images", new Image[] { final_img, null, null }, new Vector3(0, -2024, -2024), 0.0f, 400.0f);
 
         //hole testing
@@ -546,11 +532,10 @@ public partial class CodeGenerated : Node
         Node runtime_nav_baker = GetNode("RuntimeNavigationBaker");
 		runtime_nav_baker.Set("terrain", terrain);
 		runtime_nav_baker.Set("enabled", true);
-        GD.Print($"Time elapsed: {stopwatch.Elapsed}");
 
-        //Retreive 512x512 region blur map showing where the regions are
-        //var rbmap_rid: RID = terrain.material.get_region_blend_map()
+		//Retreive 512x512 region blur map showing where the regions are
+		//var rbmap_rid: RID = terrain.material.get_region_blend_map()
 
-        //img = RenderingServer.texture_2d_get(rbmap_rid)
+		//img = RenderingServer.texture_2d_get(rbmap_rid)
     }
 }

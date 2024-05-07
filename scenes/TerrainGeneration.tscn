@@ -28,3 +28,10 @@ template = SubResource("NavigationMesh_vs6am")
 storage = SubResource("Terrain3DStorage_5mlyl")
 material = ExtResource("7_ov2mj")
 texture_list = ExtResource("6_sj1ir")
+
+[node name="CSGBox3D" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)
+visibility_range_end = 1.0
+visibility_range_fade_mode = 1
+use_collision = true
+size = Vector3(20000, 1.2, 20000)
