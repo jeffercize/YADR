@@ -13,8 +13,8 @@ public partial class CodeGenerated : Node
     {
         // Called every time the node is added to the scene.
         // Initialization here.
-        GD.Print("Hello from C# to Godot :)");
-        GenerateTerrain();
+        AddTerrain("Terrain3D");
+        //GenerateTerrain("Terrain3D2", 1000);
     }
 
     public override void _Process(double delta)
@@ -94,8 +94,23 @@ public partial class CodeGenerated : Node
             outputTexUniform.Binding = 1;
             outputTexUniform.AddId(output_tex);
 
+            // Setup ImageDimensionsUniform
+            int imageWidth = image.GetWidth();
+            int imageHeight = image.GetHeight();
+            byte[] imageDimensionsBytes = new byte[sizeof(int) * 2];
+            Buffer.BlockCopy(BitConverter.GetBytes(imageWidth), 0, imageDimensionsBytes, 0, sizeof(int));
+            Buffer.BlockCopy(BitConverter.GetBytes(imageHeight), 0, imageDimensionsBytes, sizeof(int), sizeof(int));
+            Rid imageDimensionsBuffer = rd.StorageBufferCreate((uint)imageDimensionsBytes.Length, imageDimensionsBytes);
+
+            RDUniform imageDimensionsUniform = new RDUniform()
+            {
+                UniformType = RenderingDevice.UniformType.StorageBuffer,
+                Binding = 2
+            };
+            imageDimensionsUniform.AddId(imageDimensionsBuffer);
+
             //create the uniformSet
-            var uniformSet = rd.UniformSetCreate(new Array<RDUniform> { samplerUniform, outputTexUniform }, shader, 0);
+            var uniformSet = rd.UniformSetCreate(new Array<RDUniform> { samplerUniform, outputTexUniform, imageDimensionsUniform }, shader, 0);
 
             // Create a compute pipeline
             var pipeline = rd.ComputePipelineCreate(shader);
@@ -321,31 +336,16 @@ public partial class CodeGenerated : Node
         }
     }
 
-    public void GenerateTerrain()
+    public Image GenerateTerrain(int terrainOffset, int x_axis, int y_axis)
 	{
         Stopwatch stopwatch = Stopwatch.StartNew();
-		var terrain = (Variant)GetNode("Terrain3D");
-		terrain.AsGodotObject().Call("set_collision_enabled", false);
-		terrain.AsGodotObject().Set("storage", ClassDB.Instantiate("Terrain3DStorage"));
-		terrain.AsGodotObject().Set("texture_list", ClassDB.Instantiate("Terrain3DTextureList"));
-		
-		var terrainMaterial = terrain.AsGodotObject().Get("material");
-		terrainMaterial.AsGodotObject().Set("world_background", 2);
-		terrainMaterial.AsGodotObject().Set("auto_shader", true);
-		terrainMaterial.AsGodotObject().Set("dual_scaling", true);
-        terrain.AsGodotObject().Set("material", terrainMaterial);
-
-        terrain.AsGodotObject().Set("texture_list", GD.Load("res://terrainData/texture_list.tres"));
 		//AddChild((Node)terrain, true);
 
 		GD.Print("start");
         
-
 		FastNoiseLite noise = new FastNoiseLite();
 		noise.Frequency = 0.0005f;
 		noise.Seed = 1;
-		int x_axis = 8192;//16000; //if you change these a lot of shaders need re-coded
-        int y_axis = 4096;//6000; //if you change these a lot of shaders need re-coded
         Image img = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
 
 		Curve3D path = new Curve3D();
@@ -450,6 +450,27 @@ public partial class CodeGenerated : Node
         RDShaderSpirV blendShaderBytecode = blendShaderFile.GetSpirV();
         Rid blendShader = rd.ShaderCreateFromSpirV(blendShaderBytecode);
 
+        //Setup Noise Image
+        RDSamplerState noiseSamplerState = new RDSamplerState();
+        Rid noiseSampler = rd.SamplerCreate(noiseSamplerState);
+        RDTextureFormat noiseInputFmt = new RDTextureFormat();
+        noiseInputFmt.Width = (uint)noiseImage.GetWidth();
+        noiseInputFmt.Height = (uint)noiseImage.GetHeight();
+        noiseInputFmt.Format = RenderingDevice.DataFormat.R32G32Sfloat;
+        noiseInputFmt.UsageBits = RenderingDevice.TextureUsageBits.CanCopyFromBit | RenderingDevice.TextureUsageBits.SamplingBit | RenderingDevice.TextureUsageBits.CanUpdateBit;
+        RDTextureView noiseInputView = new RDTextureView();
+        byte[] noiseInputImageData = noiseImage.GetData();
+        Godot.Collections.Array<byte[]> noiseData = new Godot.Collections.Array<byte[]>
+            {
+                noiseInputImageData
+            };
+        Rid noiseTex = rd.TextureCreate(noiseInputFmt, noiseInputView, noiseData);
+        RDUniform noiseSamplerUniform = new RDUniform();
+        noiseSamplerUniform.UniformType = RenderingDevice.UniformType.SamplerWithTexture;
+        noiseSamplerUniform.Binding = 0;
+        noiseSamplerUniform.AddId(noiseSampler);
+        noiseSamplerUniform.AddId(noiseTex);
+
         //Setup Path Image
         RDSamplerState pathSamplerState = new RDSamplerState();
         Rid pathSampler = rd.SamplerCreate(pathSamplerState);
@@ -472,30 +493,6 @@ public partial class CodeGenerated : Node
         pathSamplerUniform.AddId(pathSampler);
         pathSamplerUniform.AddId(pathTex);
 
-        //Setup Noise Image
-        RDSamplerState noiseSamplerState = new RDSamplerState();
-        Rid noiseSampler = rd.SamplerCreate(noiseSamplerState);
-        RDTextureFormat noiseInputFmt = new RDTextureFormat();
-        noiseInputFmt.Width = (uint)noiseImage.GetWidth();
-        noiseInputFmt.Height = (uint)noiseImage.GetHeight();
-        noiseInputFmt.Format = RenderingDevice.DataFormat.R32G32Sfloat;
-        noiseInputFmt.UsageBits = RenderingDevice.TextureUsageBits.CanCopyFromBit | RenderingDevice.TextureUsageBits.SamplingBit | RenderingDevice.TextureUsageBits.CanUpdateBit;
-        RDTextureView noiseInputView = new RDTextureView();
-        byte[] noiseInputImageData = noiseImage.GetData();
-        Godot.Collections.Array<byte[]> noiseData = new Godot.Collections.Array<byte[]>
-            {
-                noiseInputImageData
-            };
-        Rid noiseTex = rd.TextureCreate(noiseInputFmt, noiseInputView, noiseData);
-        RDUniform noiseSamplerUniform = new RDUniform();
-        noiseSamplerUniform.UniformType = RenderingDevice.UniformType.SamplerWithTexture;
-        noiseSamplerUniform.Binding = 0;
-        noiseSamplerUniform.AddId(noiseSampler);
-        noiseSamplerUniform.AddId(noiseTex);
-
-
-
-
         //Setup Output Image 
         RDTextureFormat blendfmt = new RDTextureFormat();
         blendfmt.Width = (uint)x_axis;
@@ -515,8 +512,23 @@ public partial class CodeGenerated : Node
         blendOutputTexUniform.Binding = 2;
         blendOutputTexUniform.AddId(blendOutputTex);
 
+        // Setup ImageDimensionsUniform
+        int imageWidth = x_axis;
+        int imageHeight = y_axis;
+        byte[] imageDimensionsBytes = new byte[sizeof(int) * 2];
+        Buffer.BlockCopy(BitConverter.GetBytes(imageWidth), 0, imageDimensionsBytes, 0, sizeof(int));
+        Buffer.BlockCopy(BitConverter.GetBytes(imageHeight), 0, imageDimensionsBytes, sizeof(int), sizeof(int));
+        Rid imageDimensionsBuffer = rd.StorageBufferCreate((uint)imageDimensionsBytes.Length, imageDimensionsBytes);
+
+        RDUniform imageDimensionsUniform = new RDUniform()
+        {
+            UniformType = RenderingDevice.UniformType.StorageBuffer,
+            Binding = 3
+        };
+        imageDimensionsUniform.AddId(imageDimensionsBuffer);
+
         //create the uniformSet
-        var blenduniformSet = rd.UniformSetCreate(new Array<RDUniform> { noiseSamplerUniform, pathSamplerUniform, blendOutputTexUniform }, blendShader, 0);
+        var blenduniformSet = rd.UniformSetCreate(new Array<RDUniform> { noiseSamplerUniform, pathSamplerUniform, blendOutputTexUniform, imageDimensionsUniform }, blendShader, 0);
 
         // Create a compute pipeline
         var blendpipeline = rd.ComputePipelineCreate(blendShader);
@@ -542,34 +554,62 @@ public partial class CodeGenerated : Node
         final_img.SavePng("C:\\Users\\jeffe\\test_images\\final_output.png");
         GD.Print($"Time elapsed: {stopwatch.Elapsed}");
         GD.Print("import");
-		terrain.AsGodotObject().Get("storage").AsGodotObject().Call("import_images", new Image[] { final_img, null, null }, new Vector3(0, -2024, -2024), 0.0f, 400.0f);
+        return final_img;
+    }
+
+    public void AddTerrain(string terrainName)
+    {
+        int x_axis = 4096;//16000; //if you change these a lot of shaders need re-coded
+        int y_axis = 4096;//6000; //if you change these a lot of shaders need re-coded
+        var terrain = (Variant)GetNode(terrainName);
+        terrain.AsGodotObject().Call("set_collision_enabled", false);
+        terrain.AsGodotObject().Set("storage", ClassDB.Instantiate("Terrain3DStorage"));
+        terrain.AsGodotObject().Set("texture_list", ClassDB.Instantiate("Terrain3DTextureList"));
+
+        //var terrainMaterial = terrain.AsGodotObject().Get("material");
+        //terrainMaterial.AsGodotObject().Set("world_background", 2);
+        //terrainMaterial.AsGodotObject().Set("auto_shader", true);
+        //terrainMaterial.AsGodotObject().Set("dual_scaling", true);
+        //terrain.AsGodotObject().Set("material", terrainMaterial);
+
+        terrain.AsGodotObject().Set("texture_list", GD.Load("res://terrainData/texture_list.tres"));
+
+        Image final_img = GenerateTerrain(0, x_axis, y_axis);
+        int chunkWidth = 2048;
+        for (int i = 0; i < x_axis; i += chunkWidth)
+        {
+            Rect2I subImageRect = new Rect2I(i, 0, chunkWidth, final_img.GetHeight());
+            Image chunkImage = final_img.GetRegion(subImageRect);
+
+            Vector3 offset = new Vector3(i-8192, 0, -2048);
+            terrain.AsGodotObject().Get("storage").AsGodotObject().Call("import_images", new Image[] { chunkImage, null, null }, offset, 0.0f, 400.0f);
+        }
 
         //hole testing
-        var terrainUtil = ClassDB.Instantiate("Terrain3DUtil");
-        int bits = (int)terrainUtil.AsGodotObject().Call("enc_base", (0)) | (int)terrainUtil.AsGodotObject().Call("enc_overlay", (0)) | (int)terrainUtil.AsGodotObject().Call("enc_blend", (0)) |
-           (int)terrainUtil.AsGodotObject().Call("enc_auto", (0)) | (int)terrainUtil.AsGodotObject().Call("enc_nav", (0)) | (int)terrainUtil.AsGodotObject().Call("enc_hole", (1));
-        Color hole_color = new Color((float)terrainUtil.AsGodotObject().Call("as_float", bits), 0f, 0f, 1f);
+        /*        var terrainUtil = ClassDB.Instantiate("Terrain3DUtil");
+                int bits = (int)terrainUtil.AsGodotObject().Call("enc_base", (0)) | (int)terrainUtil.AsGodotObject().Call("enc_overlay", (0)) | (int)terrainUtil.AsGodotObject().Call("enc_blend", (0)) |
+                   (int)terrainUtil.AsGodotObject().Call("enc_auto", (0)) | (int)terrainUtil.AsGodotObject().Call("enc_nav", (0)) | (int)terrainUtil.AsGodotObject().Call("enc_hole", (1));
+                Color hole_color = new Color((float)terrainUtil.AsGodotObject().Call("as_float", bits), 0f, 0f, 1f);
 
-        for (int x = 1000; x < 2000; x++)
-		{
-			for (int z = 1000; z < 2000; z++)
-			{
-				//terrain.AsGodotObject().Get("storage").AsGodotObject().Call("set_control", new Vector3(x, 0, z), hole_color);
-                //terrain.AsGodotObject().Get("storage").AsGodotObject().Call("set_pixel", 1, new Vector3(x, 0, z), hole_color);
-			}
-		}
-		terrain.AsGodotObject().Get("storage").AsGodotObject().Call("force_update_maps", 1);
+                for (int x = 1000; x < 2000; x++)
+                {
+                    for (int z = 1000; z < 2000; z++)
+                    {
+                        terrain.AsGodotObject().Get("storage").AsGodotObject().Call("set_control", new Vector3(x, 0, z), hole_color);
+                        terrain.AsGodotObject().Get("storage").AsGodotObject().Call("set_pixel", 1, new Vector3(x, 0, z), hole_color);
+                    }
+                }
+                terrain.AsGodotObject().Get("storage").AsGodotObject().Call("force_update_maps", 1);*/
 
         GD.Print("navigation");
-		// Enable collision. Enable the first if you wish to see it with Debug/Visible Collision Shapes
-		terrain.AsGodotObject().Call("set_show_debug_collision", true);
-		terrain.AsGodotObject().Call("set_collision_enabled", true);
+        // Enable collision. Enable the first if you wish to see it with Debug/Visible Collision Shapes
+        //terrain.AsGodotObject().Call("set_show_debug_collision", true);
+        terrain.AsGodotObject().Call("set_collision_enabled", true);
 
         //Enable runtime navigation baking using the terrain
         Node runtime_nav_baker = GetNode("RuntimeNavigationBaker");
-		runtime_nav_baker.Set("terrain", terrain);
-		runtime_nav_baker.Set("enabled", true);
-        GD.Print($"Time elapsed: {stopwatch.Elapsed}");
+        runtime_nav_baker.Set("terrain", terrain);
+        runtime_nav_baker.Set("enabled", true);
 
         //Retreive 512x512 region blur map showing where the regions are
         //var rbmap_rid: RID = terrain.material.get_region_blend_map()
