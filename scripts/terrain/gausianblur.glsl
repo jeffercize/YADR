@@ -6,6 +6,11 @@ layout(local_size_x = 32, local_size_y = 32) in;
 layout(set = 0, binding = 0) uniform sampler2D inputImage;
 layout(set = 0, binding = 1, rg32f) uniform image2D outputImage;
 
+layout(set = 0, binding = 2) restrict buffer ImageDimensions {
+    int imageWidth;
+    int imageHeight;
+};
+
 
 // Define the Gaussian function
 float gaussian(int x, int y, float sigma) {
@@ -23,7 +28,7 @@ void main() {
     for (int dx = -radius; dx <= radius; dx++) {
         for (int dy = -radius; dy <= radius; dy++) {
             ivec2 neighborCoord = coord + ivec2(dx, dy);
-            vec2 uv = vec2(neighborCoord) / vec2(8192, 4096);
+            vec2 uv = vec2(neighborCoord) / vec2(imageWidth, imageHeight);
             vec4 neighborColor = texture(inputImage, uv);
             float weight = gaussian(dx, dy, sigma);
             sum += neighborColor * weight;

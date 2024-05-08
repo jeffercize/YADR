@@ -7,9 +7,14 @@ layout(set = 0, binding = 0) uniform sampler2D noiseTexture;
 layout(set = 0, binding = 1) uniform sampler2D pathTexture;
 layout(set = 0, binding = 2, rg32f) uniform image2D outputImage;
 
+layout(set = 0, binding = 3) restrict buffer ImageDimensions {
+    int imageWidth;
+    int imageHeight;
+};
+
 void main() {
     ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
-    vec2 uv = vec2(coord) / vec2(8192, 4096); // replace with your actual image size
+    vec2 uv = vec2(coord) / vec2(imageWidth, imageHeight);
 
     float height = texture(noiseTexture, uv).r;
 
