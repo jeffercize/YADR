@@ -1,10 +1,8 @@
 using Godot;
 using System.Collections.Generic;
 using System;
-using System.Security.Cryptography;
 using System.Linq;
-using System.Text;
-using System.Buffers.Text;
+using System.Threading;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Godot.Collections;
@@ -16,7 +14,7 @@ public partial class CodeGenerated : Node
         // Called every time the node is added to the scene.
         // Initialization here.
         GD.Print("Hello from C# to Godot :)");
-		GenerateTerrain();
+        GenerateTerrain();
     }
 
     public override void _Process(double delta)
@@ -123,98 +121,17 @@ public partial class CodeGenerated : Node
         return pathImg;
     }
 
-    public void GenerateTerrain()
-	{
-        Stopwatch stopwatch = Stopwatch.StartNew();
-		var terrain = (Variant)GetNode("Terrain3D");
-		terrain.AsGodotObject().Call("set_collision_enabled", false);
-		terrain.AsGodotObject().Set("storage", ClassDB.Instantiate("Terrain3DStorage"));
-		terrain.AsGodotObject().Set("texture_list", ClassDB.Instantiate("Terrain3DTextureList"));
-		
-		var terrainMaterial = terrain.AsGodotObject().Get("material");
-		terrainMaterial.AsGodotObject().Set("world_background", 2);
-		terrainMaterial.AsGodotObject().Set("auto_shader", true);
-		terrainMaterial.AsGodotObject().Set("dual_scaling", true);
-        terrain.AsGodotObject().Set("material", terrainMaterial);
-
-        terrain.AsGodotObject().Set("texture_list", GD.Load("res://terrainData/texture_list.tres"));
-		//AddChild((Node)terrain, true);
-
-		GD.Print("start");
-        
-
-		FastNoiseLite noise = new FastNoiseLite();
-		noise.Frequency = 0.0005f;
-		noise.Seed = 1;
-		int x_axis = 8192;//16000; //if you change these a lot of shaders need re-coded
-        int y_axis = 4096;//6000; //if you change these a lot of shaders need re-coded
-        Image img = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
-
-		Curve3D path = new Curve3D();
-        /*path.AddPoint(new Vector3(0, 0, 0f));
-        path.AddPoint(new Vector3(2048, 1024, 0.1f), new Vector3(-50.0f, -50.0f, 0.0f), new Vector3(500.0f, 500.0f, 0.0f));
-        path.AddPoint(new Vector3(3048, 3024, 0.5f), new Vector3(-50.0f, -50.0f, 0.0f), new Vector3(500.0f, 1000.0f, 0.0f));
-        path.AddPoint(new Vector3(4096, 2500, 0.3f), new Vector3(-500.0f, -500.0f, 0.0f), new Vector3(50.0f, 50.0f, 0.0f));
-        path.AddPoint(new Vector3(8192, 0, 0.0f));*/
-        path.AddPoint(new Vector3(300, 0, 1.0f));
-        path.AddPoint(new Vector3(300, 750, 0.9f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(400, 500, 0.8f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(500, 750, 0.7f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(600, 500, 0.6f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(700, 750, 0.5f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(800, 500, 0.4f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(900, 750, 0.3f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(1000, 500, 0.2f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(1100, 750, 0.1f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(600, 3000, 0.11f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(2600, 1000, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(2600, 3500, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(4600, 1200, 0.10f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(6600, 3500, 0.33f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(7600, 1500, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(8192, 2048, 0.0f));
-
-        List<Vector3> data = new List<Vector3>(path.Tessellate(10, 1));
-        List<Vector3> path_result = new List<Vector3>();
-        for (int i = 0; i < data.Count - 1; i++)
+    public void GeneratePath(Image innerPathImg, Image pathImg, System.Collections.Generic.Dictionary<float, List<float>>  pathDict, List<Vector3> path_result, int x_axis, int y_axis, System.Collections.Generic.List<float> myKeys)
+    {
+        foreach (var key in myKeys)
         {
-            float diff = MathF.Abs(data[i + 1].X - data[i].X) + MathF.Abs(data[i + 1].Y - data[i].Y);
-            float maxGap = 1.0f;
-            //GD.Print(diff);
-            if (diff > maxGap)
-            {
-                int steps = (int)MathF.Ceiling(diff/maxGap);
-                for (int step = 0; step <= steps; step++)
-                {
-                    float t = (float)step / steps;
-                    float x = Lerp(data[i].X, data[i + 1].X, t);
-                    float y = Lerp(data[i].Y, data[i + 1].Y, t);
-                    float z = Lerp(data[i].Z, data[i + 1].Z, t);
-                    path_result.Add(new Vector3(x, y, z));
-                }
-            }
-            else
-            {
-                path_result.Add(data[i]);
-            }
-        }
-        GD.Print($"Time elapsed: {stopwatch.Elapsed}");
-        GD.Print("path building");
-
-
-        Image pathImg = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
-        Image innerPathImg = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
-        var pathDict = path_result.GroupBy(p => p.X).ToDictionary(g => g.Key, g => g.Select(p => p.Y).ToList());
-        foreach (var key in pathDict.Keys.OrderBy(x => x))
-        {
-            //GD.Print($"{key} {pathDict[key].Count}");
             var yValues = pathDict[key];
             foreach (var yVal in yValues.Distinct())
             {
                 float height = 0.0f;
                 float pathHeight = path_result.FirstOrDefault(p => p.X == key && p.Y == yVal).Z;
                 float midVal = yVal;
-                for(int innerY = (int)MathF.Round(yVal) - 300; innerY < (int)MathF.Round(yVal) + 300; innerY++) 
+                for (int innerY = (int)MathF.Round(yVal) - 300; innerY < (int)MathF.Round(yVal) + 300; innerY++)
                 {
                     if (!((int)MathF.Round(key) >= (int)x_axis || (int)MathF.Round(innerY) >= (int)y_axis || (int)MathF.Round(key) < 0 || (int)MathF.Round(innerY) < 0))
                     {
@@ -328,7 +245,7 @@ public partial class CodeGenerated : Node
                             weight = Lerp(0.9f, 0.0f, (diff - 30.0f) / 270.0f);
                         }
                         Color pixel = pathImg.GetPixel(innerX, innerY);
-                        if (pixel.G  != 1)
+                        if (pixel.G != 1)
                         {
                             float weightedHeight = (pixel.R * pixel.G + height * weight) / (pixel.G + weight);
                             float newWeight = Math.Max(pixel.G, weight);
@@ -360,7 +277,7 @@ public partial class CodeGenerated : Node
                             weight = Lerp(0.9f, 0.0f, (diff - 30.0f) / 270.0f);
                         }
                         Color pixel = pathImg.GetPixel(innerX, innerY);
-                        if (pixel.G  != 1)
+                        if (pixel.G != 1)
                         {
                             float weightedHeight = (pixel.R * pixel.G + height * weight) / (pixel.G + weight);
                             float newWeight = Math.Max(pixel.G, weight);
@@ -392,7 +309,7 @@ public partial class CodeGenerated : Node
                             weight = Lerp(0.9f, 0.0f, (diff - 30.0f) / 270.0f);
                         }
                         Color pixel = pathImg.GetPixel(innerX, innerY);
-                        if (pixel.G  != 1)
+                        if (pixel.G != 1)
                         {
                             float weightedHeight = (pixel.R * pixel.G + height * weight) / (pixel.G + weight);
                             float newWeight = Math.Max(pixel.G, weight);
@@ -400,8 +317,114 @@ public partial class CodeGenerated : Node
                         }
                     }
                 }
-
             }
+        }
+    }
+
+    public void GenerateTerrain()
+	{
+        Stopwatch stopwatch = Stopwatch.StartNew();
+		var terrain = (Variant)GetNode("Terrain3D");
+		terrain.AsGodotObject().Call("set_collision_enabled", false);
+		terrain.AsGodotObject().Set("storage", ClassDB.Instantiate("Terrain3DStorage"));
+		terrain.AsGodotObject().Set("texture_list", ClassDB.Instantiate("Terrain3DTextureList"));
+		
+		var terrainMaterial = terrain.AsGodotObject().Get("material");
+		terrainMaterial.AsGodotObject().Set("world_background", 2);
+		terrainMaterial.AsGodotObject().Set("auto_shader", true);
+		terrainMaterial.AsGodotObject().Set("dual_scaling", true);
+        terrain.AsGodotObject().Set("material", terrainMaterial);
+
+        terrain.AsGodotObject().Set("texture_list", GD.Load("res://terrainData/texture_list.tres"));
+		//AddChild((Node)terrain, true);
+
+		GD.Print("start");
+        
+
+		FastNoiseLite noise = new FastNoiseLite();
+		noise.Frequency = 0.0005f;
+		noise.Seed = 1;
+		int x_axis = 8192;//16000; //if you change these a lot of shaders need re-coded
+        int y_axis = 4096;//6000; //if you change these a lot of shaders need re-coded
+        Image img = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
+
+		Curve3D path = new Curve3D();
+        /*path.AddPoint(new Vector3(0, 0, 0f));
+        path.AddPoint(new Vector3(2048, 1024, 0.1f), new Vector3(-50.0f, -50.0f, 0.0f), new Vector3(500.0f, 500.0f, 0.0f));
+        path.AddPoint(new Vector3(3048, 3024, 0.5f), new Vector3(-50.0f, -50.0f, 0.0f), new Vector3(500.0f, 1000.0f, 0.0f));
+        path.AddPoint(new Vector3(4096, 2500, 0.3f), new Vector3(-500.0f, -500.0f, 0.0f), new Vector3(50.0f, 50.0f, 0.0f));
+        path.AddPoint(new Vector3(8192, 0, 0.0f));*/
+        path.AddPoint(new Vector3(300, 0, 1.0f));
+        path.AddPoint(new Vector3(300, 750, 0.9f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(400, 500, 0.8f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(500, 750, 0.7f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(600, 500, 0.6f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(700, 750, 0.5f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(800, 500, 0.4f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(900, 750, 0.3f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(1000, 500, 0.2f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(1100, 750, 0.1f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(600, 3000, 0.11f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(2600, 1000, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(2600, 3500, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(4600, 1200, 0.10f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(6600, 3500, 0.33f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(7600, 1500, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(8192, 2048, 0.0f));
+
+        List<Vector3> data = new List<Vector3>(path.Tessellate(10, 1));
+        List<Vector3> path_result = new List<Vector3>();
+        for (int i = 0; i < data.Count - 1; i++)
+        {
+            float diff = MathF.Abs(data[i + 1].X - data[i].X) + MathF.Abs(data[i + 1].Y - data[i].Y);
+            float maxGap = 1.0f;
+            //GD.Print(diff);
+            if (diff > maxGap)
+            {
+                int steps = (int)MathF.Ceiling(diff/maxGap);
+                for (int step = 0; step <= steps; step++)
+                {
+                    float t = (float)step / steps;
+                    float x = Lerp(data[i].X, data[i + 1].X, t);
+                    float y = Lerp(data[i].Y, data[i + 1].Y, t);
+                    float z = Lerp(data[i].Z, data[i + 1].Z, t);
+                    path_result.Add(new Vector3(x, y, z));
+                }
+            }
+            else
+            {
+                path_result.Add(data[i]);
+            }
+        }
+        GD.Print($"Time elapsed: {stopwatch.Elapsed}");
+        GD.Print("path building");
+
+
+        Image pathImg = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
+        Image innerPathImg = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
+        System.Collections.Generic.Dictionary<float, List<float>> pathDict = path_result.GroupBy(p => p.X).ToDictionary(g => g.Key, g => g.Select(p => p.Y).ToList());
+        
+
+        int numThreads = 4;
+        var keys = pathDict.Keys.OrderBy(x => x).ToList();
+        int keysPerThread = (keys.Count + numThreads - 1) / numThreads; // round up division
+
+        Thread[] threads = new Thread[numThreads];
+
+        for (int i = 0; i < numThreads; i++)
+        {
+            // Get the keys for this thread
+            var threadKeys = keys.Skip(i * keysPerThread).Take(keysPerThread).ToList();
+
+            // Start the thread
+            threads[i] = new Thread(() => GeneratePath(innerPathImg, pathImg, pathDict, path_result, x_axis, y_axis, threadKeys));
+            threads[i].Start();
+        }
+
+        // Wait for all threads to finish
+        foreach (var thread in threads)
+        {
+            thread.Join();
         }
 
         pathImg.SavePng("C:\\Users\\jeffe\\test_images\\path_test.png");
