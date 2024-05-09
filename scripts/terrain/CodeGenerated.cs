@@ -44,8 +44,8 @@ public partial class CodeGenerated : Node
         var rd = RenderingServer.CreateLocalRenderingDevice();
         Image pathImg = Image.Create(image.GetWidth(), image.GetHeight(), false, Image.Format.Rgf);
         RDShaderFile[] shaderList = new RDShaderFile[] {
-            GD.Load<RDShaderFile>("res://scripts/terrain/gausianblur.glsl"),
-            GD.Load<RDShaderFile>("res://scripts/terrain/boxblur.glsl")
+            GD.Load<RDShaderFile>("res://shaders/terrain/gausianblur.glsl"),
+            GD.Load<RDShaderFile>("res://shaders/terrain/boxblur.glsl")
         };
         foreach (var shaderFile in shaderList)
         {
@@ -346,6 +346,8 @@ public partial class CodeGenerated : Node
 		FastNoiseLite noise = new FastNoiseLite();
 		noise.Frequency = 0.0005f;
 		noise.Seed = 1;
+        noise.FractalType = FastNoiseLite.FractalTypeEnum.None;
+        noise.DomainWarpEnabled = false;
         Image img = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
 
 		Curve3D path = new Curve3D();
@@ -446,7 +448,7 @@ public partial class CodeGenerated : Node
         GD.Print($"Time elapsed: {stopwatch.Elapsed}");
         GD.Print("full combine");
         var rd = RenderingServer.CreateLocalRenderingDevice();
-        RDShaderFile blendShaderFile = GD.Load<RDShaderFile>("res://scripts/terrain/terrainblend.glsl");
+        RDShaderFile blendShaderFile = GD.Load<RDShaderFile>("res://shaders/terrain/terrainblend.glsl");
         RDShaderSpirV blendShaderBytecode = blendShaderFile.GetSpirV();
         Rid blendShader = rd.ShaderCreateFromSpirV(blendShaderBytecode);
 
@@ -559,7 +561,7 @@ public partial class CodeGenerated : Node
 
     public void AddTerrain(string terrainName)
     {
-        int x_axis = 4096;//16000; //if you change these a lot of shaders need re-coded
+        int x_axis = 8192;//16000; //if you change these a lot of shaders need re-coded
         int y_axis = 4096;//6000; //if you change these a lot of shaders need re-coded
         var terrain = (Variant)GetNode(terrainName);
         terrain.AsGodotObject().Call("set_collision_enabled", false);
@@ -581,7 +583,7 @@ public partial class CodeGenerated : Node
             Rect2I subImageRect = new Rect2I(i, 0, chunkWidth, final_img.GetHeight());
             Image chunkImage = final_img.GetRegion(subImageRect);
 
-            Vector3 offset = new Vector3(i-8192, 0, -2048);
+            Vector3 offset = new Vector3(i-0, 0, -2048);
             terrain.AsGodotObject().Get("storage").AsGodotObject().Call("import_images", new Image[] { chunkImage, null, null }, offset, 0.0f, 400.0f);
         }
 
