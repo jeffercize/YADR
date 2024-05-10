@@ -1,63 +1,60 @@
-[gd_scene load_steps=10 format=3 uid="uid://xipoy0ugk3vd"]
+[gd_scene load_steps=13 format=3 uid="uid://xipoy0ugk3vd"]
 
 [ext_resource type="PackedScene" uid="uid://domhm87hbhbg1" path="res://components/TerrainPlayer.tscn" id="2_n37st"]
-[ext_resource type="Terrain3DStorage" uid="uid://ds1rnpqgpvy3n" path="res://terrainData/grasstest.res" id="3_5fxhn"]
-[ext_resource type="Terrain3DTextureList" uid="uid://dal3jhw6241qg" path="res://terrainData/texture_list.tres" id="3_qeuio"]
+[ext_resource type="Texture2D" uid="uid://ddprscrpsofah" path="res://assets/textures/ground037_alb_ht.png" id="3_lfptr"]
 [ext_resource type="PackedScene" uid="uid://bb2lp50sjndus" path="res://components/World.tscn" id="3_vu2ja"]
-[ext_resource type="PackedScene" uid="uid://bcvdtnnj70ups" path="res://scripts/terrain/grass/terrain_3d_grass.tscn" id="5_sgu30"]
+[ext_resource type="Shader" path="res://scripts/terrain/grass/grassShader.gdshader" id="4_fntv2"]
+[ext_resource type="Texture2D" uid="uid://c1ots7w6i0i1q" path="res://assets/textures/ground037_nrm_rgh.png" id="4_uxo7e"]
+[ext_resource type="Script" path="res://scripts/terrain/grass/GrassMeshMaker.cs" id="5_0l617"]
 
-[sub_resource type="Gradient" id="Gradient_fupo1"]
-offsets = PackedFloat32Array(0.2, 1)
-colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nysrt"]
+albedo_texture = ExtResource("3_lfptr")
+metallic = 1.0
+metallic_specular = 0.0
+metallic_texture = ExtResource("3_lfptr")
+normal_enabled = true
+normal_texture = ExtResource("4_uxo7e")
+uv1_scale = Vector3(30, 30, 30)
 
-[sub_resource type="FastNoiseLite" id="FastNoiseLite_udac8"]
-noise_type = 2
-frequency = 0.03
-cellular_jitter = 3.0
-cellular_return_type = 0
-domain_warp_enabled = true
-domain_warp_type = 1
-domain_warp_amplitude = 50.0
-domain_warp_fractal_type = 2
-domain_warp_fractal_lacunarity = 1.5
-domain_warp_fractal_gain = 1.0
+[sub_resource type="PlaneMesh" id="PlaneMesh_5g3r7"]
+material = SubResource("StandardMaterial3D_nysrt")
+size = Vector2(1000, 1000)
 
-[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_7c6rw"]
-seamless = true
-color_ramp = SubResource("Gradient_fupo1")
-noise = SubResource("FastNoiseLite_udac8")
+[sub_resource type="ConcavePolygonShape3D" id="ConcavePolygonShape3D_iplqb"]
+data = PackedVector3Array(500, 0, 500, -500, 0, 500, 500, 0, -500, -500, 0, 500, -500, 0, -500, 500, 0, -500)
 
-[sub_resource type="Terrain3DMaterial" id="Terrain3DMaterial_ln2kg"]
-_shader_parameters = {
-"_mouse_layer": 2147483648,
-"auto_base_texture": null,
-"auto_height_reduction": null,
-"auto_overlay_texture": null,
-"auto_slope": null,
-"blend_sharpness": null,
-"height_blending": true,
-"macro_variation1": null,
-"macro_variation2": null,
-"noise1_angle": null,
-"noise1_offset": null,
-"noise1_scale": null,
-"noise2_scale": null,
-"noise3_scale": null,
-"noise_texture": SubResource("NoiseTexture2D_7c6rw"),
-"vertex_normals_distance": null
-}
-auto_shader = true
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ku4ow"]
+render_priority = 0
+shader = ExtResource("4_fntv2")
+shader_parameter/time = null
+shader_parameter/grassTotalWidth = null
+shader_parameter/grassTotalHeight = null
+
+[sub_resource type="BoxMesh" id="BoxMesh_652tm"]
+material = SubResource("ShaderMaterial_ku4ow")
+
+[sub_resource type="MultiMesh" id="MultiMesh_li0o6"]
+transform_format = 1
+mesh = SubResource("BoxMesh_652tm")
 
 [node name="Grasstest" type="Node3D"]
 
 [node name="Player" parent="." instance=ExtResource("2_n37st")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -49.6331, 10.9561, 0.294576)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -29.1484, 4.64394, 0.294576)
 
 [node name="World" parent="." instance=ExtResource("3_vu2ja")]
 
-[node name="Terrain3D" type="Terrain3D" parent="."]
-storage = ExtResource("3_5fxhn")
-material = SubResource("Terrain3DMaterial_ln2kg")
-texture_list = ExtResource("3_qeuio")
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("PlaneMesh_5g3r7")
 
-[node name="terrain_3d_grass" parent="Terrain3D" instance=ExtResource("5_sgu30")]
+[node name="StaticBody3D" type="StaticBody3D" parent="MeshInstance3D"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="MeshInstance3D/StaticBody3D"]
+shape = SubResource("ConcavePolygonShape3D_iplqb")
+
+[node name="Node" type="Node" parent="."]
+script = ExtResource("5_0l617")
+
+[node name="GrassChunk" type="MultiMeshInstance3D" parent="Node"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -17.3506, 0)
+multimesh = SubResource("MultiMesh_li0o6")
