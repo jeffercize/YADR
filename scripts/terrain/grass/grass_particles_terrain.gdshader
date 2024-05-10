@@ -136,7 +136,6 @@ vec3 anchor_to_terrain(vec3 pos, inout uint seed, out vec3 normal, out float gra
 	} else {
 		grass_row = float(material_grass - 1);
 	}
-	
 	return pos;
 }
 
