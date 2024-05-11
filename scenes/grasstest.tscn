@@ -7,6 +7,21 @@
 [ext_resource type="Texture2D" uid="uid://c1ots7w6i0i1q" path="res://assets/textures/ground037_nrm_rgh.png" id="4_uxo7e"]
 [ext_resource type="Script" path="res://scripts/terrain/grass/GrassMeshMaker.cs" id="5_0l617"]
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ku4ow"]
+render_priority = 0
+shader = ExtResource("4_fntv2")
+shader_parameter/time = 0.0
+shader_parameter/grassTotalWidth = 0.5
+shader_parameter/grassTotalHeight = 1.0
+shader_parameter/heightParams = null
+
+[sub_resource type="BoxMesh" id="BoxMesh_w6v2l"]
+material = SubResource("ShaderMaterial_ku4ow")
+
+[sub_resource type="MultiMesh" id="MultiMesh_li0o6"]
+transform_format = 1
+mesh = SubResource("BoxMesh_w6v2l")
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nysrt"]
 albedo_texture = ExtResource("3_lfptr")
 metallic = 1.0
@@ -23,21 +38,14 @@ size = Vector2(1000, 1000)
 [sub_resource type="ConcavePolygonShape3D" id="ConcavePolygonShape3D_iplqb"]
 data = PackedVector3Array(500, 0, 500, -500, 0, 500, 500, 0, -500, -500, 0, 500, -500, 0, -500, 500, 0, -500)
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_ku4ow"]
-render_priority = 0
-shader = ExtResource("4_fntv2")
-shader_parameter/time = null
-shader_parameter/grassTotalWidth = null
-shader_parameter/grassTotalHeight = null
-
-[sub_resource type="BoxMesh" id="BoxMesh_652tm"]
-material = SubResource("ShaderMaterial_ku4ow")
-
-[sub_resource type="MultiMesh" id="MultiMesh_li0o6"]
-transform_format = 1
-mesh = SubResource("BoxMesh_652tm")
-
 [node name="Grasstest" type="Node3D"]
+
+[node name="Node" type="Node" parent="."]
+script = ExtResource("5_0l617")
+
+[node name="GrassChunk" type="MultiMeshInstance3D" parent="Node"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -20.5225, 0)
+multimesh = SubResource("MultiMesh_li0o6")
 
 [node name="Player" parent="." instance=ExtResource("2_n37st")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -29.1484, 4.64394, 0.294576)
@@ -51,10 +59,3 @@ mesh = SubResource("PlaneMesh_5g3r7")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="MeshInstance3D/StaticBody3D"]
 shape = SubResource("ConcavePolygonShape3D_iplqb")
-
-[node name="Node" type="Node" parent="."]
-script = ExtResource("5_0l617")
-
-[node name="GrassChunk" type="MultiMeshInstance3D" parent="Node"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -17.3506, 0)
-multimesh = SubResource("MultiMesh_li0o6")

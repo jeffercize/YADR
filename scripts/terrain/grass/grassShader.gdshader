@@ -1,9 +1,13 @@
 shader_type spatial;
 
-uniform float time;
+uniform float time = 0.0;
 
-uniform float grassTotalWidth;
-uniform float grassTotalHeight;
+uniform float grassTotalWidth = 0.5;
+uniform float grassTotalHeight = 1.0;
+
+uniform sampler2D heightMap;
+uniform vec2 heightParams;
+//uniform vec4 grassParams;
 
 varying vec4 vGrassParams;
 varying vec3 vNormal;
@@ -108,6 +112,11 @@ void vertex() {
 	if (VERTEX.x > grassTotalWidth/2.0) {
 		xSide = 1.0;
 	}
+
+	//heightmap sampling
+	vec2 uv = vec2(grassBladeWorldPos.x / heightParams.x, grassBladeWorldPos.z / heightParams.y);
+    float heightMapSample = texture(heightMap, uv).r;
+	VERTEX.y += heightMapSample*400.0;
 	
 
 	//get camera and view direction info for later
@@ -144,6 +153,7 @@ void vertex() {
 
     // Apply the rotation to the vertex position
     VERTEX.xyz = grassMat * VERTEX.xyz;
+	
 
 //Rounded Normals\\
 	NORMAL = grassMat * NORMAL;
@@ -171,7 +181,7 @@ void vertex() {
 
 void fragment() {
 	//AO
-	float density = 1.0;
+	float density = 0.5;
 	float aoForDensity = mix(1.0, 0.25, density);
 	float ao = mix(aoForDensity, 1.0, easeIn(vGrassParams.x, 1.0));
 
@@ -187,6 +197,18 @@ void fragment() {
 	vec3 normal = normalize(mix(vNormal, vNormal2, normalMixFactor));
 	NORMAL = normalize(normal);
 
+	//ALPHA
+    // Calculate the distance to the camera
+	//vec3 worldPos = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	//float distance = length(worldPos - CAMERA_POSITION_WORLD);
+
+	// Calculate the alpha value based on the distance
+	//80 is range it is alpha=1 and 120 is alpha=0
+    //float alpha = clamp((120.0 - distance) / (120.0 - 80.0), 0.0, 1.0);
+
+
+	//ALPHA = alpha;
+    
 	//ROUGHNESS
 	//ROUGHNESS = 0.9;
 }

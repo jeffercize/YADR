@@ -583,7 +583,7 @@ public partial class CodeGenerated : Node
             Rect2I subImageRect = new Rect2I(i, 0, chunkWidth, final_img.GetHeight());
             Image chunkImage = final_img.GetRegion(subImageRect);
 
-            Vector3 offset = new Vector3(i-0, 0, -2048);
+            Vector3 offset = new Vector3(i-0, 0, 0);
             terrain.AsGodotObject().Get("storage").AsGodotObject().Call("import_images", new Image[] { chunkImage, null, null }, offset, 0.0f, 400.0f);
         }
 
@@ -607,6 +607,8 @@ public partial class CodeGenerated : Node
         // Enable collision. Enable the first if you wish to see it with Debug/Visible Collision Shapes
         //terrain.AsGodotObject().Call("set_show_debug_collision", true);
         terrain.AsGodotObject().Call("set_collision_enabled", true);
+        GrassMeshMaker GrassMeshMaker = (GrassMeshMaker)GetNode("GrassMeshMaker");
+        GrassMeshMaker.SetupGrass("Player");
 
         //Enable runtime navigation baking using the terrain
         Node runtime_nav_baker = GetNode("RuntimeNavigationBaker");
