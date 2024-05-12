@@ -5,6 +5,7 @@ using System.Data.Common;
 using System.Diagnostics;
 using System.Threading;
 using static Godot.OpenXRInterface;
+using System.Diagnostics;
 
 public partial class GrassMeshMaker : Node
 {
@@ -19,11 +20,18 @@ public partial class GrassMeshMaker : Node
     CharacterBody3D player;
     Thread shaderParamThread;
 
+    private readonly object highLODGrassClumpsLock = new object();
+    private readonly object mediumLODGrassClumpsLock = new object();
+    private readonly object lowLODGrassClumpsLock = new object();
+
+    private readonly object grassClumpsLock = new object();
+
     // Called when the node enters the scene tree for the first time.
     public override void _Ready()
     {
         //SetupGrass("Player");
     }
+
     // Called every frame. 'delta' is the elapsed time since the previous frame.
     public override void _Process(double delta)
     {
@@ -31,21 +39,31 @@ public partial class GrassMeshMaker : Node
         //UpdateGrassClumps();
     }
 
+    public delegate void NodeReadyToBeAddedHandler(Node node);
+    public static event NodeReadyToBeAddedHandler NodeReadyToBeAdded = delegate { };
+
+    public void someFunction()
+    {
+        Node node = new Node();
+        NodeReadyToBeAdded.Invoke(node);
+    }
+
     public override void _PhysicsProcess(double delta)
     {
     }
 
-    public void SetupGrass(String target)
+    public void SetupGrass(String target, Image heightMap)
     {
+        Stopwatch stopwatch = Stopwatch.StartNew();
         //player = GetTree().CurrentScene.GetNode<CharacterBody3D>(target);
 
         MultiMeshInstance3D grassChunk = (MultiMeshInstance3D)GetNode("GrassChunk");
         ShaderMaterial grassMat = new ShaderMaterial();
         Shader grassShader = GD.Load<Shader>("res://scripts/terrain/grass/grassShader.gdshader");
         grassMat.Shader = grassShader;
-        Texture2D imageTexture = GD.Load<Texture2D>("res://scripts/terrain/grass/final_output.png");
-        Image heightMap = imageTexture.GetImage();
+
         ImageTexture heightmapTexture = ImageTexture.CreateFromImage(heightMap);
+        GD.Print(heightmapTexture.GetFormat());
 
         float grassWidth = 0.1f;
         float grassHeight = 0.5f;
@@ -53,17 +71,39 @@ public partial class GrassMeshMaker : Node
         Mesh highLODGrassBlade = CreateHighLODGrassBlade(grassWidth, grassHeight);
         Mesh mediumLODGrassBlade = CreateMediumLODGrassBlade(grassWidth*2, grassHeight); //we progressively widen the grass for lower lods to help it fill the screen with less blades/triangles
         Mesh lowLODGrassBlade = CreateLowLODGrassBlade(grassWidth*4, grassHeight); //we progressively widen the grass for lower lods to help it fill the screen with less blades/triangles
-
-        for (int i = 0; i < heightMap.GetWidth()/30; i++)
-        {
-            for (int j = 0; j < heightMap.GetHeight()/30; j++)
-            {
-                InitializeGrassClumps(grassMat, lowLODGrassBlade, grassWidth*4, grassHeight, heightmapTexture, heightMap.GetWidth(), heightMap.GetHeight(), 1024, 1, i, j, 30, 30); //lowLOD
-                //InitializeGrassClumps(grassMat, mediumLODGrassBlade, 2048, 1, i, j, 15, 15); //medLOD
-                //InitializeGrassClumps(grassMat, highLODGrassBlade, 4096, 1, i, j, 15, 15); //highLOD
-            }
-        }
         
+        Stopwatch stopwatch2 = Stopwatch.StartNew();
+        int numThreads = 6;
+        Thread[] threads = new Thread[numThreads];
+
+        for (int t = 0; t < numThreads / 3; t++)
+        {
+            threads[t] = new Thread(() => InitializeGrassClumpsThreaded(grassMat, lowLODGrassBlade, 2, grassWidth * 4, grassHeight, heightmapTexture, heightMap.GetWidth(), heightMap.GetHeight(), 1024, heightMap.GetWidth() / 30, heightMap.GetHeight() / 30, 30, 30));
+            threads[t].Start();
+        }
+        for (int t = numThreads / 3; t < 2 * numThreads / 3; t++)
+        {
+            threads[t] = new Thread(() => InitializeGrassClumpsThreaded(grassMat, mediumLODGrassBlade, 1, grassWidth * 4, grassHeight, heightmapTexture, heightMap.GetWidth(), heightMap.GetHeight(), 2048, heightMap.GetWidth() / 30, heightMap.GetHeight() / 30, 30, 30));
+            threads[t].Start();
+        }
+        for (int t = 2 * numThreads / 3; t < numThreads; t++)
+        {
+            threads[t] = new Thread(() => InitializeGrassClumpsThreaded(grassMat, highLODGrassBlade, 0, grassWidth * 4, grassHeight, heightmapTexture, heightMap.GetWidth(), heightMap.GetHeight(), 4096, heightMap.GetWidth() / 30, heightMap.GetHeight() / 30, 30, 30));
+            threads[t].Start();
+        }
+
+        /*        for (int i = 0; i < heightMap.GetWidth()/30; i++)
+                {
+                    for (int j = 0; j < heightMap.GetHeight()/30; j++)
+                    {
+                        InitializeGrassClump(grassMat, lowLODGrassBlade, grassWidth*4, grassHeight, heightmapTexture, heightMap.GetWidth(), heightMap.GetHeight(), 1024, i, j, 30, 30); //lowLOD
+                        InitializeGrassClump(grassMat, mediumLODGrassBlade, grassWidth * 4, grassHeight, heightmapTexture, heightMap.GetWidth(), heightMap.GetHeight(), 2048, i, j, 30, 30); //mediumLOD
+                        InitializeGrassClump(grassMat, highLODGrassBlade, grassWidth * 4, grassHeight, heightmapTexture, heightMap.GetWidth(), heightMap.GetHeight(), 4096, i, j, 30, 30); //highLOD
+                    }
+                }*/
+        GD.Print($"Init Grass Time elapsed: {stopwatch2.Elapsed}");
+        GD.Print($"Average Time Taken: {stopwatch2.Elapsed/((heightMap.GetWidth() / 30) * (heightMap.GetHeight() / 30))}");
+
         Thread shaderParamThread = new Thread(() =>
         {
             while (true) //change to isRunning and shutdown on tree exit
@@ -74,57 +114,130 @@ public partial class GrassMeshMaker : Node
             }
         });
         shaderParamThread.Start();
+        GD.Print($"Setup Time elapsed: {stopwatch.Elapsed}");
     }
 
     public void SetShaderStuff(List<MultiMeshInstance3D> grassClumps)
     {
-        foreach (var clump in grassClumps)
+        for (int i = 0; i < grassClumps.Count; i++)
         {
-            if (clump != null)
-            {
-                ((ShaderMaterial)clump.MaterialOverride).SetShaderParameter("time", totalTime);
-            }
+            ((ShaderMaterial)grassClumps[i].MaterialOverride).SetShaderParameter("time", totalTime);
         }
     }
 
-    public void InitializeGrassClumps(ShaderMaterial grassMat, Mesh grassBlade, float grassWidth, float grassHeight, ImageTexture heightMapTexture, int mapWidth, int mapHeight, int instanceCount = 2024, float chunksNeeded = 1, int i = 0, int j = 0, float fieldWidth = 15f, float fieldHeight = 15f)
+    public void InitializeGrassClump(ShaderMaterial grassMat, Mesh grassBlade, float grassWidth, float grassHeight, ImageTexture heightMapTexture, int mapWidth, int mapHeight, int instanceCount = 2024, int i = 0, int j = 0, float fieldWidth = 15f, float fieldHeight = 15f)
     {
+
         Random rand = new Random();
-        for (int count = 0; count < chunksNeeded; count++)
+        MultiMeshInstance3D grassChunk = new MultiMeshInstance3D();
+
+        MultiMesh grassMultiMesh = new MultiMesh();
+        grassMultiMesh.TransformFormat = MultiMesh.TransformFormatEnum.Transform3D;
+        grassMultiMesh.Mesh = grassBlade;
+        grassMultiMesh.InstanceCount = instanceCount;
+        grassMultiMesh.VisibleInstanceCount = instanceCount;
+
+        grassChunk.Multimesh = grassMultiMesh;
+        grassChunk.Basis = Basis.Identity;
+        grassChunk.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off;
+        grassChunk.MaterialOverride = grassMat.Duplicate() as ShaderMaterial;
+
+        int rowLength = (int)Math.Sqrt(instanceCount);
+        for (int k = 0; k < grassMultiMesh.VisibleInstanceCount; k++)
         {
-            MultiMeshInstance3D grassChunk = new MultiMeshInstance3D();
+            float x_loc = (k % rowLength) / (float)rowLength * fieldWidth - fieldWidth / 2;
+            float y_loc = (k / rowLength) / (float)rowLength * fieldHeight - fieldHeight / 2;
+            float x_jitter = (float)rand.NextDouble() * 0.9f - 0.45f;
+            float y_jitter = (float)rand.NextDouble() * 0.9f - 0.45f;
+            grassMultiMesh.SetInstanceTransform(k, new Transform3D(Basis.Identity, new Vector3((x_loc + x_jitter), 0, (y_loc + y_jitter))));
+        }
+        grassChunk.Transform = new Transform3D(Basis.Identity, new Vector3(i * fieldWidth, 0, j * fieldHeight));
+        ((ShaderMaterial)grassChunk.MaterialOverride).SetShaderParameter("grassTotalWidth", grassWidth);
+        ((ShaderMaterial)grassChunk.MaterialOverride).SetShaderParameter("grassTotalHeight", grassHeight);
 
-            MultiMesh grassMultiMesh = new MultiMesh();
-            grassMultiMesh.TransformFormat = MultiMesh.TransformFormatEnum.Transform3D;
-            grassMultiMesh.Mesh = grassBlade;
-            grassMultiMesh.InstanceCount = instanceCount;
-            grassMultiMesh.VisibleInstanceCount = instanceCount;
+        ((ShaderMaterial)grassChunk.MaterialOverride).SetShaderParameter("heightMap", heightMapTexture);
+        ((ShaderMaterial)grassChunk.MaterialOverride).SetShaderParameter("heightParams", new Vector2(heightMapTexture.GetWidth(), heightMapTexture.GetHeight()));
 
-            grassChunk.Multimesh = grassMultiMesh;
-            grassChunk.Basis = Basis.Identity;
-            grassChunk.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off;
-            grassChunk.MaterialOverride = grassMat.Duplicate() as ShaderMaterial;
+        // Add the new instance to the scene
+        highLODGrassClumps.Add(grassChunk); //oppsie fix this TODO
+        grassClumps.Add(grassChunk);
+        //AddChild(grassChunk);
+        if(instanceCount > 2000)
+        {
+            grassChunk.Visible = false;
+        }
+    }
 
-            int rowLength = (int)Math.Sqrt(instanceCount);
-            for (int k = 0; k < grassMultiMesh.VisibleInstanceCount; k++)
+    public void InitializeGrassClumpsThreaded(ShaderMaterial grassMat, Mesh grassBlade, int LOD_ENUM, float grassWidth, float grassHeight, ImageTexture heightMapTexture, int mapWidth, int mapHeight, int instanceCount = 2024, int width = 0, int height = 0, float fieldWidth = 15f, float fieldHeight = 15f)
+    {
+        for (int i = 0; i < width / 30; i++)
+        {
+            for (int j = 0; j < height / 30; j++)
             {
-                float x_loc = (k % rowLength) / (float)rowLength * fieldWidth - fieldWidth / 2;
-                float y_loc = (k / rowLength) / (float)rowLength * fieldHeight - fieldHeight / 2;
-                float x_jitter = (float)rand.NextDouble() * 0.9f - 0.45f;
-                float y_jitter = (float)rand.NextDouble() * 0.9f - 0.45f;
-                grassMultiMesh.SetInstanceTransform(k, new Transform3D(Basis.Identity, new Vector3((x_loc + x_jitter), 0, (y_loc + y_jitter))));
+                Random rand = new Random();
+                MultiMeshInstance3D grassChunk = new MultiMeshInstance3D();
+
+                MultiMesh grassMultiMesh = new MultiMesh();
+                grassMultiMesh.TransformFormat = MultiMesh.TransformFormatEnum.Transform3D;
+                grassMultiMesh.Mesh = grassBlade;
+                grassMultiMesh.InstanceCount = instanceCount;
+                grassMultiMesh.VisibleInstanceCount = instanceCount;
+
+                grassChunk.Multimesh = grassMultiMesh;
+                grassChunk.Basis = Basis.Identity;
+                grassChunk.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off;
+                grassChunk.MaterialOverride = grassMat.Duplicate() as ShaderMaterial;
+
+                int rowLength = (int)Math.Sqrt(instanceCount);
+                for (int k = 0; k < grassMultiMesh.VisibleInstanceCount; k++)
+                {
+                    float x_loc = (k % rowLength) / (float)rowLength * fieldWidth - fieldWidth / 2;
+                    float y_loc = (k / rowLength) / (float)rowLength * fieldHeight - fieldHeight / 2;
+                    float x_jitter = (float)rand.NextDouble() * 0.9f - 0.45f;
+                    float y_jitter = (float)rand.NextDouble() * 0.9f - 0.45f;
+                    grassMultiMesh.SetInstanceTransform(k, new Transform3D(Basis.Identity, new Vector3((x_loc + x_jitter), 0, (y_loc + y_jitter))));
+                }
+                grassChunk.Transform = new Transform3D(Basis.Identity, new Vector3(i * fieldWidth, 0, j * fieldHeight));
+                ((ShaderMaterial)grassChunk.MaterialOverride).SetShaderParameter("grassTotalWidth", grassWidth);
+                ((ShaderMaterial)grassChunk.MaterialOverride).SetShaderParameter("grassTotalHeight", grassHeight);
+
+                ((ShaderMaterial)grassChunk.MaterialOverride).SetShaderParameter("heightMap", heightMapTexture);
+                ((ShaderMaterial)grassChunk.MaterialOverride).SetShaderParameter("heightParams", new Vector2(heightMapTexture.GetWidth(), heightMapTexture.GetHeight()));
+
+                // Add the new instance to the scene
+                if(LOD_ENUM == 0)
+                {
+                    lock (highLODGrassClumpsLock)
+                    {
+                        highLODGrassClumps.Add(grassChunk);
+                    }
+                }
+                else if(LOD_ENUM == 2)
+                {
+                    lock (mediumLODGrassClumpsLock)
+                    {
+                        mediumLODGrassClumps.Add(grassChunk);
+                    }
+                }
+                else if (LOD_ENUM == 3)
+                {
+                    lock (lowLODGrassClumpsLock)
+                    {
+                        lowLODGrassClumps.Add(grassChunk);
+                    }
+                }
+
+
+                lock (grassClumpsLock)
+                {
+                    grassClumps.Add(grassChunk);
+                }
+                //AddChild(grassChunk);
+                if (instanceCount > 2000)
+                {
+                    grassChunk.Visible = false;
+                }
             }
-            grassChunk.Transform = new Transform3D(Basis.Identity, new Vector3(i * fieldWidth, 0, j * fieldHeight));
-            ((ShaderMaterial)grassChunk.MaterialOverride).SetShaderParameter("grassTotalWidth", grassWidth);
-            ((ShaderMaterial)grassChunk.MaterialOverride).SetShaderParameter("grassTotalHeight", grassHeight);
-
-            ((ShaderMaterial)grassChunk.MaterialOverride).SetShaderParameter("heightMap", heightMapTexture);
-            ((ShaderMaterial)grassChunk.MaterialOverride).SetShaderParameter("heightParams", new Vector2(heightMapTexture.GetWidth(), heightMapTexture.GetHeight()));
-
-            // Add the new instance to the scene
-            highLODGrassClumps.Add(grassChunk);
-            grassClumps.Add(grassChunk);
-            AddChild(grassChunk);
         }
     }
 

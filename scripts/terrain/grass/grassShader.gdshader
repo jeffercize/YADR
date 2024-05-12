@@ -113,17 +113,6 @@ void vertex() {
 		xSide = 1.0;
 	}
 
-	//heightmap sampling
-	vec2 uv = vec2(grassBladeWorldPos.x / heightParams.x, grassBladeWorldPos.z / heightParams.y);
-    float heightMapSample = texture(heightMap, uv).r;
-	VERTEX.y += heightMapSample*400.0;
-	
-
-	//get camera and view direction info for later
-	vec3 cameraPosition = INV_VIEW_MATRIX[3].xyz;
-	vec3 viewDir = normalize(cameraPosition - grassBladeWorldPos);
-	vec3 viewDirXZ = normalize(vec3(viewDir.x, 0.0, viewDir.z));
-
 
 //Rotating the base and leaning\\
 	//Random rotational angle for Y axis (i think thats Y?)
@@ -153,6 +142,29 @@ void vertex() {
 
     // Apply the rotation to the vertex position
     VERTEX.xyz = grassMat * VERTEX.xyz;
+
+	//heightmap sampling
+	vec2 uv = vec2(grassBladeWorldPos.x / heightParams.x, grassBladeWorldPos.z / heightParams.y);
+
+	// Calculate the fractional part of the uv coordinates
+	vec2 f = fract(uv * heightParams.xy);
+
+	// Sample the four closest texels
+	float h00 = texture(heightMap, uv).r;
+	float h10 = texture(heightMap, uv + vec2(1.0, 0.0) / heightParams.xy).r;
+	float h01 = texture(heightMap, uv + vec2(0.0, 1.0) / heightParams.xy).r;
+	float h11 = texture(heightMap, uv + vec2(1.0, 1.0) / heightParams.xy).r;
+
+	// Interpolate between the samples
+	float heightMapSample = mix(mix(h00, h10, f.x), mix(h01, h11, f.x), f.y);
+
+	VERTEX.y += heightMapSample * 400.0;
+	
+
+	//get camera and view direction info for later
+	vec3 cameraPosition = INV_VIEW_MATRIX[3].xyz;
+	vec3 viewDir = normalize(cameraPosition - grassBladeWorldPos);
+	vec3 viewDirXZ = normalize(vec3(viewDir.x, 0.0, viewDir.z));
 	
 
 //Rounded Normals\\
