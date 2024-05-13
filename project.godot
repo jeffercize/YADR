@@ -188,11 +188,7 @@ environment/volumetric_fog/volume_size=128
 
 [shader_globals]
 
-grass_visibility_range_end={
+time={
 "type": "float",
-"value": 1000.0
-}
-grass_visibility_range_end_margin={
-"type": "float",
-"value": 10.0
+"value": 0.0
 }
