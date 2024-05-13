@@ -1,6 +1,6 @@
 shader_type spatial;
 
-uniform float time = 0.0;
+global uniform float time = 1.0;
 
 uniform float grassTotalWidth = 0.5;
 uniform float grassTotalHeight = 1.0;
@@ -12,6 +12,7 @@ uniform vec2 heightParams;
 varying vec4 vGrassParams;
 varying vec3 vNormal;
 varying vec3 vNormal2;
+varying vec3 color;
 
 float remap(float value, float inputMin, float inputMax, float outputMin, float outputMax) {
     return outputMin + ((value - inputMin) / (inputMax - inputMin)) * (outputMax - outputMin);
@@ -159,7 +160,7 @@ void vertex() {
 	float heightMapSample = mix(mix(h00, h10, f.x), mix(h01, h11, f.x), f.y);
 
 	VERTEX.y += heightMapSample * 400.0;
-	
+	//color = vec3(grassBladeWorldPos.x / heightParams.x, grassBladeWorldPos.z / heightParams.y, 0.0);
 
 	//get camera and view direction info for later
 	vec3 cameraPosition = INV_VIEW_MATRIX[3].xyz;
@@ -198,8 +199,9 @@ void fragment() {
 	float ao = mix(aoForDensity, 1.0, easeIn(vGrassParams.x, 1.0));
 
 	//ALBEDO
+	ALBEDO = color;
 	vec3 baseColor = vec3(0.05, 0.2, 0.01);
-	vec3 tipColor = vec3(0.5, 0.5, 0.1);
+	vec3 tipColor = vec3(0.2, 0.5, 0.01);
 	vec3 diffuseColor = mix(baseColor, tipColor, easeIn(vGrassParams.x, 2.0));
 	diffuseColor *= ao;
 	ALBEDO = diffuseColor;

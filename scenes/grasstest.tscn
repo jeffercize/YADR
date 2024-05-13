@@ -1,26 +1,10 @@
-[gd_scene load_steps=13 format=3 uid="uid://xipoy0ugk3vd"]
+[gd_scene load_steps=9 format=3 uid="uid://xipoy0ugk3vd"]
 
 [ext_resource type="PackedScene" uid="uid://domhm87hbhbg1" path="res://components/TerrainPlayer.tscn" id="2_n37st"]
 [ext_resource type="Texture2D" uid="uid://ddprscrpsofah" path="res://assets/textures/ground037_alb_ht.png" id="3_lfptr"]
 [ext_resource type="PackedScene" uid="uid://bb2lp50sjndus" path="res://components/World.tscn" id="3_vu2ja"]
-[ext_resource type="Shader" path="res://scripts/terrain/grass/grassShader.gdshader" id="4_fntv2"]
 [ext_resource type="Texture2D" uid="uid://c1ots7w6i0i1q" path="res://assets/textures/ground037_nrm_rgh.png" id="4_uxo7e"]
 [ext_resource type="Script" path="res://scripts/terrain/grass/GrassMeshMaker.cs" id="5_0l617"]
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_ku4ow"]
-render_priority = 0
-shader = ExtResource("4_fntv2")
-shader_parameter/time = 0.0
-shader_parameter/grassTotalWidth = 0.5
-shader_parameter/grassTotalHeight = 1.0
-shader_parameter/heightParams = null
-
-[sub_resource type="BoxMesh" id="BoxMesh_w6v2l"]
-material = SubResource("ShaderMaterial_ku4ow")
-
-[sub_resource type="MultiMesh" id="MultiMesh_li0o6"]
-transform_format = 1
-mesh = SubResource("BoxMesh_w6v2l")
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nysrt"]
 albedo_texture = ExtResource("3_lfptr")
@@ -40,22 +24,19 @@ data = PackedVector3Array(500, 0, 500, -500, 0, 500, 500, 0, -500, -500, 0, 500,
 
 [node name="Grasstest" type="Node3D"]
 
-[node name="Node" type="Node" parent="."]
-script = ExtResource("5_0l617")
-
-[node name="GrassChunk" type="MultiMeshInstance3D" parent="Node"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -20.5225, 0)
-multimesh = SubResource("MultiMesh_li0o6")
-
 [node name="Player" parent="." instance=ExtResource("2_n37st")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -29.1484, 4.64394, 0.294576)
 
 [node name="World" parent="." instance=ExtResource("3_vu2ja")]
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+visible = false
 mesh = SubResource("PlaneMesh_5g3r7")
 
 [node name="StaticBody3D" type="StaticBody3D" parent="MeshInstance3D"]
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="MeshInstance3D/StaticBody3D"]
 shape = SubResource("ConcavePolygonShape3D_iplqb")
+
+[node name="Node3D" type="Node3D" parent="."]
+script = ExtResource("5_0l617")
