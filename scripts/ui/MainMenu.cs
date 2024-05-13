@@ -17,7 +17,6 @@ public partial class MainMenu : Control
     {
         //TODO: Popup confirm
         GetNode<AudioStreamPlayer>("/root/main/uisfx").Play();
-        SteamClient.Shutdown();
         GetTree().Quit();
     }
 
@@ -31,8 +30,6 @@ public partial class MainMenu : Control
     {
         GetNode<AudioStreamPlayer>("/root/main/uisfx").Play();
         GetNode<AudioStreamPlayer>("/root/main/music").Stop();
-        GetNode<Main>("/root/main").switchLevelName("WaitingRoom.tscn");
-        GetNode<Main>("/root/main").switchUIName("WaitingRoomUI.tscn");
 
     }
 }

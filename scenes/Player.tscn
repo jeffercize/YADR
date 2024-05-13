@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://bj7qsw8rmr8yx"]
+[gd_scene load_steps=12 format=3 uid="uid://bj7qsw8rmr8yx"]
 
 [ext_resource type="Script" path="res://scripts/player/Player.cs" id="1_x0nq7"]
 [ext_resource type="PackedScene" uid="uid://c5blodn213j26" path="res://scenes/ui/hud.tscn" id="2_gm66n"]
@@ -20,6 +20,10 @@ dof_blur_far_distance = 150.0
 dof_blur_far_transition = 200.0
 dof_blur_amount = 0.05
 
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_uq26v"]
+radius = 0.05
+height = 1.0
+
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_qbkrf"]
 
 [node name="Player" type="CharacterBody3D"]
@@ -37,12 +41,26 @@ attributes = SubResource("CameraAttributesPractical_baiq7")
 
 [node name="pointing" type="RayCast3D" parent="pov"]
 transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0)
-target_position = Vector3(0, -4, 0)
+target_position = Vector3(0, -99999, 0)
 hit_back_faces = false
+collide_with_areas = true
 debug_shape_thickness = 1
 
-[node name="holdPoint" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.254952, 0.593328, -0.993482)
+[node name="leftHoldPoint" type="Node3D" parent="pov"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.55, -0.25, -0.75)
+
+[node name="leftArm" type="MeshInstance3D" parent="pov/leftHoldPoint"]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, -0.03, 0.55)
+mesh = SubResource("CapsuleMesh_uq26v")
+skeleton = NodePath("../../..")
+
+[node name="rightHoldPoint" type="Node3D" parent="pov"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.55, -0.25, -0.75)
+
+[node name="rightArm" type="MeshInstance3D" parent="pov/rightHoldPoint"]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, -0.03, 0.55)
+mesh = SubResource("CapsuleMesh_uq26v")
+skeleton = NodePath("../../..")
 
 [node name="hud" parent="." instance=ExtResource("2_gm66n")]
 

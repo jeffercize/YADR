@@ -208,6 +208,9 @@ points = PackedVector3Array(0.0144336, 0.0381532, 0.364335, -0.0187629, -0.18323
 
 [node name="TestGun" type="RigidBody3D" node_paths=PackedStringArray("collisionShape")]
 script = ExtResource("1_gvqym")
+shotCooldown = 0.2
+damage = 1
+type = 8
 physWeight = 5.0
 weight = 5.0
 height = 2
@@ -226,3 +229,14 @@ skeleton = NodePath("")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0027684, -0.00361228, -0.0195467)
 shape = SubResource("ConvexPolygonShape3D_lqqx8")
+
+[node name="barrelRay" type="RayCast3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0.0162438, -0.0497456)
+target_position = Vector3(0, -0.6, 0)
+hit_from_inside = true
+
+[node name="holdPoint" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.00499264, -0.0553581, 0.107342)
+
+[node name="barrel" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0163268, -0.338528)

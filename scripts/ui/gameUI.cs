@@ -1,5 +1,4 @@
  using Godot;
-using Steamworks.Ugc;
 using System;
 
 public partial class gameUI : Control
@@ -7,7 +6,7 @@ public partial class gameUI : Control
     public Player player { get; set; }
     public Control playerMenu { get; set; }
     public InventoryUI playerInventoryUI { get; set; }
-    public Equipment equipment { get; set; }
+    public Control playerEquipmentUI { get; set; }
 
     public Item dragItem = Item.NONE;
 
@@ -29,13 +28,12 @@ public partial class gameUI : Control
         playerInventoryUI.subdivide();
         //playerInventoryUI.connectedInventory.debugGen();
 
-        //Grab a pointer to the UI Element that corresponds to the player's equipment page
-        equipment = GetNode<Equipment>("PlayerMenu/LeftTabs/Equipment");
-        equipment.connectedCharacter = player;
+
+
 
 
         //Event subscription
-        PlayerInput.input_OpenInventory += input_OpenInventory;
+        //InputManager.input_OpenInventory += input_OpenInventory;
     }
 
     public override void _Draw()
@@ -72,7 +70,7 @@ public partial class gameUI : Control
         {
             Item temp = dragItem;
             dragItem = Item.NONE;
-            Global.level.GetNode("proc").AddChild(temp);
+            Global.LevelManager.GetNode("proc").AddChild(temp);
             Vector3 pos= new Vector3(player.GlobalPosition.X, player.GlobalPosition.Y, player.GlobalPosition.Z);
             pos -= player.GlobalBasis.Z.Normalized();
             pos.Y += 1;
@@ -98,6 +96,11 @@ public partial class gameUI : Control
             Input.MouseMode = Input.MouseModeEnum.Confined;
         }
 
+    }
+
+    internal bool hasDragItem()
+    {
+        return dragItem != null && dragItem != Item.NONE;
     }
 }
 
