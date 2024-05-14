@@ -68,6 +68,18 @@ using static NetworkManager;
                 Global.NetworkManager.networkDebugLog("Client - Chat Message Received.");
                 NetworkChatHandler.handleChatMessage(data);
                 break;
+            case MessageType.INPUTDELTA:
+                Global.NetworkManager.networkDebugLog("Client - Input Delta Message Received.");
+                break;
+            case MessageType.ACTIONDELTA:
+                Global.NetworkManager.networkDebugLog("Client - Action Delta Message Received.");
+                NetworkInputHandler.ActionDeltaMessage msg = new NetworkInputHandler.ActionDeltaMessage();
+                Global.ByteArrayToStructure(data, msg);
+                NetworkInputHandler.handleActionDeltaMessage(msg);
+                break;
+            case MessageType.FULLINPUTCAPTURE:
+                Global.NetworkManager.networkDebugLog("Client - Full Input Sync Message Received.");
+                break;
             default:
                 break;
         }
@@ -88,7 +100,7 @@ using static NetworkManager;
                 ptr =(IntPtr)p;
             }
         }
-
+        
         Marshal.Copy(newData, 0, ptr, newData.Length);
         SteamNetworkingSockets.SendMessageToConnection(connectionToServer,  ptr, (uint)newData.Length, NetworkManager.k_nSteamNetworkingSend_ReliableNoNagle,out result);
 
@@ -109,6 +121,7 @@ using static NetworkManager;
         Buffer.BlockCopy(derefData, 1, debugData2, 0, derefData.Length-1);
         Global.NetworkManager.networkDebugLog("         intptr dereference test - data: " + debugData2.GetStringFromUtf8());
         */
+        //Marshal.FreeHGlobal(ptr);
     }
 
 

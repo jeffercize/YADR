@@ -40,8 +40,12 @@ public partial class NetworkManager: Node
     public enum NETWORK_MODE { STEAM, NONSTEAM, OFFLINE };
     private NETWORK_MODE networkMode;
 
-    public enum MessageType { CHAT };
-
+    public enum MessageType { 
+        CHAT,
+        INPUTDELTA,
+        ACTIONDELTA,
+        FULLINPUTCAPTURE,
+    }
     public override void _Process(double delta)
     {
         

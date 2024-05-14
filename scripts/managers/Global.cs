@@ -2,6 +2,7 @@ using Godot;
 using Steamworks;
 using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 public partial class Global : Node
 {
@@ -37,7 +38,10 @@ public partial class Global : Node
     /// </summary>
     public static SteamManager SteamManager;
 
-
+    /// <summary>
+    ///  Stores a reference to the AudioManager node, grabbed from the main scene when Global is autoloaded
+    /// </summary>
+    public static PlayerManager PlayerManager;
     /// <summary>
     /// If true, print debug logs to console during runtime.
     /// </summary>
@@ -64,7 +68,7 @@ public partial class Global : Node
     /// <summary>
     /// A numerical ID for the client. Should be unique.
     /// </summary>
-    public string clientID;
+    public ulong clientID;
 
     /// <summary>
     /// Text name for this client. Probably breaks if using esoteric fonts, weird unicode stuff, or right to left languages.
@@ -83,15 +87,9 @@ public partial class Global : Node
         AudioManager = GetNode<AudioManager>("../main/AudioManager");
         InputManager = GetNode<InputManager>("../main/InputManager");
         SteamManager = GetNode<SteamManager>("../SteamManager");
-
-
-
-
-
-
-
-       
-	}
+        PlayerManager = GetNode<PlayerManager>("../main/PlayerManager");
+        
+    }
 
     public static void debugLog(string msg)
     {
@@ -101,5 +99,34 @@ public partial class Global : Node
         }
     }
 
+    public static byte[] StructureToByteArray(object obj)
+    {
+        int len = Marshal.SizeOf(obj);
+
+        byte[] arr = new byte[len];
+
+        IntPtr ptr = Marshal.AllocHGlobal(len);
+
+        Marshal.StructureToPtr(obj, ptr, true);
+
+        Marshal.Copy(ptr, arr, 0, len);
+
+        Marshal.FreeHGlobal(ptr);
+
+        return arr;
+    }
+
+    public static void ByteArrayToStructure<T>(byte[] bytearray, T obj)
+    {
+        int len = Marshal.SizeOf(obj);
+
+        IntPtr i = Marshal.AllocHGlobal(len);
+
+        Marshal.Copy(bytearray, 0, i, len);
+
+        obj = Marshal.PtrToStructure<T>(i);
+
+        Marshal.FreeHGlobal(i);
+    }
 
 }

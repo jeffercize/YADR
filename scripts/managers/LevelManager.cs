@@ -17,6 +17,8 @@ public partial class LevelManager : Node3D
 	
 	}
 
+
+
     public bool loadScene(string uri)
     {
         try
@@ -26,7 +28,7 @@ public partial class LevelManager : Node3D
             AddChild(currentScene);
             return true;
         }
-        catch (Exception e)
+        catch
         {
             throw;
         }
@@ -48,7 +50,7 @@ public partial class LevelManager : Node3D
             PackedScene preloaded = ResourceLoader.Load<PackedScene>(uri, "PackedScene", ResourceLoader.CacheMode.Replace);
             return preloaded.CanInstantiate();
         }
-        catch (Exception e)
+        catch
         {
             return false;
         }

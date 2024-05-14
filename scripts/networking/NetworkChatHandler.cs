@@ -28,12 +28,13 @@ using System.Threading.Tasks;
 
     internal static void handleChatMessage(byte[] data)
     {
-        Global.debugLog("I got a chat message with data: " + data.GetStringFromUtf8());
+       Global.debugLog("I got a chat message with data: " + data.GetStringFromUtf8());
        ChatMessageReceived.Invoke(new ChatMessage(Global.instance.clientName,data.GetStringFromUtf8()));
     }
 
     internal static void CreateAndSendChatMessage(string text)
     {
+        if (!Global.NetworkManager.isActive) { return; }
         Global.NetworkManager.networkDebugLog("Send pressed! time to build a chat network message with data: " + text.ToUtf8Buffer().GetStringFromUtf8());
         Global.NetworkManager.client.SendSteamMessage(NetworkManager.MessageType.CHAT, text.ToUtf8Buffer());
         

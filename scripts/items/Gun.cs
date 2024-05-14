@@ -25,7 +25,7 @@ public partial class Gun : Weapon
         PhysicsDirectSpaceState3D phys = GetWorld3D().DirectSpaceState;
         PhysicsRayQueryParameters3D query = PhysicsRayQueryParameters3D.Create(this.GetNode<Marker3D>("barrel").GlobalPosition, this.GetNode<Marker3D>("barrel").ToGlobal(this.GetNode<Marker3D>("barrel").Position+new Vector3(0,0,-range)));
         query.HitFromInside = true;
-        query.Exclude = new Array<Rid> { this.GetRid(), Global.UIManager.gameUI.player.GetRid() };
+        query.Exclude = new Array<Rid> { this.GetRid(), Global.UIManager.player.GetRid() };
         Dictionary result = phys.IntersectRay(query);
         if (result.TryGetValue("position", out Variant pos))
         {

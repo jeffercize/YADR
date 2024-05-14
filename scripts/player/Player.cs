@@ -6,12 +6,17 @@ using System.Collections.Generic;
 using System.Runtime;
 using System.Transactions;
 
+[GlobalClass]
 public partial class Player : Character
 {
 
     public Vector3 newVelocity = Vector3.Zero;
+
+
     public Inventory inventory;
     public Equipment equipment;
+
+
     public Item rightHeldItem = Item.NONE;
     public Item leftHeldItem = Item.NONE;
     public Node3D leftHoldPoint;
@@ -20,31 +25,17 @@ public partial class Player : Character
     public Vector3 rightHoldPointOriginPos;
     RayCast3D pointing;
 
-
-
+    public Player() { }
 
     //Internal vars
     private Camera3D camera;
-    private Vector2 lookDelta;
-
-    public bool isMe;
-    public gameUI gameUI;
-    Vector2 inputDir = Vector2.Zero;
-
-    double fireCounter;
-
-    public InputManager input;
-
-    [Export]
-    public string steamName;
+    public PlayerInputData input;
 
     //Movement
 
     public const float jumpSpeed = 7.5f;
 
-    [Export]
     public float gravity = ProjectSettings.GetSetting("physics/3d/default_gravity").AsSingle();
-
 
     const float maxSpeed = 5.0f;
 
@@ -78,8 +69,6 @@ public partial class Player : Character
     float accelerationSpeedX = accelerationSpeed;
     float accelerationSpeedZ = accelerationSpeed;
 
-
-
     const float decelerationSpeed = 50.0f;
 
     float decelerationSpeedZ = decelerationSpeed;
@@ -95,6 +84,7 @@ public partial class Player : Character
     public bool jumpMomentumCancel = true;
     public bool canJump = true;
     public bool inAir = false;
+
 
 
 
@@ -141,37 +131,25 @@ public partial class Player : Character
     {
 
         inventory = GetNode<Inventory>("Inventory");
+        inventory.spatialParent = this;
         equipment = GetNode<Equipment>("Equipment");
-
-        //Every player has an input object, gets data from input if local, or network if remote
-        //input = new PlayerInput(this.account.Id.ToString());
-        input.Name = "InputOf:";
-        AddChild(input);
-
-
+        equipment.connectedCharacter = this;
 
         leftHoldPoint = GetNode<Node3D>("pov/leftHoldPoint");
         rightHoldPoint = GetNode<Node3D>("pov/rightHoldPoint");
         leftHoldPointOriginPos = leftHoldPoint.Position;
         rightHoldPointOriginPos = rightHoldPoint.Position;
 
+        camera = GetNode<Camera3D>("pov");
+        //camera.Name = "CameraOf_" + account.Name;
+        camera.Current = true;
 
-        if (isMe)
-        {
-            camera = GetNode<Camera3D>("pov");
-            //camera.Name = "CameraOf_" + account.Name;
-            camera.Current = true;
 
-            gameUI = ResourceLoader.Load<PackedScene>("res://scenes/ui/gameUI.tscn").Instantiate<gameUI>();
-            gameUI.Name = "gameUI";
-            gameUI.player = this;
-            GetNode("/root/main/ui").AddChild(gameUI);
-
-            Global.UIManager.gameUI = gameUI;
+        Global.UIManager.connectToPlayer(this);
             
 
-            Input.MouseMode = Input.MouseModeEnum.Captured;
-        }
+        Input.MouseMode = Input.MouseModeEnum.Captured;
+        
 
         pointing = GetNode<RayCast3D>("pov/pointing");
 
@@ -180,6 +158,16 @@ public partial class Player : Character
         Equipment.equipMessage += onEquip;
         Equipment.unequipMessage += onUnequip;
 
+        InputManager.InputEvent += onInputEvent;
+
+    }
+
+    private void onInputEvent(ulong clientID, InputManager.ActionEnum action, bool newState)
+    {
+        if (action.Equals(InputManager.ActionEnum.jump) && newState==true)
+        {
+            onJump();
+        }
     }
 
 
@@ -190,15 +178,16 @@ public partial class Player : Character
     //MOVEMENT SHIT ///////////////////////////////////////////////
     public override void _PhysicsProcess(double delta)
     {
-        inputDir = input.inputDirection;
 
         //Collect our current Input direction (drop the Y piece), and multiply it by our Transform Basis, rotating it so that forward input becomes forward in the direction we are facing
-        Vector3 dir = Transform.Basis * new Vector3(inputDir.Y * maxSpeedX, 0, inputDir.X * maxSpeedZ);
+        Vector3 dir = Transform.Basis * new Vector3(input.direction.Y * maxSpeedX, 0, input.direction.X * maxSpeedZ);
 
         //Create our desired vector, the direction we're going at max speed
         Vector3 targetVec = new Vector3(dir.X, 0, dir.Z);
 
-
+        newVelocity.X = targetVec.X;
+        newVelocity.Z = targetVec.Z;
+        /*
         //I honestly have no idea what the dot operator does. This uses our acceleration if we're inputing in the direction of motion, otherwise use our deceleration
         if (dir.Dot(newVelocity) > 0)
         {
@@ -211,7 +200,7 @@ public partial class Player : Character
             newVelocity.X = Mathf.MoveToward(Velocity.X, targetVec.X, decelerationSpeedX * (float)delta * (IsOnFloor() ? 1 : airControlModX));
             newVelocity.Z = Mathf.MoveToward(Velocity.Z, targetVec.Z, decelerationSpeedZ * (float)delta * (IsOnFloor() ? 1 : airControlModZ));
         }
-
+        */
 
         //Lets get the Y component sorted - gravity and jumping
         if (!IsOnFloor())
@@ -266,16 +255,15 @@ public partial class Player : Character
     //CAMERA SHIT////////////////////////////////////////////////
     public override void _Process(double delta)
     {
-        if (isMe)
-        {
-            //Rotates the camera on X (Up/Down) and clamps so it doesnt go too far.
-            camera.Rotation = new Vector3((float)Mathf.Clamp(camera.Rotation.X - input.lookDelta.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
-        }
+
+        //Rotates the camera on X (Up/Down) and clamps so it doesnt go too far.
+        camera.Rotation = new Vector3((float)Mathf.Clamp(camera.Rotation.X - input.lookDelta.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
+        
 
         //Rotates the entire player (camera is child, so it comes along) on Y (left/right)
         Rotation = new Vector3(0, Rotation.Y - input.lookDelta.X * (float)delta, 0);
-
-        debugPointer();
+        input.lookDelta = Vector2.Zero;
+       // debugPointer();
 
         if (leftHeldItem != Item.NONE)
         {
@@ -359,17 +347,7 @@ public partial class Player : Character
                 gun.RotationDegrees = rightHoldPoint.RotationDegrees;
             }
 
-            //if (input.inputData.fire)
-            if(false) 
-                {
-           
-                if (fireCounter<=0)
-                {
-                    gun.fire();
-                    fireCounter = gun.shotCooldown;
 
-                }
-            }
         }
 
     }
@@ -401,7 +379,7 @@ public partial class Player : Character
 
     private void onFireStop()
     {
-        fireCounter = 0;
+
     }
 
     private void onFire()

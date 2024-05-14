@@ -72,11 +72,13 @@ using static NetworkManager;
     {
         byte[] data = new byte[message.m_cbSize];
         MessageType type = NetworkManager.deconstructSteamNetworkingMessage(message, out data);
-        handleNetworkData(type, data);
+        SteamNetworkingIdentity identity = new SteamNetworkingIdentity();
+        identity = message.m_identityPeer;
+        handleNetworkData(identity,type, data);
 
     }
 
-    private void handleNetworkData(MessageType type, byte[] data)
+    private void handleNetworkData(SteamNetworkingIdentity identity, MessageType type, byte[] data)
     {
 
         switch (type)
@@ -84,6 +86,22 @@ using static NetworkManager;
             case MessageType.CHAT:
                 Global.NetworkManager.networkDebugLog("Server - Chat Message Received - Broadcasting!");
                 BroadcastMessage(type, data);   
+                break;
+            case MessageType.INPUTDELTA:
+                Global.NetworkManager.networkDebugLog("Server - Input Delta Message Recevied!");
+                //Apply this input data to my simulation of the players.
+
+                //forward the inputs to all other players for their sims
+                //BroadcastMessageWithExclusion(identity, type, data);
+                BroadcastMessage(type, data);
+                break;
+            case MessageType.ACTIONDELTA:
+                Global.NetworkManager.networkDebugLog("Server - Action Delta Message Recevied!");
+                //Apply this input data to my simulation of the players.
+
+                //forward the inputs to all other players for their sims
+                //BroadcastMessageWithExclusion(identity, type, data);
+                BroadcastMessage(type, data);
                 break;
             default:
                 break;
@@ -98,6 +116,23 @@ using static NetworkManager;
         foreach (HSteamNetConnection c in clients)
         {
             SendSteamMessage(c, type, data);
+        }
+    }
+
+    private void BroadcastMessageWithExclusion(SteamNetworkingIdentity exclude, MessageType type, byte[] data)
+    {
+        Global.NetworkManager.networkDebugLog("Server starting broadcast");
+        foreach (HSteamNetConnection c in clients)
+        {
+            if (SteamNetworkingSockets.GetConnectionUserData(c).Equals(exclude))
+            {
+                continue;
+            }
+            else
+            {
+                SendSteamMessage(c, type, data);
+            }
+
         }
     }
 

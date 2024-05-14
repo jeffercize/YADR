@@ -18,7 +18,7 @@ public partial class Main : Node
         if (Global.SteamManager.steamRunning)
         {
             Global.instance.platform = Global.PLATFORM.STEAM;
-            Global.instance.clientID = SteamUser.GetSteamID().ToString();
+            Global.instance.clientID = (ulong)SteamUser.GetSteamID();
             Global.instance.clientName = SteamFriends.GetPersonaName();
         }
 
