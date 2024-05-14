@@ -361,16 +361,26 @@ theme_override_constants/v_separation = 20
 columns = 2
 metadata/_edit_use_anchors_ = true
 
-[node name="ConnectionStatusLabel" type="Label" parent="MPDebugStatusPanel/JoinPanel/GridContainer"]
+[node name="ConnectionsLabel" type="Label" parent="MPDebugStatusPanel/JoinPanel/GridContainer"]
+layout_mode = 2
+text = "Connections List:"
+
+[node name="ConnListScroll" type="ScrollContainer" parent="MPDebugStatusPanel/JoinPanel/GridContainer"]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+vertical_scroll_mode = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="ConnList" type="VBoxContainer" parent="MPDebugStatusPanel/JoinPanel/GridContainer/ConnListScroll"]
+layout_mode = 2
+
+[node name="ConnectionStatusLabel2" type="Label" parent="MPDebugStatusPanel/JoinPanel/GridContainer"]
 layout_mode = 2
 text = "Connection Status:"
 
-[node name="ConnectionStatus" type="TextEdit" parent="MPDebugStatusPanel/JoinPanel/GridContainer"]
+[node name="ConnectionStatusLabel3" type="Label" parent="MPDebugStatusPanel/JoinPanel/GridContainer"]
 layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-text = "127.0.0.1"
-placeholder_text = "127.0.0.1"
+text = "Not Connected."
 
 [connection signal="pressed" from="MPDebugPanel/HostPanel/hostButton" to="MPDebugPanel" method="onHostPressed"]
 [connection signal="pressed" from="MPDebugPanel/JoinPanel/JoinButton" to="MPDebugPanel" method="onJoinPressed"]
