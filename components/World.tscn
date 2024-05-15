@@ -1,4 +1,6 @@
-[gd_scene load_steps=5 format=3 uid="uid://bb2lp50sjndus"]
+[gd_scene load_steps=6 format=3 uid="uid://bb2lp50sjndus"]
+
+[ext_resource type="Script" path="res://components/WeatherController.cs" id="1_awlf1"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_vibap"]
 sky_top_color = Color(0.192157, 0.282353, 0.509804, 1)
@@ -13,15 +15,21 @@ sky_material = SubResource("ProceduralSkyMaterial_vibap")
 [sub_resource type="Environment" id="Environment_8jcgm"]
 background_mode = 2
 sky = SubResource("Sky_srg7c")
-ambient_light_source = 2
 ambient_light_color = Color(1, 1, 1, 1)
 ambient_light_sky_contribution = 0.5
 ambient_light_energy = 0.2
 tonemap_mode = 3
+fog_light_color = Color(0.386536, 0.418728, 0.469327, 1)
+fog_light_energy = 0.5
+fog_density = 0.0005
+fog_sky_affect = 0.5
+volumetric_fog_emission = Color(0.355314, 0.355314, 0.355314, 1)
 
 [sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_0gcl0"]
+dof_blur_far_distance = 100.0
 
 [node name="World" type="Node3D"]
+script = ExtResource("1_awlf1")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_8jcgm")

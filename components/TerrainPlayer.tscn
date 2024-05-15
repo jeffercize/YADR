@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://domhm87hbhbg1"]
+[gd_scene load_steps=11 format=3 uid="uid://domhm87hbhbg1"]
 
 [ext_resource type="Script" path="res://scripts/terrain/Player.gd" id="1_nm1yx"]
 [ext_resource type="Script" path="res://scripts/terrain/CameraManager.gd" id="2_loos7"]
@@ -11,6 +11,34 @@ height = 1.5
 [sub_resource type="SeparationRayShape3D" id="SeparationRayShape3D_twc2s"]
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_lsqiy"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_npmnv"]
+emission_shape_offset = Vector3(0, 15, 0)
+emission_shape = 3
+emission_box_extents = Vector3(30, 1, 30)
+direction = Vector3(0, -1, 0)
+spread = 5.0
+initial_velocity_min = 10.0
+initial_velocity_max = 12.0
+collision_mode = 2
+
+[sub_resource type="Curve" id="Curve_xju52"]
+max_value = 0.1
+_data = [Vector2(0, 0.0103383), 0.0, 0.0, 0, 0, Vector2(0.0517241, 0.0218045), 0.235625, 0.235625, 0, 0, Vector2(0.995074, 0.00103384), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hklps"]
+transparency = 1
+cull_mode = 2
+vertex_color_use_as_albedo = true
+albedo_color = Color(0.74902, 0.819608, 0.811765, 0.0431373)
+use_particle_trails = true
+
+[sub_resource type="RibbonTrailMesh" id="RibbonTrailMesh_tiaho"]
+material = SubResource("StandardMaterial3D_hklps")
+size = 0.6
+sections = 2
+curve = SubResource("Curve_xju52")
 
 [node name="Player" type="CharacterBody3D"]
 collision_layer = 2
@@ -42,3 +70,17 @@ shape = SubResource("SeparationRayShape3D_twc2s")
 [node name="Body" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 mesh = SubResource("CapsuleMesh_lsqiy")
+
+[node name="GPUParticles3D" type="GPUParticles3D" parent="."]
+amount = 4525
+lifetime = 2.0
+randomness = 0.45
+visibility_aabb = AABB(-19.252, -10, -19.083, 38.503, 24.079, 38.167)
+trail_enabled = true
+trail_lifetime = 0.2
+process_material = SubResource("ParticleProcessMaterial_npmnv")
+draw_pass_1 = SubResource("RibbonTrailMesh_tiaho")
+
+[node name="GPUParticlesCollisionBox3D" type="GPUParticlesCollisionBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.74439, -1.06226, -0.905592)
+size = Vector3(72.1295, 2.09912, 66.9786)
