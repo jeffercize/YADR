@@ -2,13 +2,9 @@
 using Steamworks;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using static NetworkManager;
 
-    public partial class Server: Node
+public partial class Server: Node
     {
 
     public List<HSteamNetConnection> clients = new();
@@ -53,55 +49,61 @@ using static NetworkManager;
 
     public override void _Process(double delta)
     {
-        IntPtr[] messages = new IntPtr[5];
-        foreach (HSteamNetConnection c in clients)
+        IntPtr[] messages = new IntPtr[100];
+        foreach (HSteamNetConnection conn in clients)
         {
-            SteamNetworkingSockets.ReceiveMessagesOnConnection(c, messages, 5);
-            foreach (IntPtr msg in messages)
+            int numMessages = SteamNetworkingSockets.ReceiveMessagesOnConnection(conn, messages, 100);
+            for (int i = 0; i < numMessages; i++)
             {
-                if (msg == IntPtr.Zero) { continue; }
-                //Global.NetworkManager.networkDebugLog("Server got a message.");
-                handleNetworkData(Marshal.PtrToStructure<SteamNetworkingMessage_t>(msg));
+                if (messages[i] == IntPtr.Zero) { continue; }
+                handleNetworkData(SteamNetworkingMessage_t.FromIntPtr(messages[i]));
             }
         }
     }
 
-
-
     private void handleNetworkData(SteamNetworkingMessage_t message)
     {
-        byte[] data = new byte[message.m_cbSize];
-        MessageType type = NetworkManager.deconstructSteamNetworkingMessage(message, out data);
-        SteamNetworkingIdentity identity = new SteamNetworkingIdentity();
-        identity = message.m_identityPeer;
-        handleNetworkData(identity,type, data);
-
+        handleNetworkData(message.m_identityPeer, (MessageType)message.m_nUserData, NetworkManager.IntPtrToBytes(message.m_pData, message.m_cbSize));
     }
+
 
     private void handleNetworkData(SteamNetworkingIdentity identity, MessageType type, byte[] data)
     {
 
         switch (type)
         {
-            case MessageType.CHAT:
+            case MessageType.CHAT_BASIC:
                 Global.NetworkManager.networkDebugLog("Server - Chat Message Received - Broadcasting!");
                 BroadcastMessage(type, data);   
                 break;
-            case MessageType.INPUTDELTA:
+            case MessageType.INPUT_MOVEMENTDIRECTION:
                 Global.NetworkManager.networkDebugLog("Server - Input Delta Message Recevied!");
                 //Apply this input data to my simulation of the players.
 
                 //forward the inputs to all other players for their sims
-                //BroadcastMessageWithExclusion(identity, type, data);
-                BroadcastMessage(type, data);
+                BroadcastMessageWithExclusion(identity, type, data);
+                //BroadcastMessage(type, data);
                 break;
-            case MessageType.ACTIONDELTA:
+            case MessageType.INPUT_ACTION:
                 Global.NetworkManager.networkDebugLog("Server - Action Delta Message Recevied!");
                 //Apply this input data to my simulation of the players.
 
+                ClientInputHandler.ActionDeltaMessage msg = new ClientInputHandler.ActionDeltaMessage();
+                Global.ByteArrayToStructure(data, msg);
+                Global.NetworkManager.networkDebugLog("Server - Just decoded this lad, clientID: " + msg.clientID);
+
+
                 //forward the inputs to all other players for their sims
-                //BroadcastMessageWithExclusion(identity, type, data);
-                BroadcastMessage(type, data);
+                BroadcastMessageWithExclusion(identity, type, data);
+                //BroadcastMessage(type, data);
+                break;
+            case MessageType.INPUT_FULLCAPTURE:
+                Global.NetworkManager.networkDebugLog("Server - Input Sync Message Recevied!");
+                //Apply this input data to my simulation of the players.
+
+                //forward the inputs to all other players for their sims
+                BroadcastMessageWithExclusion(identity, type, data);
+                //BroadcastMessage(type, data);
                 break;
             default:
                 break;
@@ -115,7 +117,7 @@ using static NetworkManager;
         Global.NetworkManager.networkDebugLog("Server starting broadcast");
         foreach (HSteamNetConnection c in clients)
         {
-            SendSteamMessage(c, type, data);
+            NetworkManager.SendSteamMessage(type,c,data);
         }
     }
 
@@ -128,23 +130,8 @@ using static NetworkManager;
             {
                 continue;
             }
-            else
-            {
-                SendSteamMessage(c, type, data);
-            }
-
+            NetworkManager.SendSteamMessage(type, c, data);
         }
     }
 
-    public unsafe void SendSteamMessage(HSteamNetConnection conn, MessageType type, byte[] data)
-    {
-        //Global.NetworkManager.networkDebugLog("Server sending message: " + data.GetStringFromUtf8());
-        long result = new();
-        byte[] newData = new byte[data.Length + 1];
-        Buffer.BlockCopy(data, 0, newData, 1, data.Length);
-        newData[0] = (byte)type;
-        IntPtr ptr = Marshal.AllocHGlobal(newData.Length);
-        Marshal.Copy(newData, 0, ptr, newData.Length);
-        SteamNetworkingSockets.SendMessageToConnection(conn, ptr, (uint)newData.Length, NetworkManager.k_nSteamNetworkingSend_ReliableNoNagle, out result);
-    }
 }

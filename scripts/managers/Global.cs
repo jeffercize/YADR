@@ -99,6 +99,11 @@ public partial class Global : Node
         }
     }
 
+    /// <summary>
+    /// DEPRECATED - preprotobuff
+    /// </summary>
+    /// <param name="obj"></param>
+    /// <returns></returns>
     public static byte[] StructureToByteArray(object obj)
     {
         int len = Marshal.SizeOf(obj);
@@ -116,6 +121,12 @@ public partial class Global : Node
         return arr;
     }
 
+    /// <summary>
+    /// DEPRECATED - preprotobuff
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="bytearray"></param>
+    /// <param name="obj"></param>
     public static void ByteArrayToStructure<T>(byte[] bytearray, T obj)
     {
         int len = Marshal.SizeOf(obj);
@@ -127,6 +138,40 @@ public partial class Global : Node
         obj = Marshal.PtrToStructure<T>(i);
 
         Marshal.FreeHGlobal(i);
+    }
+
+    /// <summary>
+    /// DEPRECATED - preprotobuff
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="str"></param>
+    /// <returns></returns>
+    public static byte[] getBytes<T>(T str)
+    {
+        int size = Marshal.SizeOf(str);
+        byte[] arr = new byte[size];
+        IntPtr ptr = IntPtr.Zero;
+        ptr = Marshal.AllocHGlobal(size);
+        Marshal.StructureToPtr(str, ptr, true);
+        Marshal.Copy(ptr, arr, 0, size);
+        Marshal.FreeHGlobal(ptr);
+        return arr;
+    }
+
+    /// <summary>
+    /// DEPRECATED - preprotobuff
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="bytes"></param>
+    /// <returns></returns>
+    public static T fromBytes<T>(byte[] bytes)
+    {
+        T str;
+        int size = 1;
+        IntPtr ptr= IntPtr.Zero;
+        ptr = Marshal.AllocHGlobal(size);
+        Marshal.Copy(bytes, 0, ptr, size);
+        return default;
     }
 
 }

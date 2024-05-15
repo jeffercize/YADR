@@ -1,83 +1,116 @@
 ﻿using Godot;
 using Steamworks;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using static Godot.HttpRequest;
 using static NetworkManager;
 
-
-    public partial class Client: Node
+/// <summary>
+/// Object representing the client-side processing of networking data. Only one of these should exist per machine.
+/// </summary>
+public partial class Client: Node
     {
 
-     HSteamNetConnection connectionToServer;
+    /// <summary>
+    /// The maximum number of messages the Client will attempt to handle per frame. I have no clue what the concequences of this are, in either direction.
+    /// </summary>
+    public int nMaxMessages = 100;
 
+    /// <summary>
+    /// A handle for the connection to the server. Any messages from the server end up on this, any message sent on this end up at the server.
+    /// </summary>
+    public HSteamNetConnection connectionToServer;
+
+    /// <summary>
+    /// An event that fires when the underlying steam network detects a change in connection status.
+    /// </summary>
     protected Callback<SteamNetConnectionStatusChangedCallback_t> SteamNetConnectionStatusChange;
 
-
+    /// <summary>
+    /// Construct a client with a pre-existing connection object.
+    /// </summary>
+    /// <param name="connectionToServer">A valid and pre-connected connection object. MUST ALREADY BE IN CONNECTED STATE. Does NOT generate callbacks. </param>
     public Client(HSteamNetConnection connectionToServer)
     {
         this.connectionToServer = connectionToServer;
     }
+
+    /// <summary>
+    /// Empty constructor to keep Godot happy
+    /// </summary>
     public Client() { }
-
-
-
 
     public override void _Ready()
     {
+        //Hooks up the connection status change event to a function
         SteamNetConnectionStatusChange = Callback<SteamNetConnectionStatusChangedCallback_t>.Create(onSteamNetConnectionStatusChange);
     }
 
+    /// <summary>
+    /// Called by the underlying Steam API in response to any underlying connection status change
+    /// </summary>
+    /// <param name="param">Info on the event</param>
+    /// <exception cref="NotImplementedException"></exception>
     private void onSteamNetConnectionStatusChange(SteamNetConnectionStatusChangedCallback_t param)
     {
         throw new NotImplementedException();
     }
 
+    // Runs once per frame.
     public override void _Process(double delta)
     {
-        IntPtr[] messages = new IntPtr[100];
-        SteamNetworkingSockets.ReceiveMessagesOnConnection(connectionToServer, messages, 100);
-        foreach (IntPtr msg in messages)
+        //Create and allocate memory for an array of pointers
+        IntPtr[] messages = new IntPtr[nMaxMessages];
+
+        //Collect up to nMaxMessages that are waiting in the queue on the connection to the server, and load them up into our preallocated message array
+        int numMessages = SteamNetworkingSockets.ReceiveMessagesOnConnection(connectionToServer, messages, nMaxMessages);
+
+        //For each message, send it off to further processing
+        for(int i = 0; i<numMessages; i++)
             {
-            if (msg == IntPtr.Zero) { continue; }
-            handleNetworkData(Marshal.PtrToStructure<SteamNetworkingMessage_t>(msg));
-            Global.NetworkManager.networkDebugLog("Client got a message.");
+            if (messages[i] == IntPtr.Zero) { continue; } //Sanity check. 
+            handleNetworkData(SteamNetworkingMessage_t.FromIntPtr(messages[i]));
         }
-        
     }
 
-
-
+    /// <summary>
+    /// Overloaded method sig just to make things easier. Takes apart the SteamMessage into its important peices and sends them on.
+    /// </summary>
+    /// <param name="message"></param>
     private void handleNetworkData(SteamNetworkingMessage_t message)
     {
-        byte[] data;
-        handleNetworkData(NetworkManager.deconstructSteamNetworkingMessage(message, out data), data);
+        //Read m_cbSize bytes starting at m_pData (payload size and payload pointer) out to a managed byte array
+        byte[] payload = NetworkManager.IntPtrToBytes(message.m_pData, message.m_cbSize);
 
+        //send those pieces of the message we care about onward.
+        handleNetworkData(message.m_identityPeer, (MessageType)message.m_nUserData, payload);
     }
 
-    private void handleNetworkData(MessageType type, byte[] data)
+    /// <summary>
+    /// The primary network processing switch. All network messages entering the Client must pass thru here to be directed to the correct processing location.
+    /// </summary>
+    /// <param name="identity">Will be either a CSteamID (ulong) or an ipaddress. See SteamNetworkingIdentity</param>
+    /// <param name="type">enum message type</param>
+    /// <param name="data">raw bytearray of protobuf payload</param>
+    private void handleNetworkData(SteamNetworkingIdentity identity, MessageType type, byte[] data)
     {
 
         switch (type)
         {
-            case MessageType.CHAT:
+            case MessageType.CHAT_BASIC:
                 Global.NetworkManager.networkDebugLog("Client - Chat Message Received.");
-                NetworkChatHandler.handleChatMessage(data);
+                ClientChatHandler.handleChatMessage(data);
                 break;
-            case MessageType.INPUTDELTA:
+            case MessageType.INPUT_MOVEMENTDIRECTION:
                 Global.NetworkManager.networkDebugLog("Client - Input Delta Message Received.");
                 break;
-            case MessageType.ACTIONDELTA:
+            case MessageType.INPUT_ACTION:
                 Global.NetworkManager.networkDebugLog("Client - Action Delta Message Received.");
-                NetworkInputHandler.ActionDeltaMessage msg = new NetworkInputHandler.ActionDeltaMessage();
+                ClientInputHandler.ActionDeltaMessage msg = new ClientInputHandler.ActionDeltaMessage();
                 Global.ByteArrayToStructure(data, msg);
-                NetworkInputHandler.handleActionDeltaMessage(msg);
+                Global.NetworkManager.networkDebugLog("Just decoded this lad, clientID: " + msg.clientID + " compared to ");
+                ClientInputHandler.handleActionDeltaMessage(msg);
                 break;
-            case MessageType.FULLINPUTCAPTURE:
+            case MessageType.INPUT_FULLCAPTURE:
                 Global.NetworkManager.networkDebugLog("Client - Full Input Sync Message Received.");
                 break;
             default:
@@ -85,44 +118,11 @@ using static NetworkManager;
         }
     }
 
-    public void SendSteamMessage(MessageType type, byte[] data)
-    {
 
-        long result = new();
-        byte[] newData = new byte[data.Length+1];
-        Buffer.BlockCopy(data,0,newData, 1, data.Length);
-        newData[0] = (byte)type;
-        IntPtr ptr;
-        unsafe
-        {
-            fixed (byte* p = newData)
-            {
-                ptr =(IntPtr)p;
-            }
-        }
-        
-        Marshal.Copy(newData, 0, ptr, newData.Length);
-        SteamNetworkingSockets.SendMessageToConnection(connectionToServer,  ptr, (uint)newData.Length, NetworkManager.k_nSteamNetworkingSend_ReliableNoNagle,out result);
 
-        /*
-        Global.NetworkManager.networkDebugLog("Client - Just sent a message, lets check our work.");
-        Global.NetworkManager.networkDebugLog("     Byte[] array is " + newData.Length +" long. Compared to original data length of: " + data.Length + "   [0] should be the type, the rest is the payload.");
-        Global.NetworkManager.networkDebugLog("     Type should be the first byte of our new array, testing: " + (MessageType)newData[0]);
-        byte[] debugData = new byte[newData.Length-1];
-        Buffer.BlockCopy(newData, 1, debugData, 0, newData.Length-1);
-        Global.NetworkManager.networkDebugLog("     Let's copy out +1 offset to length bytes and check it for text: " + debugData.GetStringFromUtf8());
 
-        Global.NetworkManager.networkDebugLog("     Ok time to test pointer dereference.");
-        byte[] derefData = new byte[newData.Length];
-        Marshal.Copy(ptr, derefData, 0, newData.Length);
-        MessageType debugType = (MessageType)derefData[0];
-        Global.NetworkManager.networkDebugLog("         intptr dereference test - type: " + debugType);
-        byte[] debugData2 = new byte[derefData.Length-1];
-        Buffer.BlockCopy(derefData, 1, debugData2, 0, derefData.Length-1);
-        Global.NetworkManager.networkDebugLog("         intptr dereference test - data: " + debugData2.GetStringFromUtf8());
-        */
-        //Marshal.FreeHGlobal(ptr);
-    }
+
+
 
 
 

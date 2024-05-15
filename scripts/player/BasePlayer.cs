@@ -99,8 +99,17 @@ using System.Threading.Tasks;
         equipment = GetNode<Equipment>("Equipment");
         equipment.connectedCharacter = this;
         pov = GetNode<Node3D>("pov");
+
+        InputManager.InputEvent += onInputEvent;
     }
 
+    private void onInputEvent(ulong clientID, InputManager.ActionEnum action, bool newState)
+    {
+        if (action == InputManager.ActionEnum.jump && newState==true)
+        {
+            onJump();
+        }
+    }
 
     public void ForceSyncState(BasePlayer state)
     {
@@ -108,7 +117,22 @@ using System.Threading.Tasks;
     }
 
 
+    public void onJump()
+    {
+        if (jumps > 0)
+        {
+            jumping = true;
+            jumps -= 1;
 
+            //nullify the down velocity (Y) if using momentum cancel
+            if (jumpMomentumCancel && Velocity.Y < 0)
+            {
+                newVelocity.Y = 0;
+            }
+
+            newVelocity += jumpVelocity;
+        }
+    }
 
     //MOVEMENT SHIT ///////////////////////////////////////////////
     public override void _PhysicsProcess(double delta)

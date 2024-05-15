@@ -25,9 +25,12 @@ public partial class PlayerManager : Node3D
 
         player.input = Global.InputManager.localInput;
         AddChild(player);
-        player.Position = new Vector3(0, 10, 0);
+        player.Position = new Vector3(10, 10, 0);
         Input.MouseMode = Input.MouseModeEnum.Captured;
 
+
+        //debug
+        
         AddChild(GenerateRemotePlayer(Global.instance.clientID));
     }
 
