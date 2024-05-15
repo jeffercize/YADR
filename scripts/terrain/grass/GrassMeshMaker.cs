@@ -15,8 +15,8 @@ public partial class GrassMeshMaker : Node3D
     List<Rid> activeGrassChunks = new List<Rid>();
     List<Rid> newActiveGrassChunks = new List<Rid>();
 
-    int instanceCount = 2048;
-    int rowLength = (int)Math.Sqrt(2048);
+    int instanceCount = 8192;
+    int rowLength = (int)Math.Sqrt(8192);
     int randomSeed;
     bool grassReady = false;
 
@@ -98,8 +98,10 @@ public partial class GrassMeshMaker : Node3D
     }
 
 
-    int i = -15;
-    int j = -15;
+    int i = 0;
+    int j = 0;
+    int k = 0;
+    int l = 0;
     int widthIndex;
     int heightIndex;
 // Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -113,123 +115,212 @@ public partial class GrassMeshMaker : Node3D
         //UpdateGrassChunks();
         if (grassReady)
         {
-            int chunksUpdatedThisFrame = 0;
-            int maxChunksPerFrame = 10; // Adjust this value for performance vs grass loading
-            Stopwatch stopwatch = Stopwatch.StartNew();
-
-            for (; i <= 18; i++)
+            if (Input.IsKeyPressed(Key.J))
             {
-                for (; j <= 18; j++)
-                {
-                    int currentWidthIndex = widthIndex + i;
-                    int currentHeightIndex = heightIndex + j;
-                    if(chunksUpdatedThisFrame > maxChunksPerFrame)
-                    {
-                        return;
-                    }
-                    chunksUpdatedThisFrame++;
-                    // Ensure the indices are within the bounds of the grassChunks array
-                    if (currentWidthIndex >= 0 && currentWidthIndex < grassChunks.GetLength(0) &&
-                        currentHeightIndex >= 0 && currentHeightIndex < grassChunks.GetLength(1))
-                    {
-                        // Calculate the distance from the player to the current chunk
-                        int distance = Math.Max(Math.Abs(i), Math.Abs(j));
-                        if (!grassChunks[currentWidthIndex, currentHeightIndex].Item1.IsValid && !grassChunks[currentWidthIndex, currentHeightIndex].Item2.IsValid)
-                        {
-                            grassChunks[currentWidthIndex, currentHeightIndex].Item1 = InitializeRenderServerGrassClump(lowLODMesh, currentWidthIndex, currentHeightIndex, rowLength, 2048, 30, 30, randomSeed, 0);
-                            grassChunks[currentWidthIndex, currentHeightIndex].Item2 = InitializeRenderServerGrassClump(lowLODMesh, currentWidthIndex, currentHeightIndex, rowLength, 2048, 30, 30, randomSeed, 1);
-                            RenderingServer.MultimeshSetVisibleInstances(grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item2, instanceCount / 4);
-                            RenderingServer.MultimeshSetVisibleInstances(grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item4, instanceCount / 4);
-                            grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item3 = 2;
-                            grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item1 = 2;
-                        }
-                        // Calculate the distance from the player to the current chunk
-
-                        Vector3 chunkPosition = new Vector3(currentWidthIndex*30, 0, currentHeightIndex*30); //TODO REPLACE 0 with a local Y heightmap check
-                        Vector3 playerPosition = new Vector3(player.Transform.Origin.X, 0, player.Transform.Origin.Z);
-
-                        float real_distance = (chunkPosition - playerPosition).Length()/30.0f;
-                        (float transitionFactor1, float transitionFactor2) = CalculateFactors(real_distance); //TODO smooth out the transition from medium to low and low to none
-                        // Calculate the transition factors based on the distance
-
-                        // Ensure the transition factors are within the range [0, 1]
-                        transitionFactor1 = Math.Max(0, Math.Min(1, transitionFactor1));
-                        transitionFactor2 = Math.Max(0, Math.Min(1, transitionFactor2));
-
-                        // Calculate the number of instances for each LOD
-                        int item2LODInstanceCount = (int)(instanceCount * transitionFactor1);
-                        int item4LODInstanceCount = (int)(instanceCount * transitionFactor2);
-
-                        //Item2 management between high and medium
-                        if (distance <= 5 && grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item1 != 0)
-                        {
-                            RenderingServer.MultimeshSetMesh(grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item2, highLODMesh.GetRid());
-                            grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item1 = 0;
-                        }
-                        else if(distance > 5 && grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item1 != 1)
-                        {
-                            RenderingServer.MultimeshSetMesh(grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item2, mediumLODMesh.GetRid());
-                            grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item1 = 1;
-                        }
-
-                        //Item4 management between high and low
-                        if (distance <= 10 && grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item3 != 0)
-                        {
-                            RenderingServer.MultimeshSetMesh(grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item4, highLODMesh.GetRid());
-                            grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item3 = 0;
-                        }
-                        else if(distance > 10 && grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item3 != 2)
-                        {
-                            RenderingServer.MultimeshSetMesh(grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item4, lowLODMesh.GetRid());
-                            grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item3 = 2;
-                        }
-
-
-                        if (distance > 5)
-                        {
-                            item2LODInstanceCount = item2LODInstanceCount / 4;
-                        }
-                        if (distance > 10)
-                        {
-                            item4LODInstanceCount = item4LODInstanceCount / 8;
-                        }
-                        RenderingServer.MultimeshSetVisibleInstances(grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item2, item2LODInstanceCount);
-                        RenderingServer.MultimeshSetVisibleInstances(grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item4, item4LODInstanceCount);
-                    }
-                }
-                j = -15;
+                return;
             }
-            i = -15;
-            widthIndex = (int)(player.Transform.Origin.X / 30);
-            heightIndex = (int)(player.Transform.Origin.Z / 30);
-            // Cleanup
-            for (int i = 0; i < grassChunks.GetLength(0); i++)
+            
+            if (Input.IsKeyPressed(Key.I))
             {
-                for (int j = 0; j < grassChunks.GetLength(1); j++)
-                {
-                    if (i < widthIndex - 18 || i > widthIndex + 18 || j < heightIndex - 18 || j > heightIndex + 18)
-                    {
-                        if (grassChunks[i,j].Item1.IsValid || grassChunks[i, j].Item2.IsValid)
-                        {
-                            RenderingServer.MultimeshSetVisibleInstances(grassChunkMultimeshs[i, j].Item2, 0);
-                            RenderingServer.MultimeshSetVisibleInstances(grassChunkMultimeshs[i, j].Item4, 0);
-                            RenderingServer.FreeRid(grassChunks[i, j].Item1);
-                            RenderingServer.FreeRid(grassChunks[i, j].Item2);
-                            RenderingServer.FreeRid(grassChunkMultimeshs[i, j].Item2);
-                            RenderingServer.FreeRid(grassChunkMultimeshs[i, j].Item4);
-                            grassChunks[i, j].Item1 = new Rid();
-                            grassChunks[i, j].Item2 = new Rid();
-                            grassChunkMultimeshs[i, j].Item2 = new Rid();
-                            grassChunkMultimeshs[i, j].Item4 = new Rid();
-                        }
-                    }
-                }
+                RenderingServer.GlobalShaderParameterSet("windStrength", 0.0);
             }
+            else if(Input.IsKeyPressed(Key.O))
+            {
+                RenderingServer.GlobalShaderParameterSet("windStrength", 0.5);
+            }
+            else if(Input.IsKeyPressed(Key.P))
+            {
+                RenderingServer.GlobalShaderParameterSet("windStrength", 1.0);
+            }
+
+            if (Input.IsKeyPressed(Key.T))
+            {
+                RenderingServer.GlobalShaderParameterSet("windDirection", 0.0);
+            }
+            else if (Input.IsKeyPressed(Key.F))
+            {
+                RenderingServer.GlobalShaderParameterSet("windDirection", MathF.PI/2);
+            }
+            else if(Input.IsKeyPressed(Key.B))
+            {
+                RenderingServer.GlobalShaderParameterSet("windDirection", MathF.PI);
+            }
+            else if(Input.IsKeyPressed(Key.H))
+            {
+                RenderingServer.GlobalShaderParameterSet("windDirection", 3*MathF.PI/2);
+            }
+            else if (Input.IsKeyPressed(Key.Y))
+            {
+                RenderingServer.GlobalShaderParameterSet("windDirection", 7*MathF.PI/4);
+            }
+
+            processGrassClumps();
+
+
+
+            cleanupGrassClumps();
         }
     }
 
     public override void _PhysicsProcess(double delta)
     {
+    }
+    /// <summary>
+    /// Clears the Rids and sets visible to 0 for multi-meshes that are out of range
+    /// DOESNT ACTUALLY DELETE THE MULTIMESH not sure why TODO how do you actually clear something from RenderingServer
+    /// </summary>
+    public void cleanupGrassClumps()
+    {
+        Stopwatch stopwatch = Stopwatch.StartNew();
+        int chunksCleanedThisFrame = 0;
+        int maxChunksCleanedPerFrame = 100;
+
+        widthIndex = (int)(player.Transform.Origin.X / 30);
+        heightIndex = (int)(player.Transform.Origin.Z / 30);
+        // Cleanup
+        for (; k < grassChunks.GetLength(0); k++)
+        {
+            for (; l < grassChunks.GetLength(1); l++)
+            {
+                if (k < widthIndex - 5 || k > widthIndex + 5 || l < heightIndex - 5 || l > heightIndex + 5)
+                {
+                    if (grassChunks[k, l].Item1.IsValid || grassChunks[k, l].Item2.IsValid)
+                    {
+                        RenderingServer.MultimeshSetVisibleInstances(grassChunkMultimeshs[k, l].Item2, 0);
+                        RenderingServer.MultimeshSetVisibleInstances(grassChunkMultimeshs[k, l].Item4, 0);
+                        RenderingServer.FreeRid(grassChunks[k, l].Item1);
+                        RenderingServer.FreeRid(grassChunks[k, l].Item2);
+                        RenderingServer.FreeRid(grassChunkMultimeshs[k, l].Item2);
+                        RenderingServer.FreeRid(grassChunkMultimeshs[k, l].Item4);
+                        grassChunks[k, l].Item1 = new Rid();
+                        grassChunks[k, l].Item2 = new Rid();
+                        grassChunkMultimeshs[k, l].Item2 = new Rid();
+                        grassChunkMultimeshs[k, l].Item4 = new Rid();
+                    }
+                }
+                chunksCleanedThisFrame += 1;
+                if (chunksCleanedThisFrame > maxChunksCleanedPerFrame)
+                {
+                    //GD.Print($"Cleanup Time elapsed: {k} {l} {stopwatch.Elapsed}");
+                    return;
+                }
+            }
+            l = 0;
+        }
+        k = 0;
+        //GD.Print($"Cleanup Time elapsed: {stopwatch.Elapsed}");
+    }
+    /// <summary>
+    /// Should be reworked to dispatch the compute shader for each desired cluster (in view + some?), cluster will then manage their own culling
+    /// </summary>
+    public void processGrassClumps()
+    {
+        Stopwatch stopwatch = Stopwatch.StartNew();
+        int chunksUpdatedThisFrame = 0;
+        int maxChunksPerFrame = 4; // Adjust this value for performance vs grass loading
+        for (; i <= 3; i++)
+        {
+            for (; j <= i; j++)
+            {
+                //GD.Print($"{widthIndex}:{i} | {heightIndex}:{j}");
+                // Top side, from left to right
+                processGrassClump(widthIndex - i, heightIndex + j);
+
+                // Right side, from top to bottom
+                processGrassClump(widthIndex + j, heightIndex + i);
+
+                // Bottom side, from right to left
+                processGrassClump(widthIndex + i, heightIndex - j);
+
+                // Left side, from bottom to top
+                processGrassClump(widthIndex - j, heightIndex - i);
+                chunksUpdatedThisFrame += 4;
+                if(chunksUpdatedThisFrame > maxChunksPerFrame)
+                {
+                    return;
+                }
+            }
+            //GD.Print("set J to -I");
+            j = -i;
+        }
+        //GD.Print("set J to -I");
+        i = 0;
+    }
+    /// <summary>
+    /// This should be re-written to just be a compute shader with a RenderingServerWrapper
+    /// Currently it takes in a chunkWidth index and chunkHeight index and initializes that grass clump
+    /// </summary>
+    /// <param name="currentWidthIndex">index in chunks</param>
+    /// <param name="currentHeightIndex">index in chunks</param>
+    public void processGrassClump(int currentWidthIndex, int currentHeightIndex)
+    {
+        // Ensure the indices are within the bounds of the grassChunks array
+        if (currentWidthIndex >= 0 && currentWidthIndex < grassChunks.GetLength(0) &&
+            currentHeightIndex >= 0 && currentHeightIndex < grassChunks.GetLength(1))
+        {
+            // Calculate the distance from the player to the current chunk
+            int distance = Math.Max(Math.Abs(i), Math.Abs(j));
+            if (!grassChunks[currentWidthIndex, currentHeightIndex].Item1.IsValid && !grassChunks[currentWidthIndex, currentHeightIndex].Item2.IsValid)
+            {
+                grassChunks[currentWidthIndex, currentHeightIndex].Item1 = InitializeRenderServerGrassClump(lowLODMesh, currentWidthIndex, currentHeightIndex, rowLength, instanceCount, 30, 30, randomSeed, 0);
+                grassChunks[currentWidthIndex, currentHeightIndex].Item2 = InitializeRenderServerGrassClump(lowLODMesh, currentWidthIndex, currentHeightIndex, rowLength, instanceCount, 30, 30, randomSeed, 1);
+                RenderingServer.MultimeshSetVisibleInstances(grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item2, instanceCount / 4);
+                RenderingServer.MultimeshSetVisibleInstances(grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item4, instanceCount / 4);
+                grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item3 = 2;
+                grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item1 = 2;
+            }
+            // Calculate the distance from the player to the current chunk
+
+            Vector3 chunkPosition = new Vector3(currentWidthIndex * 30, 0, currentHeightIndex * 30); //TODO REPLACE 0 with a local Y heightmap check and player Y
+            Vector3 playerPosition = new Vector3(player.Transform.Origin.X, 0, player.Transform.Origin.Z);
+
+            float real_distance = (chunkPosition - playerPosition).Length() / 30.0f;
+            (float transitionFactor1, float transitionFactor2) = CalculateFactors(real_distance);                                                                         
+
+            // Ensure the transition factors are within the range [0, 1]
+            transitionFactor1 = Math.Max(0, Math.Min(1, transitionFactor1));
+            transitionFactor2 = Math.Max(0, Math.Min(1, transitionFactor2));
+
+            // Calculate the number of instances for each LOD
+            int item2LODInstanceCount = (int)(instanceCount * transitionFactor1);
+            int item4LODInstanceCount = (int)(instanceCount * transitionFactor2);
+
+            //Item2 management between high and medium
+            if (distance <= 5 && grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item1 != 0)
+            {
+                RenderingServer.MultimeshSetMesh(grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item2, highLODMesh.GetRid());
+                grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item1 = 0;
+            }
+            else if (distance > 5 && grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item1 != 1)
+            {
+                RenderingServer.MultimeshSetMesh(grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item2, mediumLODMesh.GetRid());
+                grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item1 = 1;
+            }
+
+            //Item4 management between high and low
+            if (distance <= 10 && grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item3 != 0)
+            {
+                RenderingServer.MultimeshSetMesh(grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item4, highLODMesh.GetRid());
+                grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item3 = 0;
+            }
+            else if (distance > 10 && grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item3 != 2)
+            {
+                RenderingServer.MultimeshSetMesh(grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item4, lowLODMesh.GetRid());
+                grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item3 = 2;
+            }
+
+
+            if (distance > 5)
+            {
+                item2LODInstanceCount = item2LODInstanceCount / 4;
+            }
+            if (distance > 10)
+            {
+                item4LODInstanceCount = item4LODInstanceCount / 8;
+            }
+            RenderingServer.MultimeshSetVisibleInstances(grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item2, item2LODInstanceCount);
+            RenderingServer.MultimeshSetVisibleInstances(grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item4, item4LODInstanceCount);
+        }
     }
 
     public void SetupGrass(String target, Image givenHeightMap)
@@ -253,11 +344,11 @@ public partial class GrassMeshMaker : Node3D
 
         float grassWidth = 0.3f;
         float grassHeight = 1.5f;
-        //TODO make a GrassMesh class that holds its width and height
         highLODMesh = CreateHighLODGrassBlade(grassWidth, grassHeight, grassMat);
         mediumLODMesh = CreateMediumLODGrassBlade(grassWidth*2, grassHeight, grassMat); //we progressively widen the grass for lower lods to help it fill the screen with less blades/triangles
         lowLODMesh = CreateLowLODGrassBlade(grassWidth*4, grassHeight, grassMat); //we progressively widen the grass for lower lods to help it fill the screen with less blades/triangles
-
+        
+        //create and assign a shader per mesh
         Rid materialShader = RenderingServer.ShaderCreate();
         RenderingServer.ShaderSetCode(materialShader, grassMat.Shader.Code);
 
@@ -295,28 +386,21 @@ public partial class GrassMeshMaker : Node3D
         RenderingServer.MaterialSetParam(lowGrassMaterial, "heightParams", new Vector2(heightMapTexture.GetWidth(), heightMapTexture.GetHeight()));
         RenderingServer.MaterialSetParam(lowGrassMaterial, "heightMap", heightMapTexture.GetRid());
 
+        //Set global wind direction
+        RenderingServer.GlobalShaderParameterSet("windDirection", 7*MathF.PI/4);
+        RenderingServer.GlobalShaderParameterSet("windStrength", 0.5);
+
         // Set the material for the mesh surface
         RenderingServer.MeshSurfaceSetMaterial(highLODMesh.GetRid(), 0, grassMaterial);
         RenderingServer.MeshSurfaceSetMaterial(mediumLODMesh.GetRid(), 0, mediumGrassMaterial);
         RenderingServer.MeshSurfaceSetMaterial(lowLODMesh.GetRid(), 0, lowGrassMaterial);
-
-
-
-        //lets target 30 chunks by 30 chunks
-        /*        for(int widthIndex = 0; widthIndex < 5; widthIndex++)
-                {
-                    for(int heightIndex = 0; heightIndex < 5; heightIndex++) 
-                    {
-                        InitializeRenderServerGrassClump(highLODMesh, widthIndex, heightIndex, rowLength, 4096, 30, 30, randomSeed);
-                    }
-                }*/
 
         Thread shaderParamThread = new Thread(() =>
         {
             while (true) //change to isRunning and shutdown on tree exit
             {
                 SetShaderStuff();
-                Thread.Sleep(16); // Wait for 16 milliseconds TODO maybe speed up
+                Thread.Sleep(16); // Wait for 16 milliseconds
             }
         });
         shaderParamThread.Start();
@@ -344,7 +428,7 @@ public partial class GrassMeshMaker : Node3D
         RenderingServer.MultimeshSetMesh(grassChunk, grassBlade.GetRid());
         // Create a new array to hold the transform data for all instances
         //GD.Print($"declare array size: {stopwatch3.Elapsed}");
-        float[] instanceData = new float[12 * instanceCount];
+        float[] instanceData = new float[16 * instanceCount];
         //GD.Print($"pre-array: {stopwatch3.Elapsed}");
         // Fill the array with the transform data for each instance
         int instanceDataIndex = 0;
@@ -354,35 +438,94 @@ public partial class GrassMeshMaker : Node3D
         // Shuffle the list
         indices = indices.OrderBy(x => rand.Next()).ToList();
 
+        int desiredClumpCount = instanceCount / 10; //15 blades of grass per clump on average
+        int arraySize = (int)MathF.Ceiling(MathF.Sqrt(desiredClumpCount)); // Calculate the size of the array
+        Tuple<float, float, float, int, float>[,] clumpPoints = new Tuple<float, float, float, int, float>[arraySize + 2, arraySize + 2]; //x,y,height,type
+        float clumpingValue = 0.5f;
+
+        float spacing = fieldWidth / (MathF.Sqrt(desiredClumpCount) - 1);
+
+        // Populate the array
+        for (int i = -1; i <= arraySize; i++)
+        {
+            for (int j = -1; j <= arraySize; j++)
+            {
+                float x = i * spacing - fieldWidth / 2;
+                float y = j * spacing - fieldHeight / 2;
+                float jitterFactor = 3.0f;
+                float x_jitter = rand.NextSingle() * spacing * jitterFactor - spacing / 2;
+                float y_jitter = rand.NextSingle() * spacing * jitterFactor - spacing / 2;
+                float rangeMin = 0.5f;
+                float rangeMax = 0.6f;
+                float randomNum = rangeMin + (rand.NextSingle() * (rangeMax - rangeMin));
+                float facing = (randomNum * 2 * MathF.PI); // Generate a random angle in radians (NOT USED)
+                clumpPoints[i + 1, j + 1] = new Tuple<float, float, float, int, float>(x + x_jitter, y + y_jitter, rand.NextSingle()+0.4f, 1, facing); //random height from 0 to 1 for now, all grass is type 1
+            }
+        }
+
+        //we randomly insert 0 -> instanceCount and they are also randomly placed with x_loc and y_loc
         foreach (int i in indices)
         {
-            double x_loc = rand.NextDouble() * fieldWidth - fieldWidth / 2;
-            double y_loc = rand.NextDouble() * fieldHeight - fieldHeight / 2;
-            float x_jitter = (float)rand.NextDouble() * 0.9f - 0.45f;
-            float y_jitter = (float)rand.NextDouble() * 0.9f - 0.45f;
+            float x_jitter = rand.NextSingle() * 0.9f - 0.45f;
+            float y_jitter = rand.NextSingle() * 0.9f - 0.45f;
+            float x_loc = (rand.NextSingle() * fieldWidth - fieldWidth / 2) + x_jitter;
+            float y_loc = (rand.NextSingle() * fieldHeight - fieldHeight / 2) + y_jitter;
+
+            //use transform to find and pick this instances clump point
+            Tuple<float, float, float, int, float> closestClump = new Tuple<float, float, float, int, float>(0.0f,0.0f,0.0f,1, 0.0f);
+            float closestClumpDistance = float.MaxValue;
+            for (int x_index = Math.Max(0, (int)((x_loc + fieldWidth / 2) / fieldWidth * arraySize)); x_index <= Math.Min(arraySize, (int)((x_loc + fieldWidth / 2) / fieldWidth * arraySize) + 2); x_index++)
+            {
+                for (int y_index = Math.Max(0, (int)((y_loc + fieldHeight / 2) / fieldHeight * arraySize)); y_index <= Math.Min(arraySize, (int)((y_loc + fieldHeight / 2) / fieldHeight * arraySize) + 2); y_index++)
+                {
+                    Vector2 clumpPoint = new Vector2(clumpPoints[x_index, y_index].Item1, clumpPoints[x_index, y_index].Item2);
+                    float currentDistance = clumpPoint.DistanceTo(new Vector2(x_loc, y_loc));
+                    if (currentDistance < closestClumpDistance)
+                    {
+                        closestClump = clumpPoints[x_index, y_index];
+                        closestClumpDistance = currentDistance;
+                    }
+                }
+            }
+
+            // Calculate the direction from the grass blade to the clump point
+            Vector2 directionToClump = new Vector2(closestClump.Item1, closestClump.Item2) - new Vector2(x_loc, y_loc);
+
+            // Move the grass blade towards the clump point
+            x_loc += directionToClump.X * clumpingValue;
+            y_loc += directionToClump.Y * clumpingValue;
+
 
             // Create a new transform for this instance
-            Transform3D transform = new Transform3D(Basis.Identity, new Vector3((float)(x_loc + x_jitter), 0, (float)(y_loc + y_jitter)));
+            Transform3D transform = new Transform3D(Basis.Identity, new Vector3((x_loc), 0, (y_loc)));
 
             // Add the transform data to the array
-            instanceData[instanceDataIndex * 12 + 0] = transform.Basis.X.X;
-            instanceData[instanceDataIndex * 12 + 1] = transform.Basis.X.Y;
-            instanceData[instanceDataIndex * 12 + 2] = transform.Basis.X.Z;
-            instanceData[instanceDataIndex * 12 + 3] = transform.Origin.X;
-            instanceData[instanceDataIndex * 12 + 4] = transform.Basis.Y.X;
-            instanceData[instanceDataIndex * 12 + 5] = transform.Basis.Y.Y;
-            instanceData[instanceDataIndex * 12 + 6] = transform.Basis.Y.Z;
-            instanceData[instanceDataIndex * 12 + 7] = transform.Origin.Y;
-            instanceData[instanceDataIndex * 12 + 8] = transform.Basis.Z.X;
-            instanceData[instanceDataIndex * 12 + 9] = transform.Basis.Z.Y;
-            instanceData[instanceDataIndex * 12 + 10] = transform.Basis.Z.Z;
-            instanceData[instanceDataIndex * 12 + 11] = transform.Origin.Z;
+            instanceData[instanceDataIndex * 16 + 0] = transform.Basis.X.X;
+            instanceData[instanceDataIndex * 16 + 1] = transform.Basis.X.Y;
+            instanceData[instanceDataIndex * 16 + 2] = transform.Basis.X.Z;
+            instanceData[instanceDataIndex * 16 + 3] = transform.Origin.X;
+            instanceData[instanceDataIndex * 16 + 4] = transform.Basis.Y.X;
+            instanceData[instanceDataIndex * 16 + 5] = transform.Basis.Y.Y;
+            instanceData[instanceDataIndex * 16 + 6] = transform.Basis.Y.Z;
+            instanceData[instanceDataIndex * 16 + 7] = transform.Origin.Y;
+            instanceData[instanceDataIndex * 16 + 8] = transform.Basis.Z.X;
+            instanceData[instanceDataIndex * 16 + 9] = transform.Basis.Z.Y;
+            instanceData[instanceDataIndex * 16 + 10] = transform.Basis.Z.Z;
+            instanceData[instanceDataIndex * 16 + 11] = transform.Origin.Z;
+
+            // Add custom data at the end
+            Color customData = new Color(closestClump.Item1, closestClump.Item2, closestClump.Item3, closestClump.Item4);
+
+            instanceData[instanceDataIndex * 16 + 12] = customData.R; //x
+            instanceData[instanceDataIndex * 16 + 13] = customData.G; //y
+            instanceData[instanceDataIndex * 16 + 14] = customData.B; //height
+            instanceData[instanceDataIndex * 16 + 15] = customData.A; //grassType
 
             instanceDataIndex++;
         }
         //GD.Print($"post-array: {stopwatch3.Elapsed}");
         // Set the buffer data for the MultiMesh
-        RenderingServer.MultimeshAllocateData(grassChunk, instanceCount, RenderingServer.MultimeshTransformFormat.Transform3D, false);
+        RenderingServer.MultimeshAllocateData(grassChunk, instanceCount, RenderingServer.MultimeshTransformFormat.Transform3D, false, true);
         RenderingServer.MultimeshSetBuffer(grassChunk, instanceData);
         RenderingServer.MultimeshSetVisibleInstances(grassChunk, instanceCount);
 
@@ -590,5 +733,8 @@ public partial class GrassMeshMaker : Node3D
 
         return lowLODMesh;
     }
-
+    public static float Lerp(float a, float b, float t)
+    {
+        return a + (b - a) * t;
+    }
 }
