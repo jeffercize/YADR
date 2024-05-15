@@ -40,6 +40,10 @@ version_control/autoload_on_startup=true
 
 enabled=PackedStringArray("res://addons/terrain_3d/plugin.cfg")
 
+[filesystem]
+
+import/blender/enabled=false
+
 [input]
 
 lookDown={

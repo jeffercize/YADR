@@ -2,14 +2,18 @@
 using Steamworks;
 using System;
 using System.Collections.Generic;
-
+using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
 
 using static Steamworks.SteamNetworkingSockets;
 
+/// <summary>
+/// Manager class for all things networking. Singleton pattern, created and managed by Global
+/// </summary>
 public partial class NetworkManager: Node
 {
 
+    //Bitflags from the SteamAPI for sending messages - replicated here to make things easier.
     public const int k_nSteamNetworkingSend_NoNagle = 1;
     public const int k_nSteamNetworkingSend_NoDelay = 4;
     public const int k_nSteamNetworkingSend_Unreliable = 0;
@@ -18,11 +22,12 @@ public partial class NetworkManager: Node
     public const int k_nSteamNetworkingSend_UnreliableNoDelay = k_nSteamNetworkingSend_Unreliable | k_nSteamNetworkingSend_NoDelay | k_nSteamNetworkingSend_NoNagle;
     public const int k_nSteamNetworkingSend_ReliableNoNagle = k_nSteamNetworkingSend_Reliable | k_nSteamNetworkingSend_NoNagle;
 
-
+    /// <summary>
+    /// The port the system should use. TODO: config this.
+    /// </summary>
     ushort port = 9999;
 
-    int maxMessageQueueSize = 100;
-
+    //Bunch of state bools, TODO: this needs cleaned up and streamlined. Network state needs defined better overall
     public bool isSteam = true;
     public bool isOffline = false;
     public bool isActive = false;
@@ -30,27 +35,30 @@ public partial class NetworkManager: Node
     public bool isHost = false;
     public bool isConnected = false;
 
-
-
-    List<HSteamNetConnection> connectedClients = new();
-
+    /// <summary>
+    /// Actual Client object. Everyone gets one of these cause there is no dedicated server.
+    /// </summary>
     public Client client = null;
+
+    /// <summary>
+    /// Actual Server object. Only the host gets one (including Offline!!), will stay null for any joiners
+    /// </summary>
     public Server server = null;
 
     public enum NETWORK_MODE { STEAM, NONSTEAM, OFFLINE };
     private NETWORK_MODE networkMode;
 
     public enum MessageType { 
-        CHAT,
-        INPUTDELTA,
-        ACTIONDELTA,
-        FULLINPUTCAPTURE,
-    }
-    public override void _Process(double delta)
-    {
-        
+        CHAT_BASIC,
+        INPUT_MOVEMENTDIRECTION,
+        INPUT_ACTION,
+        INPUT_FULLCAPTURE,
     }
 
+    /// <summary>
+    /// Starts the game. Despite being in network manager this also starts singleplayer due to the unified internal server approach.
+    /// TODO:this should be different functions or take parameters or something
+    /// </summary>
     public void startGame()
     {
         Global.NetworkManager.networkDebugLog("Starting internal server...");
@@ -87,6 +95,10 @@ public partial class NetworkManager: Node
         Global.NetworkManager.networkDebugLog("Internal server started.");
     }
 
+    /// <summary>
+    /// Joins to a server using a steamID. This will only connect to a server hosted using the Steam Relay Network.
+    /// </summary>
+    /// <param name="steamID"></param>
     public void joinGame(CSteamID steamID)
     {
         if (!isSteam)
@@ -111,6 +123,10 @@ public partial class NetworkManager: Node
         isActive = true;
     }
 
+    /// <summary>
+    /// Joins to a server using an IP address. This will only connect to a server hosted using non-steam UDP
+    /// </summary>
+    /// <param name="ipAddress"></param>
     public void joinGame(uint ipAddress)
     {
         if (isConnected)
@@ -132,57 +148,70 @@ public partial class NetworkManager: Node
 
     public void networkDebugLog(string msg)
     {
-        Global.debugLog("[netID:" + Global.instance.clientID + "] " + msg);
-    }
-
-    public static MessageType deconstructSteamNetworkingMessage(SteamNetworkingMessage_t message, out byte[] data)
-    {
-        //Global.NetworkManager.networkDebugLog("Parsing Steam Message ----------- ");
-        byte[] derefData = new byte[message.m_cbSize];
-        Marshal.Copy(message.m_pData, derefData, 0, message.m_cbSize);
-        MessageType type = (MessageType)derefData[0];
-        //Global.NetworkManager.networkDebugLog("     Type: " + type);
-
-
-        data = new byte[derefData.Length - 1];
-        Buffer.BlockCopy(derefData, 1, data, 0, derefData.Length - 1);
-        //Global.NetworkManager.networkDebugLog("     Data: " + data.GetStringFromUtf8());
-        return type;
-
-    }
-
-    /*
-    public static SteamNetworkingMessage_t constructSteamNetworkingMessage(MessageType type, byte[] data)
-    {
-        Global.NetworkManager.networkDebugLog("Attempting to build a steam message. (shitty version)");
-        SteamNetworkingMessage_t message = Marshal.PtrToStructure<SteamNetworkingMessage_t>(SteamNetworkingUtils.AllocateMessage(data.Length));
-        unsafe
+        if (Global.enableLogging)
         {
-            fixed (byte* p = data)
-            {
-                message.m_pData = (IntPtr)p;
-                message.m_cbSize = data.Length;
-            }
+            Global.debugLog("[netID:" + Global.instance.clientID + "] " + msg);
         }
 
-        return message;
     }
 
-    
-    public static SteamNetworkingMessage_t constructSteamNetworkingMessage(MessageType type, byte[] data)
+    /// <summary>
+    /// Dereferences a pointer to an array of bytes.
+    /// </summary>
+    /// <param name="ptr">Pointer to dereference</param>
+    /// <param name="cbSize">The number of bytes to read, make sure to get this right</param>
+    /// <returns>a raw array of bytes of length cbSize from pointer ptr</returns>
+    public static byte[] IntPtrToBytes(IntPtr ptr, int cbSize)
     {
-        Global.NetworkManager.networkDebugLog("Attempting to build a steam message.");
-        SteamNetworkingMessage_t message;
-        unsafe
+        byte[] retval = new byte[cbSize];
+        Marshal.Copy(ptr, retval, 0, cbSize);
+        return retval;
+    }
+
+    /// <summary>
+    /// Sends a message using the SteamNetworkingSockets library. In theory, this should be agnostic to steam vs non-steam networking.
+    /// </summary>
+    /// <param name="type"></param>
+    /// <param name="target"></param>
+    /// <param name="data"></param>
+    /// <param name="sendFlags"></param>
+    /// <returns></returns>
+    public static bool SendSteamMessage(MessageType type, HSteamNetConnection target, byte[] data, int sendFlags = k_nSteamNetworkingSend_ReliableNoNagle)
+    {
+        var msgPtrsToSend = new IntPtr[] { IntPtr.Zero };
+        var ptr = IntPtr.Zero;
+        try
         {
-            message = *(SteamNetworkingMessage_t*)SteamNetworkingUtils.AllocateMessage(data.Length).ToPointer();
-            fixed (byte* p = data)
-            {
-                message.m_pData = (IntPtr)p;
-            }
+            ptr = SteamNetworkingUtils.AllocateMessage(data.Length);
+
+            var msg = SteamNetworkingMessage_t.FromIntPtr(ptr);
+
+            // Unfortunately, this allocates a managed SteamNetworkingMessage_t,
+            // but the native message currently can't be edited via ptr, even with unsafe code
+            Marshal.Copy(data, 0, msg.m_pData, data.Length);
+
+            msg.m_nFlags = NetworkManager.k_nSteamNetworkingSend_ReliableNoNagle;
+            msg.m_conn = target;
+            msg.m_nUserData = (long)type;
+
+            // Copies the bytes of the managed message back into the native structure located at ptr
+            Marshal.StructureToPtr(msg, ptr, false);
+
+            msgPtrsToSend[0] = ptr;
         }
-        message.m_nUserData = (long)type;
-        return message;
-    }*/
+        catch (Exception e)
+        {
+            // Callers only have responsibility to release the message until it's passed to SendMessages
+            SteamNetworkingMessage_t.Release(ptr);
+            return false;
+        }
+
+        var msgSendResult = new long[] { default };
+        SteamNetworkingSockets.SendMessages(1, msgPtrsToSend, msgSendResult);
+        EResult result = msgSendResult[0] >= 1 ? EResult.k_EResultOK : (EResult)(-msgSendResult[0]);
+
+        return result == EResult.k_EResultOK;
+
+    }
 }
 

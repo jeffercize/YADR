@@ -37,6 +37,7 @@ use_hidden_tabs_for_min_size = true
 [node name="playerEquipment" type="Control" parent="LeftTabs"]
 layout_mode = 2
 mouse_filter = 2
+metadata/_tab_index = 0
 
 [node name="head" parent="LeftTabs/playerEquipment" instance=ExtResource("2_ub338")]
 layout_mode = 1
@@ -77,6 +78,7 @@ offset_bottom = -183.5
 visible = false
 layout_mode = 2
 script = ExtResource("4_qn8mh")
+metadata/_tab_index = 1
 
 [node name="HealthDoll" type="Control" parent="LeftTabs/Health"]
 z_index = 2
@@ -212,6 +214,7 @@ text = "0 / 100"
 visible = false
 layout_mode = 2
 script = ExtResource("5_08fcu")
+metadata/_tab_index = 2
 
 [node name="Panel" type="Panel" parent="LeftTabs/Character"]
 layout_mode = 0

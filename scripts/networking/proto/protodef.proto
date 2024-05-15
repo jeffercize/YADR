@@ -1,0 +1,88 @@
+﻿syntax = "proto3";
+package NetworkMessages;
+
+enum ActionType {
+	jump = 0;
+}
+
+enum ActionState {
+	released = 0;
+	pressed = 1;
+}
+
+enum AxisType {
+	movementDirection = 0;
+	lookDirection = 1;
+	lookDelta = 2;
+}
+
+message Identity {
+	string name = 1;
+	oneof identity {
+		int64 steamID = 2;
+		int64 ipAddress = 3;
+	}
+}
+message ChatString
+{
+	string message = 1;
+}
+message ChatMessage {
+	Identity sender = 1;
+	ChatString message = 2;
+} 
+
+
+
+message Action{
+	ActionType action = 1;
+	ActionState state = 2;
+}
+
+message InputActionMessage {
+	Identity inputOf = 1;
+	Action action = 2;
+}
+
+
+
+message Vector2 {
+	float x = 1;
+	float y = 2;
+}
+
+message Vector3 {
+	float x = 1;
+	float y = 2;
+	float z = 3;
+}
+
+message Axis {
+	AxisType type = 1;
+	oneof vector {
+		Vector2 vec2 = 2;
+		Vector3 vec3 = 3;
+	}
+}
+
+message InputAxisMessage {
+	Identity inputOf = 1;
+	AxisType axis = 2;
+    Axis inputAxis = 3;
+}
+
+
+
+message InputFullCaptureMessage {
+	Identity inputOf = 1;
+	repeated Action actions = 2;
+	repeated Axis axises = 3;
+}
+
+
+message PlayerStateFullCapture {
+	Identity stateOf = 1;
+	Vector3 position = 2;
+	Vector3 rotation = 3;
+	Vector3 velocity = 4;
+}

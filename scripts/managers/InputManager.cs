@@ -40,7 +40,7 @@ public partial class InputManager: Node
 
     public void BindRemoteClientInput(ulong remoteClient, BasePlayer player)
     {
-        remoteInputs[remoteClient] = new PlayerInputData();
+        remoteInputs.Add(remoteClient, new PlayerInputData());
         player.input = remoteInputs[remoteClient];
     }
 
@@ -49,7 +49,7 @@ public partial class InputManager: Node
         InputSyncCounter += delta;
         if (InputSyncCounter > InputSyncTimer)
         {
-            NetworkInputHandler.CreateAndSendInputSyncMessage(Global.instance.clientID, localInput);
+            //NetworkInputHandler.CreateAndSendInputSyncMessage(Global.instance.clientID, localInput);
             InputSyncCounter = 0;
         }
 
@@ -62,9 +62,9 @@ public partial class InputManager: Node
 
     public override void _Ready()
     {
-        NetworkInputHandler.NetworkActionDeltaEvent += onActionDelta;
-        NetworkInputHandler.NetworkInputDeltaEvent += onInputDelta;
-        NetworkInputHandler.NetworkInputSyncEvent += onInputSync;
+        ClientInputHandler.NetworkActionDeltaEvent += onActionDelta;
+        ClientInputHandler.NetworkInputDeltaEvent += onInputDelta;
+        ClientInputHandler.NetworkInputSyncEvent += onInputSync;
     }
 
     public override void _Input(InputEvent @event)
@@ -90,7 +90,7 @@ public partial class InputManager: Node
             localInput.direction = Input.GetVector("moveForward", "moveBackward", "moveLeft", "moveRight");
             if (!@event.IsEcho())
             {
-                NetworkInputHandler.CreateAndSendInputDeltaMessage(Global.instance.clientID, NetworkInputHandler.InputType.MOVEDIRECTION, localInput.direction);
+                ClientInputHandler.CreateAndSendInputDeltaMessage(Global.instance.clientID, ClientInputHandler.InputType.MOVEDIRECTION, localInput.direction);
             }
         }
 
@@ -104,13 +104,13 @@ public partial class InputManager: Node
             {
                 localInput.actionStates[action] = true;
                 InputEvent.Invoke(Global.instance.clientID, action, true);
-                NetworkInputHandler.CreateAndSendActionDeltaMessage(Global.instance.clientID, action, true);
+                ClientInputHandler.CreateAndSendActionDeltaMessage(Global.instance.clientID, action, true);
             }
             else if (@event.IsActionReleased(Enum.GetName(typeof(InputManager.ActionEnum), action)))
             {
                 localInput.actionStates[action] = false;
                 InputEvent.Invoke(Global.instance.clientID, action, false);
-                NetworkInputHandler.CreateAndSendActionDeltaMessage(Global.instance.clientID, action, false);
+                ClientInputHandler.CreateAndSendActionDeltaMessage(Global.instance.clientID, action, false);
             }
         }
     }
@@ -119,7 +119,6 @@ public partial class InputManager: Node
         if (@event is InputEventMouseMotion mouse && Input.MouseMode==Input.MouseModeEnum.Captured)
         {
             localInput.lookDelta = mouse.Relative * mouseSens;
-
             //NetworkInputHandler.CreateAndSendInputDeltaMessage(Global.instance.clientID, NetworkInputHandler.InputType.LOOKDELTA,localInput.lookDelta);
         }
     }
@@ -129,27 +128,27 @@ public partial class InputManager: Node
         //throw new NotImplementedException();
     }
 
-    private void onInputSync(ulong clientID, PlayerInputData input)
+    private void onInputSync(ulong clientID, Vector2 direction, Vector2 lookDelta, Vector3 lookDirection, Dictionary<InputManager.ActionEnum, bool> actions)
     {
-        if (remoteInputs[clientID] != null)
+        if (remoteInputs.TryGetValue(clientID, out PlayerInputData input))
         {
-            remoteInputs[clientID].direction = input.direction;
-            remoteInputs[clientID].lookDelta = input.lookDelta;
-            remoteInputs[clientID].lookDirection = input.lookDirection;
-            remoteInputs[clientID].actionStates = new Dictionary<InputManager.ActionEnum, bool>(input.actionStates);
+            remoteInputs[clientID].direction = direction;
+            remoteInputs[clientID].lookDelta = lookDelta;
+            remoteInputs[clientID].actionStates = new Dictionary<InputManager.ActionEnum, bool>(actions);
+            remoteInputs[clientID].lookDirection = lookDirection; 
         }
     }
 
-    private void onInputDelta(ulong clientID, NetworkInputHandler.InputType type, Vector2 newState)
+    private void onInputDelta(ulong clientID, ClientInputHandler.InputType type, Vector2 newState)
     {
         if (remoteInputs.TryGetValue(clientID, out PlayerInputData input))
         {
             switch (type)
             {
-                case NetworkInputHandler.InputType.MOVEDIRECTION:
+                case ClientInputHandler.InputType.MOVEDIRECTION:
                         input.direction = newState;
                     break;
-                case NetworkInputHandler.InputType.LOOKDELTA:
+                case ClientInputHandler.InputType.LOOKDELTA:
                         input.direction = newState;
                     break;
                 default:
@@ -160,9 +159,11 @@ public partial class InputManager: Node
 
     private void onActionDelta(ulong clientID, InputManager.ActionEnum action, bool newState)
     {
-        if (remoteInputs.TryGetValue(clientID, out PlayerInputData input))
+        Global.NetworkManager.networkDebugLog("InputChad here, just got an action delta for player: " + clientID);
+        if (remoteInputs.TryGetValue(clientID, out PlayerInputData remoteInput))
         {
-            input.actionStates[action] = newState;
+            Global.NetworkManager.networkDebugLog("     Yeah we got that player in our files. Applying action state.");
+            remoteInput.actionStates[action] = newState;
             InputEvent.Invoke(clientID, action, newState);
         }
 
