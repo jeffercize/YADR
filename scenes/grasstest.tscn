@@ -25,12 +25,10 @@ data = PackedVector3Array(500, 0, 500, -500, 0, 500, 500, 0, -500, -500, 0, 500,
 [node name="Grasstest" type="Node3D"]
 
 [node name="Player" parent="." instance=ExtResource("2_n37st")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -29.1484, 4.64394, 0.294576)
 
 [node name="World" parent="." instance=ExtResource("3_vu2ja")]
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
-visible = false
 mesh = SubResource("PlaneMesh_5g3r7")
 
 [node name="StaticBody3D" type="StaticBody3D" parent="MeshInstance3D"]
