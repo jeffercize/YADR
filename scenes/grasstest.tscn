@@ -1,0 +1,40 @@
+[gd_scene load_steps=9 format=3 uid="uid://xipoy0ugk3vd"]
+
+[ext_resource type="PackedScene" uid="uid://domhm87hbhbg1" path="res://components/TerrainPlayer.tscn" id="2_n37st"]
+[ext_resource type="Texture2D" uid="uid://ddprscrpsofah" path="res://assets/textures/ground037_alb_ht.png" id="3_lfptr"]
+[ext_resource type="PackedScene" uid="uid://bb2lp50sjndus" path="res://components/World.tscn" id="3_vu2ja"]
+[ext_resource type="Texture2D" uid="uid://c1ots7w6i0i1q" path="res://assets/textures/ground037_nrm_rgh.png" id="4_uxo7e"]
+[ext_resource type="Script" path="res://scripts/terrain/grass/GrassMeshMaker.cs" id="5_0l617"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nysrt"]
+albedo_texture = ExtResource("3_lfptr")
+metallic = 1.0
+metallic_specular = 0.0
+metallic_texture = ExtResource("3_lfptr")
+normal_enabled = true
+normal_texture = ExtResource("4_uxo7e")
+uv1_scale = Vector3(30, 30, 30)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_5g3r7"]
+material = SubResource("StandardMaterial3D_nysrt")
+size = Vector2(1000, 1000)
+
+[sub_resource type="ConcavePolygonShape3D" id="ConcavePolygonShape3D_iplqb"]
+data = PackedVector3Array(500, 0, 500, -500, 0, 500, 500, 0, -500, -500, 0, 500, -500, 0, -500, 500, 0, -500)
+
+[node name="Grasstest" type="Node3D"]
+
+[node name="Player" parent="." instance=ExtResource("2_n37st")]
+
+[node name="World" parent="." instance=ExtResource("3_vu2ja")]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("PlaneMesh_5g3r7")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="MeshInstance3D"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="MeshInstance3D/StaticBody3D"]
+shape = SubResource("ConcavePolygonShape3D_iplqb")
+
+[node name="Node3D" type="Node3D" parent="."]
+script = ExtResource("5_0l617")
