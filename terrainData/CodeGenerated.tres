@@ -5,8 +5,7 @@ offsets = PackedFloat32Array(0.2, 1)
 colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_wa6d6"]
-noise_type = 2
-frequency = 0.03
+noise_type = 3
 cellular_jitter = 3.0
 cellular_return_type = 0
 domain_warp_enabled = true
@@ -29,7 +28,7 @@ _shader_parameters = {
 "auto_overlay_texture": 1,
 "auto_slope": 1.0,
 "blend_sharpness": 0.87,
-"height_blending": true,
+"height_blending": false,
 "macro_variation1": Color(0.762634, 0.730566, 0.6094, 1),
 "macro_variation2": Color(0.839557, 0.848086, 0.864415, 1),
 "noise1_angle": 0.2,

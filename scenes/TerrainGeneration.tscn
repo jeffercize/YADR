@@ -1,43 +1,58 @@
-[gd_scene load_steps=10 format=3 uid="uid://cofnhdcclon1w"]
+[gd_scene load_steps=13 format=3 uid="uid://cofnhdcclon1w"]
 
 [ext_resource type="Script" path="res://scripts/terrain/CodeGenerated.cs" id="1_btvwy"]
-[ext_resource type="PackedScene" uid="uid://bb2lp50sjndus" path="res://components/World.tscn" id="3_71ikj"]
-[ext_resource type="PackedScene" uid="uid://di5fovhcyd7re" path="res://components/Enemy.tscn" id="4_p8qry"]
+[ext_resource type="Terrain3DStorage" uid="uid://dkqwrhjieitw7" path="res://terrainData/TerrainGeneration.res" id="4_muabl"]
 [ext_resource type="Script" path="res://scripts/terrain/RuntimeNavigationBaker.gd" id="5_445ur"]
 [ext_resource type="Terrain3DTextureList" uid="uid://dal3jhw6241qg" path="res://terrainData/texture_list.tres" id="6_sj1ir"]
-[ext_resource type="PackedScene" uid="uid://domhm87hbhbg1" path="res://components/Player.tscn" id="7_d53nm"]
 [ext_resource type="Terrain3DMaterial" uid="uid://c7yygu7xtcpun" path="res://terrainData/CodeGenerated.tres" id="7_ov2mj"]
+[ext_resource type="Script" path="res://scripts/terrain/grass/GrassMeshMaker.cs" id="8_hyt63"]
+[ext_resource type="Script" path="res://scripts/terrain/WeatherController.cs" id="8_n3tlt"]
+[ext_resource type="Shader" path="res://scripts/terrain/grass/grassShader.gdshader" id="9_07r24"]
 
 [sub_resource type="NavigationMesh" id="NavigationMesh_vs6am"]
 geometry_parsed_geometry_type = 1
 agent_height = 2.0
 agent_max_slope = 30.0
 
-[sub_resource type="Terrain3DStorage" id="Terrain3DStorage_5mlyl"]
-version = 0.842
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_dop3f"]
+render_priority = 0
+shader = ExtResource("9_07r24")
+shader_parameter/grassTotalWidth = 0.5
+shader_parameter/grassTotalHeight = 1.0
+shader_parameter/heightParams = null
+
+[sub_resource type="BoxMesh" id="BoxMesh_652tm"]
+material = SubResource("ShaderMaterial_dop3f")
+
+[sub_resource type="MultiMesh" id="MultiMesh_3gj5r"]
+transform_format = 1
+mesh = SubResource("BoxMesh_652tm")
 
 [node name="CodeGenerated" type="Node"]
 script = ExtResource("1_btvwy")
-
-[node name="World" parent="." instance=ExtResource("3_71ikj")]
-
-[node name="Enemy" parent="." instance=ExtResource("4_p8qry")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.28216, 50, -1.1526)
 
 [node name="RuntimeNavigationBaker" type="Node" parent="."]
 script = ExtResource("5_445ur")
 enabled = false
 template = SubResource("NavigationMesh_vs6am")
 
-[node name="RunThisSceneLabel3D" type="Label3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 100, 30)
-pixel_size = 1.0
-billboard = 1
-text = "Run This Scene"
-
 [node name="Terrain3D" type="Terrain3D" parent="."]
-storage = SubResource("Terrain3DStorage_5mlyl")
+storage = ExtResource("4_muabl")
 material = ExtResource("7_ov2mj")
 texture_list = ExtResource("6_sj1ir")
 
-[node name="Player" parent="." instance=ExtResource("7_d53nm")]
+[node name="CSGBox3D" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)
+visibility_range_end = 1.0
+use_collision = true
+size = Vector3(20000, 1.2, 20000)
+
+[node name="GrassMeshMaker" type="Node3D" parent="."]
+script = ExtResource("8_hyt63")
+
+[node name="GrassChunk" type="MultiMeshInstance3D" parent="GrassMeshMaker"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -17.3506, 0)
+multimesh = SubResource("MultiMesh_3gj5r")
+
+[node name="World" type="Node3D" parent="."]
+script = ExtResource("8_n3tlt")

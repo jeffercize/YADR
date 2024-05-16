@@ -1,0 +1,541 @@
+using Godot;
+using System.Collections.Generic;
+using System;
+using System.Security.Cryptography;
+using System.Linq;
+using System.Text;
+using System.Buffers.Text;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using Godot.Collections;
+
+public partial class CodeGenerated : Node
+{
+    public override void _Ready()
+    {
+        // Called every time the node is added to the scene.
+        // Initialization here.
+        GD.Print("Hello from C# to Godot :)");
+		GenerateTerrain();
+    }
+
+    public override void _Process(double delta)
+    {
+        // Called every frame. Delta is time since the last frame.
+        // Update game logic here.
+    }
+
+
+    public static float Lerp(float a, float b, float t)
+    {
+        return a + (b - a) * t;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct BlurParams
+    {
+        public int radius;
+        public float sigma;
+    }
+
+
+
+    public Image ApplyGassianAndBoxBlur(Image image, RenderingDevice.DataFormat imageFormat, int radius =0, float sigma=0.0f)
+    {
+        // Create a local rendering device.
+        var rd = RenderingServer.CreateLocalRenderingDevice();
+        Image pathImg = Image.Create(image.GetWidth(), image.GetHeight(), false, Image.Format.Rgbaf);
+        RDShaderFile[] shaderList = new RDShaderFile[] {
+            GD.Load<RDShaderFile>("res://scripts/terrain/gausianblur.glsl"),
+            GD.Load<RDShaderFile>("res://scripts/terrain/boxblur.glsl")
+        };
+        foreach (var shaderFile in shaderList)
+        {
+            RDShaderSpirV shaderBytecode = shaderFile.GetSpirV();
+            Rid shader = rd.ShaderCreateFromSpirV(shaderBytecode);
+
+            //Setup Input Image
+            RDSamplerState samplerState = new RDSamplerState();
+            Rid sampler = rd.SamplerCreate(samplerState);
+            RDTextureFormat inputFmt = new RDTextureFormat();
+            inputFmt.Width = (uint)image.GetWidth();
+            inputFmt.Height = (uint)image.GetHeight();
+            inputFmt.Format = imageFormat;
+            inputFmt.UsageBits = RenderingDevice.TextureUsageBits.CanCopyFromBit | RenderingDevice.TextureUsageBits.SamplingBit | RenderingDevice.TextureUsageBits.CanUpdateBit;
+            RDTextureView inputView = new RDTextureView();
+            byte[] inputImageData = image.GetData();
+            Godot.Collections.Array<byte[]> inputData = new Godot.Collections.Array<byte[]>
+            {
+                inputImageData
+            };
+            Rid inputTex = rd.TextureCreate(inputFmt, inputView, inputData);
+            RDUniform samplerUniform = new RDUniform();
+            samplerUniform.UniformType = RenderingDevice.UniformType.SamplerWithTexture;
+            samplerUniform.Binding = 0;
+            samplerUniform.AddId(sampler);
+            samplerUniform.AddId(inputTex);
+
+
+
+            //Setup Output Image 
+            RDTextureFormat fmt = new RDTextureFormat();
+            fmt.Width = (uint)image.GetWidth();
+            fmt.Height = (uint)image.GetHeight();
+            fmt.Format = RenderingDevice.DataFormat.R32G32B32A32Sfloat;
+            fmt.UsageBits = RenderingDevice.TextureUsageBits.StorageBit | RenderingDevice.TextureUsageBits.CanUpdateBit | RenderingDevice.TextureUsageBits.CanCopyFromBit;
+            RDTextureView view = new RDTextureView();
+            Image output_image = Image.Create(image.GetWidth(), image.GetHeight(), false, Image.Format.Rgbaf);
+            byte[] outputImageData = output_image.GetData();
+            Godot.Collections.Array<byte[]> tempData = new Godot.Collections.Array<byte[]>
+            {
+                outputImageData
+            };
+            Rid output_tex = rd.TextureCreate(fmt, view, tempData);
+            RDUniform outputTexUniform = new RDUniform();
+            outputTexUniform.UniformType = RenderingDevice.UniformType.Image;
+            outputTexUniform.Binding = 1;
+            outputTexUniform.AddId(output_tex);
+
+            //create the uniformSet
+            var uniformSet = rd.UniformSetCreate(new Array<RDUniform> { samplerUniform, outputTexUniform }, shader, 0);
+
+            // Create a compute pipeline
+            var pipeline = rd.ComputePipelineCreate(shader);
+            var computeList = rd.ComputeListBegin();
+            rd.ComputeListBindComputePipeline(computeList, pipeline);
+            rd.ComputeListBindUniformSet(computeList, uniformSet, 0);
+            int threadsPerGroup = 32;
+            uint xGroups = (uint)(pathImg.GetWidth() + threadsPerGroup - 1) / (uint)threadsPerGroup;
+            uint yGroups = (uint)(pathImg.GetHeight() + threadsPerGroup - 1) / (uint)threadsPerGroup;
+            rd.ComputeListDispatch(computeList, xGroups, yGroups, 1);
+            rd.ComputeListEnd();
+
+            // Submit to GPU and wait for sync
+            rd.Submit();
+            rd.Sync();
+
+            //Get Data
+            var byteData = rd.TextureGetData(output_tex, 0);
+            pathImg = Image.CreateFromData(image.GetWidth(), image.GetHeight(), false, Image.Format.Rgbaf, byteData);
+            image = pathImg;
+            pathImg.SavePng("C:\\Users\\jeffe\\test_images\\blur_test_gausbox" + byteData[2] + ".png");
+            imageFormat = RenderingDevice.DataFormat.R32G32B32A32Sfloat;
+        }
+        return pathImg;
+    }
+
+    public void GenerateTerrain()
+	{
+		var terrain = (Variant)GetNode("Terrain3D");
+		terrain.AsGodotObject().Call("set_collision_enabled", false);
+		terrain.AsGodotObject().Set("storage", ClassDB.Instantiate("Terrain3DStorage"));
+		terrain.AsGodotObject().Set("texture_list", ClassDB.Instantiate("Terrain3DTextureList"));
+		
+		var terrainMaterial = terrain.AsGodotObject().Get("material");
+		terrainMaterial.AsGodotObject().Set("world_background", 2);
+		terrainMaterial.AsGodotObject().Set("auto_shader", true);
+		terrainMaterial.AsGodotObject().Set("dual_scaling", true);
+        terrain.AsGodotObject().Set("material", terrainMaterial);
+
+        terrain.AsGodotObject().Set("texture_list", GD.Load("res://terrainData/texture_list.tres"));
+		//AddChild((Node)terrain, true);
+
+		GD.Print("start");
+
+		FastNoiseLite noise = new FastNoiseLite();
+		noise.Frequency = 0.0005f;
+		noise.Seed = 2;
+		int x_axis = 8192;//16000; //if you change these a lot of shaders need re-coded
+        int y_axis = 4096;//6000; //if you change these a lot of shaders need re-coded
+        Image img = Image.Create(x_axis, y_axis, false, Image.Format.Rgbaf);
+
+		Curve3D path = new Curve3D();
+        /*path.AddPoint(new Vector3(0, 0, 0f));
+        path.AddPoint(new Vector3(2048, 1024, 0.1f), new Vector3(-50.0f, -50.0f, 0.0f), new Vector3(500.0f, 500.0f, 0.0f));
+        path.AddPoint(new Vector3(3048, 3024, 0.5f), new Vector3(-50.0f, -50.0f, 0.0f), new Vector3(500.0f, 1000.0f, 0.0f));
+        path.AddPoint(new Vector3(4096, 2500, 0.3f), new Vector3(-500.0f, -500.0f, 0.0f), new Vector3(50.0f, 50.0f, 0.0f));
+        path.AddPoint(new Vector3(8192, 0, 0.0f));*/
+        path.AddPoint(new Vector3(300, 0, 1.0f));
+        path.AddPoint(new Vector3(300, 750, 0.9f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(400, 500, 0.8f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(500, 750, 0.7f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(600, 500, 0.6f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(700, 750, 0.5f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(800, 500, 0.4f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(900, 750, 0.3f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(1000, 500, 0.2f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(1100, 750, 0.1f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(600, 3000, 0.11f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(2600, 1000, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(2600, 3500, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(4600, 1200, 0.10f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(6600, 3500, 0.33f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(7600, 1500, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(8192, 2048, 0.0f));
+
+        List<Vector3> data = new List<Vector3>(path.Tessellate(10, 1));
+        List<Vector3> path_result = new List<Vector3>();
+        for (int i = 0; i < data.Count - 1; i++)
+        {
+            float diff = MathF.Abs(data[i + 1].X - data[i].X) + MathF.Abs(data[i + 1].Y - data[i].Y);
+            float maxGap = 1.0f;
+            //GD.Print(diff);
+            if (diff > maxGap)
+            {
+                int steps = (int)MathF.Ceiling(diff/maxGap);
+                for (int step = 0; step <= steps; step++)
+                {
+                    float t = (float)step / steps;
+                    float x = Lerp(data[i].X, data[i + 1].X, t);
+                    float y = Lerp(data[i].Y, data[i + 1].Y, t);
+                    float z = Lerp(data[i].Z, data[i + 1].Z, t);
+                    path_result.Add(new Vector3(x, y, z));
+                }
+            }
+            else
+            {
+                path_result.Add(data[i]);
+            }
+        }
+        GD.Print("path building");
+
+        Image pathImg = Image.Create(x_axis, y_axis, false, Image.Format.Rgbaf);
+        var pathDict = path_result.GroupBy(p => p.X).ToDictionary(g => g.Key, g => g.Select(p => p.Y).ToList());
+        foreach (var key in pathDict.Keys.OrderBy(x => x))
+        {
+            //GD.Print($"{key} {pathDict[key].Count}");
+            var yValues = pathDict[key];
+            foreach (var yVal in yValues.Distinct())
+            {
+                float height = 0.0f;
+                float pathHeight = path_result.FirstOrDefault(p => p.X == key && p.Y == yVal).Z;
+                float midVal = yVal;
+                for(int innerY = (int)MathF.Round(yVal) - 300; innerY < (int)MathF.Round(yVal) + 300; innerY++) 
+                {
+                    if (!((int)MathF.Round(key) >= (int)x_axis || (int)MathF.Round(innerY) >= (int)y_axis || (int)MathF.Round(key) < 0 || (int)MathF.Round(innerY) < 0))
+                    {
+                        float mainPath = 0.0f;
+                        float diff = MathF.Abs(innerY - midVal);
+                        float weight = 0.0f;
+
+                        if (innerY > yVal - 30.0f && innerY < yVal + 30.0f)
+                        {
+                            height = pathHeight;
+                            mainPath = 1.0f;
+                            weight = 1.0f;
+                        }
+
+                        else if (innerY > yVal - 300.0f && innerY < yVal + 300.0f)
+                        {
+                            height = pathHeight;
+                            weight = Lerp(1.0f, 0.0f, (diff - 30.0f) / 270.0f);
+                        }
+                        Color pixel = pathImg.GetPixel((int)key, (int)innerY);
+                        if (pixel.G != 1)
+                        {
+                            float weightedHeight = (pixel.R * pixel.B + height * weight) / (pixel.B + weight);
+                            float newWeight = Math.Max(pixel.B, weight);
+                            pathImg.SetPixel((int)key, (int)innerY, new Color(height, mainPath, newWeight, 1));
+                        }
+                    }
+                }
+                for (int innerX = (int)MathF.Round(key) - 300; innerX < (int)MathF.Round(key) + 300; innerX++)
+                {
+                    if (!((int)MathF.Round(innerX) >= (int)x_axis || (int)MathF.Round(yVal) >= (int)y_axis || (int)MathF.Round(innerX) < 0 || (int)MathF.Round(yVal) < 0))
+                    {
+                        float mainPath = 0.0f;
+                        float diff = MathF.Abs(innerX - key);
+                        float weight = 0.0f;
+                        if (innerX > key - 30.0f && innerX < key + 30.0f)
+                        {
+                            height = pathHeight;
+                            mainPath = 1.0f;
+                            weight = 1.0f;
+                        }
+                        else if (innerX > key - 300.0f && innerX < key + 300.0f)
+                        {
+                            height = pathHeight;
+                            weight = Lerp(1.0f, 0.0f, (diff - 30.0f) / 270.0f);
+                        }
+                        Color pixel = pathImg.GetPixel(innerX, (int)MathF.Round(yVal));
+                        if (pixel.G != 1)
+                        {
+                            float weightedHeight = (pixel.R * pixel.B + height * weight) / (pixel.B + weight);
+                            float newWeight = Math.Max(pixel.B, weight);
+                            pathImg.SetPixel(innerX, (int)MathF.Round(yVal), new Color(height, mainPath, newWeight, 1));
+                        }
+                    }
+                }
+                // Top-left
+                for (int innerX = (int)MathF.Round(key) - 300, innerY = (int)MathF.Round(yVal) + 300;
+                     innerX < (int)MathF.Round(key) && innerY > (int)MathF.Round(yVal);
+                     innerX++, innerY--)
+                {
+                    if (!((int)MathF.Round(innerX) >= (int)x_axis || innerY >= (int)y_axis || (int)MathF.Round(innerX) < 0 || innerY < 0))
+                    {
+                        float mainPath = 0.0f;
+                        float diff = MathF.Abs(innerX - key);
+                        float weight = 0.0f;
+                        if (innerX > key - 30.0f && innerX < key + 30.0f)
+                        {
+                            height = pathHeight;
+                            mainPath = 1.0f;
+                            weight = 1.0f;
+                        }
+                        else if (innerX > key - 300.0f && innerX < key + 300.0f)
+                        {
+                            height = pathHeight;
+                            weight = Lerp(1.0f, 0.0f, (diff - 30.0f) / 270.0f);
+                        }
+                        Color pixel = pathImg.GetPixel(innerX, innerY);
+                        if (pixel.G != 1)
+                        {
+                            float weightedHeight = (pixel.R * pixel.B + height * weight) / (pixel.B + weight);
+                            float newWeight = Math.Max(pixel.B, weight);
+                            pathImg.SetPixel(innerX, innerY, new Color(height, mainPath, newWeight, 1));
+                        }
+                    }
+                }
+
+                // Top-right
+                for (int innerX = (int)MathF.Round(key) + 300, innerY = (int)MathF.Round(yVal) + 300;
+                     innerX > (int)MathF.Round(key) && innerY > (int)MathF.Round(yVal);
+                     innerX--, innerY--)
+                {
+                    if (!((int)MathF.Round(innerX) >= (int)x_axis || innerY >= (int)y_axis || (int)MathF.Round(innerX) < 0 || innerY < 0))
+                    {
+                        float mainPath = 0.0f;
+                        float diff = MathF.Abs(innerX - key);
+                        float weight = 0.0f;
+                        if (innerX > key - 30.0f && innerX < key + 30.0f)
+                        {
+                            height = pathHeight;
+                            mainPath = 1.0f;
+                            weight = 1.0f;
+                        }
+                        else if (innerX > key - 300.0f && innerX < key + 300.0f)
+                        {
+                            height = pathHeight;
+                            weight = Lerp(1.0f, 0.0f, (diff - 30.0f) / 270.0f);
+                        }
+                        Color pixel = pathImg.GetPixel(innerX, innerY);
+                        if (pixel.G != 1)
+                        {
+                            float weightedHeight = (pixel.R * pixel.B + height * weight) / (pixel.B + weight);
+                            float newWeight = Math.Max(pixel.B, weight);
+                            pathImg.SetPixel(innerX, innerY, new Color(height, mainPath, newWeight, 1));
+                        }
+                    }
+                }
+
+                // Bottom-right
+                for (int innerX = (int)MathF.Round(key) + 300, innerY = (int)MathF.Round(yVal) - 300;
+                     innerX > (int)MathF.Round(key) && innerY < (int)MathF.Round(yVal);
+                     innerX--, innerY++)
+                {
+                    if (!((int)MathF.Round(innerX) >= (int)x_axis || innerY >= (int)y_axis || (int)MathF.Round(innerX) < 0 || innerY < 0))
+                    {
+                        float mainPath = 0.0f;
+                        float diff = MathF.Abs(innerX - key);
+                        float weight = 0.0f;
+                        if (innerX > key - 30.0f && innerX < key + 30.0f)
+                        {
+                            height = pathHeight;
+                            mainPath = 1.0f;
+                            weight = 1.0f;
+                        }
+                        else if (innerX > key - 300.0f && innerX < key + 300.0f)
+                        {
+                            height = pathHeight;
+                            weight = Lerp(1.0f, 0.0f, (diff - 30.0f) / 270.0f);
+                        }
+                        Color pixel = pathImg.GetPixel(innerX, innerY);
+                        if (pixel.G != 1)
+                        {
+                            float weightedHeight = (pixel.R * pixel.B + height * weight) / (pixel.B + weight);
+                            float newWeight = Math.Max(pixel.B, weight);
+                            pathImg.SetPixel(innerX, innerY, new Color(height, mainPath, newWeight, 1));
+                        }
+                    }
+                }
+
+                // Bottom-left
+                for (int innerX = (int)MathF.Round(key) - 300, innerY = (int)MathF.Round(yVal) - 300;
+                     innerX < (int)MathF.Round(key) && innerY < (int)MathF.Round(yVal);
+                     innerX++, innerY++)
+                {
+                    if (!((int)MathF.Round(innerX) >= (int)x_axis || innerY >= (int)y_axis || (int)MathF.Round(innerX) < 0 || innerY < 0))
+                    {
+                        float mainPath = 0.0f;
+                        float diff = MathF.Abs(innerX - key);
+                        float weight = 0.0f;
+                        if (innerX > key - 30.0f && innerX < key + 30.0f)
+                        {
+                            height = pathHeight;
+                            mainPath = 1.0f;
+                            weight = 1.0f;
+                        }
+                        else if (innerX > key - 300.0f && innerX < key + 300.0f)
+                        {
+                            height = pathHeight;
+                            weight = Lerp(1.0f, 0.0f, (diff - 30.0f) / 270.0f);
+                        }
+                        Color pixel = pathImg.GetPixel(innerX, innerY);
+                        if (pixel.G != 1)
+                        {
+                            float weightedHeight = (pixel.R * pixel.B + height * weight) / (pixel.B + weight);
+                            float newWeight = Math.Max(pixel.B, weight);
+                            pathImg.SetPixel(innerX, innerY, new Color(height, mainPath, newWeight, 1));
+                        }
+                    }
+                }
+
+            }
+        }
+
+        pathImg.SavePng("C:\\Users\\jeffe\\test_images\\path_test.png");
+                
+        GD.Print("blur");
+
+
+        // Run the blur shader
+        pathImg = ApplyGassianAndBoxBlur(pathImg, RenderingDevice.DataFormat.R32G32B32A32Sfloat);
+        Image noiseImage = noise.GetImage(x_axis, y_axis);
+        GD.Print("hello");
+        noiseImage = ApplyGassianAndBoxBlur(noiseImage, RenderingDevice.DataFormat.R8Unorm);
+
+       
+        pathImg.SavePng("C:\\Users\\jeffe\\test_images\\blur_test_gausbox.png");
+
+        GD.Print("loop");
+        var rd = RenderingServer.CreateLocalRenderingDevice();
+        RDShaderFile blendShaderFile = GD.Load<RDShaderFile>("res://scripts/terrain/terrainblend.glsl");
+        RDShaderSpirV blendShaderBytecode = blendShaderFile.GetSpirV();
+        Rid blendShader = rd.ShaderCreateFromSpirV(blendShaderBytecode);
+
+        //Setup Path Image
+        RDSamplerState pathSamplerState = new RDSamplerState();
+        Rid pathSampler = rd.SamplerCreate(pathSamplerState);
+        RDTextureFormat pathInputFmt = new RDTextureFormat();
+        pathInputFmt.Width = (uint)pathImg.GetWidth();
+        pathInputFmt.Height = (uint)pathImg.GetHeight();
+        pathInputFmt.Format = RenderingDevice.DataFormat.R32G32B32A32Sfloat;
+        pathInputFmt.UsageBits = RenderingDevice.TextureUsageBits.CanCopyFromBit | RenderingDevice.TextureUsageBits.SamplingBit | RenderingDevice.TextureUsageBits.CanUpdateBit;
+        RDTextureView pathInputView = new RDTextureView();
+        
+        byte[] pathImageData = pathImg.GetData();
+        Godot.Collections.Array<byte[]> pathData = new Godot.Collections.Array<byte[]>
+            {
+                pathImageData
+            };
+        Rid pathTex = rd.TextureCreate(pathInputFmt, pathInputView, pathData);
+        RDUniform pathSamplerUniform = new RDUniform();
+        pathSamplerUniform.UniformType = RenderingDevice.UniformType.SamplerWithTexture;
+        pathSamplerUniform.Binding = 1;
+        pathSamplerUniform.AddId(pathSampler);
+        pathSamplerUniform.AddId(pathTex);
+
+        //Setup Noise Image
+        GD.Print("noiseImage Start");
+        RDSamplerState noiseSamplerState = new RDSamplerState();
+        Rid noiseSampler = rd.SamplerCreate(noiseSamplerState);
+        RDTextureFormat noiseInputFmt = new RDTextureFormat();
+        noiseInputFmt.Width = (uint)noiseImage.GetWidth();
+        noiseInputFmt.Height = (uint)noiseImage.GetHeight();
+        noiseInputFmt.Format = RenderingDevice.DataFormat.R32G32B32A32Sfloat;
+        noiseInputFmt.UsageBits = RenderingDevice.TextureUsageBits.CanCopyFromBit | RenderingDevice.TextureUsageBits.SamplingBit | RenderingDevice.TextureUsageBits.CanUpdateBit;
+        RDTextureView noiseInputView = new RDTextureView();
+        byte[] noiseInputImageData = noiseImage.GetData();
+        Godot.Collections.Array<byte[]> noiseData = new Godot.Collections.Array<byte[]>
+            {
+                noiseInputImageData
+            };
+        Rid noiseTex = rd.TextureCreate(noiseInputFmt, noiseInputView, noiseData);
+        RDUniform noiseSamplerUniform = new RDUniform();
+        noiseSamplerUniform.UniformType = RenderingDevice.UniformType.SamplerWithTexture;
+        noiseSamplerUniform.Binding = 0;
+        noiseSamplerUniform.AddId(noiseSampler);
+        noiseSamplerUniform.AddId(noiseTex);
+
+
+
+
+        //Setup Output Image 
+        RDTextureFormat blendfmt = new RDTextureFormat();
+        blendfmt.Width = (uint)x_axis;
+        blendfmt.Height = (uint)y_axis;
+        blendfmt.Format = RenderingDevice.DataFormat.R32G32B32A32Sfloat;
+        blendfmt.UsageBits = RenderingDevice.TextureUsageBits.StorageBit | RenderingDevice.TextureUsageBits.CanUpdateBit | RenderingDevice.TextureUsageBits.CanCopyFromBit;
+        RDTextureView blendview = new RDTextureView();
+        Image blend_image = Image.Create(x_axis, y_axis, false, Image.Format.Rgbaf);
+        byte[] blendOutputImageData = blend_image.GetData();
+        Godot.Collections.Array<byte[]> blendTempData = new Godot.Collections.Array<byte[]>
+            {
+                blendOutputImageData
+            };
+        Rid blendOutputTex = rd.TextureCreate(blendfmt, blendview, blendTempData);
+        RDUniform blendOutputTexUniform = new RDUniform();
+        blendOutputTexUniform.UniformType = RenderingDevice.UniformType.Image;
+        blendOutputTexUniform.Binding = 2;
+        blendOutputTexUniform.AddId(blendOutputTex);
+
+        //create the uniformSet
+        var blenduniformSet = rd.UniformSetCreate(new Array<RDUniform> { noiseSamplerUniform, pathSamplerUniform, blendOutputTexUniform }, blendShader, 0);
+
+        // Create a compute pipeline
+        var blendpipeline = rd.ComputePipelineCreate(blendShader);
+        var blendcomputeList = rd.ComputeListBegin();
+        rd.ComputeListBindComputePipeline(blendcomputeList, blendpipeline);
+        rd.ComputeListBindUniformSet(blendcomputeList, blenduniformSet, 0);
+        int blendthreadsPerGroup = 32;
+        uint blendxGroups = (uint)(pathImg.GetWidth() + blendthreadsPerGroup - 1) / (uint)blendthreadsPerGroup;
+        uint blendyGroups = (uint)(pathImg.GetHeight() + blendthreadsPerGroup - 1) / (uint)blendthreadsPerGroup;
+        rd.ComputeListDispatch(blendcomputeList, blendxGroups, blendyGroups, 1);
+        rd.ComputeListEnd();
+
+        // Submit to GPU and wait for sync
+        rd.Submit();
+        rd.Sync();
+
+        //Get Data
+        var blendbyteData = rd.TextureGetData(blendOutputTex, 0);
+        Image final_img = Image.Create(x_axis, y_axis, false, Image.Format.Rgbaf);
+        final_img = Image.CreateFromData(x_axis, y_axis, false, Image.Format.Rgbaf, blendbyteData);
+
+
+        final_img.SavePng("C:\\Users\\jeffe\\test_images\\final_output.png");
+		GD.Print("import");
+		terrain.AsGodotObject().Get("storage").AsGodotObject().Call("import_images", new Image[] { final_img, null, null }, new Vector3(0, -2024, -2024), 0.0f, 400.0f);
+
+        //hole testing
+        var terrainUtil = ClassDB.Instantiate("Terrain3DUtil");
+        int bits = (int)terrainUtil.AsGodotObject().Call("enc_base", (0)) | (int)terrainUtil.AsGodotObject().Call("enc_overlay", (0)) | (int)terrainUtil.AsGodotObject().Call("enc_blend", (0)) |
+           (int)terrainUtil.AsGodotObject().Call("enc_auto", (0)) | (int)terrainUtil.AsGodotObject().Call("enc_nav", (0)) | (int)terrainUtil.AsGodotObject().Call("enc_hole", (1));
+        Color hole_color = new Color((float)terrainUtil.AsGodotObject().Call("as_float", bits), 0f, 0f, 1f);
+
+        for (int x = 1000; x < 2000; x++)
+		{
+			for (int z = 1000; z < 2000; z++)
+			{
+				//terrain.AsGodotObject().Get("storage").AsGodotObject().Call("set_control", new Vector3(x, 0, z), hole_color);
+                //terrain.AsGodotObject().Get("storage").AsGodotObject().Call("set_pixel", 1, new Vector3(x, 0, z), hole_color);
+			}
+		}
+		terrain.AsGodotObject().Get("storage").AsGodotObject().Call("force_update_maps", 1);
+
+        GD.Print("navigation");
+		// Enable collision. Enable the first if you wish to see it with Debug/Visible Collision Shapes
+		terrain.AsGodotObject().Call("set_show_debug_collision", true);
+		terrain.AsGodotObject().Call("set_collision_enabled", true);
+
+        //Enable runtime navigation baking using the terrain
+        Node runtime_nav_baker = GetNode("RuntimeNavigationBaker");
+		runtime_nav_baker.Set("terrain", terrain);
+		runtime_nav_baker.Set("enabled", true);
+
+		//Retreive 512x512 region blur map showing where the regions are
+		//var rbmap_rid: RID = terrain.material.get_region_blend_map()
+
+		//img = RenderingServer.texture_2d_get(rbmap_rid)
+    }
+}
