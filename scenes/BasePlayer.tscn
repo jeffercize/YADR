@@ -1,6 +1,5 @@
-[gd_scene load_steps=9 format=3 uid="uid://fag0fpfytixb"]
+[gd_scene load_steps=8 format=3 uid="uid://fag0fpfytixb"]
 
-[ext_resource type="Script" path="res://scripts/player/BasePlayer.cs" id="1_ekfu1"]
 [ext_resource type="Script" path="res://scripts/player/Inventory.cs" id="4_8yb4d"]
 [ext_resource type="Script" path="res://scripts/player/Equipment.cs" id="5_lx7nc"]
 
@@ -18,7 +17,6 @@ height = 1.0
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_qbkrf"]
 
 [node name="BasePlayer" type="CharacterBody3D"]
-script = ExtResource("1_ekfu1")
 
 [node name="mesh" type="MeshInstance3D" parent="."]
 mesh = SubResource("CapsuleMesh_xxrac")
