@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://btet0dxnwq7li"
+path="res://.godot/imported/boxblur.glsl-84eb4c37019cd17d6f010f2226ffbd57.res"
+
+[deps]
+
+source_file="res://shaders/terrain/boxblur.glsl"
+dest_files=["res://.godot/imported/boxblur.glsl-84eb4c37019cd17d6f010f2226ffbd57.res"]
+
+[params]
+
