@@ -14,7 +14,7 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Steamworks.NET">
-      <HintPath>..\..\Steamworks.NET-master\Standalone\bin\x64\Windows\Steamworks.NET.dll</HintPath>
+      <HintPath>bin\x64\Windows\Steamworks.NET.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>
