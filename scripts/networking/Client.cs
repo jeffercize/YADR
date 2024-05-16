@@ -65,7 +65,7 @@ public partial class Client: Node
     /// <exception cref="NotImplementedException"></exception>
     private void onSteamNetConnectionStatusChange(SteamNetConnectionStatusChangedCallback_t param)
     {
-        throw new NotImplementedException();
+        Global.NetworkManager.networkDebugLog("Client - connection status change. New status: " + param.m_info.m_eState);
     }
 
     // Runs once per frame.
