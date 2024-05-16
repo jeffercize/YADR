@@ -33,4 +33,12 @@ public partial class Main : Node
         }
 
     }
+
+    public override void _Input(InputEvent @event)
+    {
+        if (@event.IsAction("Quit"))
+        {
+            GetTree().Quit();
+        }
+    }
 }
