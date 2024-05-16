@@ -381,6 +381,15 @@ text = "Connection Status:"
 layout_mode = 2
 text = "Not Connected."
 
+[node name="gen" type="Button" parent="."]
+layout_mode = 0
+offset_left = 746.0
+offset_top = 932.0
+offset_right = 1160.0
+offset_bottom = 1040.0
+text = "terrain gen"
+
 [connection signal="pressed" from="MPDebugPanel/HostPanel/hostButton" to="MPDebugPanel" method="onHostPressed"]
 [connection signal="pressed" from="MPDebugPanel/JoinPanel/JoinButton" to="MPDebugPanel" method="onJoinPressed"]
 [connection signal="pressed" from="MPDebugStatusPanel/ChatPanel/sendButton" to="MPDebugStatusPanel" method="onSendPressed"]
+[connection signal="pressed" from="gen" to="." method="genPressed"]

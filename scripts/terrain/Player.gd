@@ -26,7 +26,7 @@ extends CharacterBody3D
 func _physics_process(p_delta) -> void:
 	var direction: Vector3 = get_camera_relative_input()
 	var h_veloc: Vector2 = Vector2(direction.x, direction.z) * MOVE_SPEED
-	if Input.is_action_pressed("sprint"):
+	if Input.is_action_pressed("Sprint"):
 		h_veloc *= 2
 	velocity.x = h_veloc.x
 	velocity.z = h_veloc.y
@@ -46,7 +46,7 @@ func get_camera_relative_input() -> Vector3:
 		input_dir -= %Camera3D.global_transform.basis.z
 	if Input.is_action_pressed("moveBackward"):
 		input_dir += %Camera3D.global_transform.basis.z
-	if Input.is_action_pressed("jump"):
+	if Input.is_action_pressed("Jump"):
 		velocity.y += JUMP_SPEED + MOVE_SPEED*.016
 	if Input.is_action_pressed("moveDown"):
 		velocity.y -= JUMP_SPEED + MOVE_SPEED*.016
