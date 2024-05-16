@@ -142,7 +142,8 @@ public partial class NetworkManager: Node
         SteamNetworkingIdentity identity = new SteamNetworkingIdentity();
         identity.SetSteamID(steamID);
         client = new Client(ConnectP2P(ref identity, 0, 0, null));
-        if (GetConnectionState(client.connectionToServer) == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_Connected)
+        //if (GetConnectionState(client.connectionToServer) == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_Connected)
+        if (true)
         {
             AddChild(client);
             isActive = true;

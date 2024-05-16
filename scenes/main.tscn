@@ -37,8 +37,6 @@ script = ExtResource("6_5rbi3")
 [node name="PlayerManager" type="Node3D" parent="."]
 script = ExtResource("7_y76u6")
 
-[node name="players" type="Node" parent="."]
-
 [node name="uisfx" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("2_aicxg")
 volume_db = -20.0
