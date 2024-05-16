@@ -1,4 +1,5 @@
 ﻿using Godot;
+using NetworkMessages;
 using Steamworks;
 using System;
 using System.Runtime.InteropServices;
@@ -39,10 +40,22 @@ public partial class Client: Node
     /// </summary>
     public Client() { }
 
+    public delegate void NewPlayerJoinEventHandler(ulong clientID);
+    public static event NewPlayerJoinEventHandler NewPlayerJoinEvent = delegate { };
+
+
     public override void _Ready()
     {
         //Hooks up the connection status change event to a function
         SteamNetConnectionStatusChange = Callback<SteamNetConnectionStatusChangedCallback_t>.Create(onSteamNetConnectionStatusChange);
+        NewPlayerJoinEvent += onNewPlayerJoinEvent;
+    }
+
+    private void onNewPlayerJoinEvent(ulong clientID)
+    {
+        Player remotePlayer = Global.PlayerManager.CreateAndRegisterNewPlayer(clientID);
+        Global.PlayerManager.SpawnPlayer(remotePlayer, new Vector3(0,10,0));
+
     }
 
     /// <summary>
@@ -100,19 +113,40 @@ public partial class Client: Node
                 Global.NetworkManager.networkDebugLog("Client - Chat Message Received.");
                 ClientChatHandler.handleChatMessage(data);
                 break;
+
             case MessageType.INPUT_MOVEMENTDIRECTION:
                 Global.NetworkManager.networkDebugLog("Client - Input Delta Message Received.");
+                ClientInputHandler.HandleInputMovementDirectionMessage(data);
                 break;
             case MessageType.INPUT_ACTION:
                 Global.NetworkManager.networkDebugLog("Client - Action Delta Message Received.");
-                ClientInputHandler.ActionDeltaMessage msg = new ClientInputHandler.ActionDeltaMessage();
-                Global.ByteArrayToStructure(data, msg);
-                Global.NetworkManager.networkDebugLog("Just decoded this lad, clientID: " + msg.clientID + " compared to ");
-                ClientInputHandler.handleActionDeltaMessage(msg);
+                ClientInputHandler.HandleInputActionMessage(data);
                 break;
             case MessageType.INPUT_FULLCAPTURE:
                 Global.NetworkManager.networkDebugLog("Client - Full Input Sync Message Received.");
+                ClientInputHandler.handleInputSyncMessage(data);
                 break;
+
+            case MessageType.SERVER_NEWPLAYER:
+                Global.NetworkManager.networkDebugLog("Client - Got the new player notice from server.");
+                ServerMessagePlayerJoin joinMessage = ServerMessagePlayerJoin.Parser.ParseFrom(data);
+                Global.PlayerManager.CreateAndRegisterNewPlayer((ulong)joinMessage.NewPlayer.SteamID);
+                break;
+            case MessageType.SERVER_SPAWNPLAYER:
+                Global.NetworkManager.networkDebugLog("Client - Got the spawn player command from server.");
+                ServerMessageSpawnPlayer spawnMessage = ServerMessageSpawnPlayer.Parser.ParseFrom(data);
+                if (Global.PlayerManager.players.TryGetValue((ulong)spawnMessage.Player.SteamID, out Player player))
+                {
+                    Global.PlayerManager.SpawnPlayer(player, new Vector3(spawnMessage.Position.X,spawnMessage.Position.Y,spawnMessage.Position.Z));
+                }
+                break;
+            case MessageType.SERVER_LAUNCHGAME:
+                Global.NetworkManager.networkDebugLog("Client - Got the launch game command from server.");
+                Global.UIManager.clearUI();
+                Global.PlayerManager.SpawnAll();
+                break;
+
+
             default:
                 break;
         }

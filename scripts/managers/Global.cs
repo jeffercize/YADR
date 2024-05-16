@@ -1,4 +1,5 @@
 using Godot;
+using NetworkMessages;
 using Steamworks;
 using System;
 using System.Diagnostics;
@@ -174,4 +175,23 @@ public partial class Global : Node
         return default;
     }
 
+    internal bool isMe(ulong clientID)
+    {
+        return clientID == this.clientID;
+    }
+
+    internal bool isMe(long clientID)
+    {
+        return (ulong)clientID == this.clientID;
+    }
+
+    internal bool isMe(CSteamID clientID)
+    {
+        return (ulong)clientID == this.clientID;
+    }
+
+    internal bool isMe(Identity identity)
+    {
+        return (ulong)identity.SteamID == this.clientID;
+    }
 }

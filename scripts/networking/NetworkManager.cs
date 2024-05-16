@@ -53,14 +53,23 @@ public partial class NetworkManager: Node
         INPUT_MOVEMENTDIRECTION,
         INPUT_ACTION,
         INPUT_FULLCAPTURE,
+        SERVER_NEWPLAYER,
+        SERVER_SPAWNPLAYER,
+        SERVER_LAUNCHGAME
     }
 
     /// <summary>
     /// Starts the game. Despite being in network manager this also starts singleplayer due to the unified internal server approach.
     /// TODO:this should be different functions or take parameters or something
     /// </summary>
-    public void startGame()
+    public void startServer()
     {
+        if (isActive)
+        {
+            networkDebugLog("You are already joined or hosting and cannot start a server.");
+            return;
+        }
+
         Global.NetworkManager.networkDebugLog("Starting internal server...");
         HSteamNetConnection localConnection = new();
         HSteamNetConnection remoteConnection = new();
@@ -70,8 +79,9 @@ public partial class NetworkManager: Node
         client = new Client(remoteConnection);
         AddChild(client);
         server = new Server(localConnection);
-        
         AddChild(server);
+
+
         if (isOffline)
         {
             Global.NetworkManager.networkDebugLog("Offline mode - not opening listen socket.");
@@ -95,12 +105,25 @@ public partial class NetworkManager: Node
         Global.NetworkManager.networkDebugLog("Internal server started.");
     }
 
+    public void launchGame()
+    {
+        if(isActive && isHost)
+        {
+            server.ServerLaunchGame();
+        }
+        else
+        {
+            networkDebugLog("You aren't hosting a game, you can't start!");
+        }
+    }
+
     /// <summary>
     /// Joins to a server using a steamID. This will only connect to a server hosted using the Steam Relay Network.
     /// </summary>
     /// <param name="steamID"></param>
     public void joinGame(CSteamID steamID)
     {
+        networkDebugLog("Attempting to join server hosted at: " + steamID);
         if (!isSteam)
         {
             Global.debugLog("Attempt to join by SteamID failed, Steam not connected.");
@@ -119,8 +142,23 @@ public partial class NetworkManager: Node
         SteamNetworkingIdentity identity = new SteamNetworkingIdentity();
         identity.SetSteamID(steamID);
         client = new Client(ConnectP2P(ref identity, 0, 0, null));
-        AddChild(client);
-        isActive = true;
+        if (GetConnectionState(client.connectionToServer) == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_Connected)
+        {
+            AddChild(client);
+            isActive = true;
+            networkDebugLog("Successfully connected to server hosted at: " + steamID);
+        }
+        else
+        {
+            networkDebugLog("Connecting to server at: " + steamID + " failed!");
+        }
+ 
+    }
+
+    public ESteamNetworkingConnectionState GetConnectionState(HSteamNetConnection conn)
+    {
+        SteamNetworkingSockets.GetConnectionInfo(conn, out SteamNetConnectionInfo_t info);
+        return info.m_eState;
     }
 
     /// <summary>

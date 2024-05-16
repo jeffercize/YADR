@@ -18,7 +18,7 @@ public partial class MPDebugPanel : Panel
 	public void onHostPressed()
 	{
 	
-        Global.NetworkManager.startGame();
+        Global.NetworkManager.startServer();
 	}
 
 	public void onJoinPressed()
