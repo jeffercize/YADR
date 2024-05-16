@@ -37,4 +37,11 @@ public partial class MainMenu : Control
 
 
     }
+
+    private void genPressed()
+    {
+        Global.LevelManager.loadScene("res://scenes/TerrainGeneration.tscn");
+        Global.LevelManager.loadScene("res://components/TerrainPlayer.tscn");
+        Global.UIManager.clearUI();
+    }
 }

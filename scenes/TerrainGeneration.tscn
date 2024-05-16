@@ -28,7 +28,7 @@ material = SubResource("ShaderMaterial_dop3f")
 transform_format = 1
 mesh = SubResource("BoxMesh_652tm")
 
-[node name="CodeGenerated" type="Node"]
+[node name="CodeGenerated" type="Node3D"]
 script = ExtResource("1_btvwy")
 
 [node name="RuntimeNavigationBaker" type="Node" parent="."]
