@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://dwl568k47uff7"
+path="res://.godot/imported/terrainblend.glsl-0f3b0c656274ff0a47a59b45b92743f2.res"
+
+[deps]
+
+source_file="res://shaders/terrain/terrainblend.glsl"
+dest_files=["res://.godot/imported/terrainblend.glsl-0f3b0c656274ff0a47a59b45b92743f2.res"]
+
+[params]
+

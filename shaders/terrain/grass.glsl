@@ -1,18 +1,7 @@
-#[compute]
 #version 450
 
-layout(local_size_x = 32, local_size_y = 32) in;
 
-layout(set = 0, binding = 0) uniform sampler2D noiseTexture;
-layout(set = 0, binding = 1) uniform sampler2D pathTexture;
-layout(set = 0, binding = 2, rg32f) uniform image2D outputImage;
-
-layout(set = 0, binding = 3) restrict buffer ImageDimensions {
-    int imageWidth;
-    int imageHeight;
-};
-
-void main() {
+void CreateTileGeometry() {
     ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
     vec2 uv = vec2(coord) / vec2(imageWidth, imageHeight);
 
@@ -21,10 +10,16 @@ void main() {
     if (height < 0.0) {
         height = height / ((1.0 - height) * (1.0 - height));
     }
+    else 
+    {
+        height = height * height * height;
+    }
 
     if (uv.y < 0.2) {
         height *= uv.y / 0.2;
-    } else if (uv.y > 0.8) {
+    } 
+    else if (uv.y > 0.8) 
+    {
         height *= (1.0 - uv.y) / 0.2;
     }
 
