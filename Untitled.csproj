@@ -15,6 +15,7 @@
     <PackageReference Update="GodotSharpEditor" Version="4.1.0-dev.1" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="components\" />
     <Folder Include="scenes\" />
     <Folder Include="scenes\ui\" />
   </ItemGroup>

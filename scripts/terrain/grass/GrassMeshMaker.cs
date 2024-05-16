@@ -54,45 +54,56 @@ public partial class GrassMeshMaker : Node3D
         SetupGrass("Player", testImg);*/
     }
 
-    public (float factor1, float factor2) CalculateFactors(float distance)
+    public (float factor1, float factor2) CalculateFactorsOld(float distance)
     {
         float factor1, factor2;
 
-        if (distance >= 0 && distance <= 3)
+        if (distance >= 0 && distance <= 1) //fade out 1 high lod
         {
             factor1 = 1;
-            factor2 = 1;
+            factor2 = 1 - distance;
         }
-        else if (distance > 3 && distance <= 5)
+        else if (distance > 2 && distance <= 3) //fade in medium lod and fade out high lod
+        {
+            factor1 = 1 - (distance - 2);
+            factor2 = distance - 2;
+        }
+        else if (distance > 3 && distance <= 4) //fade out medium lod and fade in low lod
+        {
+            factor1 = distance - 3;
+            factor2 = 1 - (distance - 3);
+        }
+        else //maintain low lod
         {
             factor1 = 1;
-            factor2 = 1 - ((distance - 3) / 2);
+            factor2 = 0;
         }
-        else if (distance > 5 && distance <= 7)
+
+        return (factor1, factor2);
+    }
+
+    public (float factor1, float factor2) CalculateFactors(float distance)
+    {
+        float factor1 = 0.0f;
+        float factor2 = 0.0f;
+        if(distance < 2)
         {
-            factor1 = 1 - ((distance - 5) / 2);
-            factor2 = ((distance - 5) / 2);
+            factor1 = 1.0f;
+            factor2 = 0.0f;
         }
-        else if (distance > 7 && distance <= 10)
+        else if (distance <= 12)
         {
-            factor1 = (distance - 7) / 3;
-            factor2 = 1 - ((distance - 7) / 3);
-        }
-        else if (distance > 10 && distance <= 15)
-        {
-            factor1 = 1 - ((distance - 10) / 5);
-            factor2 = (distance - 10) / 5;
-        }
-        else if (distance <= 20)
-        {
-            factor1 = 0;
-            factor2 = 1 - (distance - 15) / 5;
+            distance = (distance / 4) - 0.5f; //we divide by 2 to slow down the cosine wave so now its is 0-2 per flip
+            //start 2 go to 6, instead divide by 4 so its start at .5 go to 1.5 so subtract .5 go from 0 to 1.0 then back again for low lod fade in thus 2-12 or 0->1->2(0), normalized :)
+            factor1 = 0.5f * (1 + (float)Math.Cos(distance * Math.PI));
+            factor2 = 0.5f * (1 + (float)Math.Cos(distance+1 * Math.PI));
         }
         else
         {
-            factor1 = 0;
-            factor2 = 0;
+            factor1 = 1.0f;
+            factor2 = 0.0f;
         }
+        
 
         return (factor1, factor2);
     }
@@ -107,30 +118,18 @@ public partial class GrassMeshMaker : Node3D
 // Called every frame. 'delta' is the elapsed time since the previous frame.
     public override void _Process(double delta)
     {
-        if (Input.IsKeyPressed(Key.J))
-        {
-            return;
-        }
         totalTime += (float)delta;
         //UpdateGrassChunks();
         if (grassReady)
         {
             if (Input.IsKeyPressed(Key.J))
             {
-                return;
+                //return;
             }
-            
-            if (Input.IsKeyPressed(Key.I))
+            else
             {
-                RenderingServer.GlobalShaderParameterSet("windStrength", 0.0);
-            }
-            else if(Input.IsKeyPressed(Key.O))
-            {
-                RenderingServer.GlobalShaderParameterSet("windStrength", 0.5);
-            }
-            else if(Input.IsKeyPressed(Key.P))
-            {
-                RenderingServer.GlobalShaderParameterSet("windStrength", 1.0);
+                processGrassClumps();
+                cleanupGrassClumps();
             }
 
             if (Input.IsKeyPressed(Key.T))
@@ -153,12 +152,6 @@ public partial class GrassMeshMaker : Node3D
             {
                 RenderingServer.GlobalShaderParameterSet("windDirection", 7*MathF.PI/4);
             }
-
-            processGrassClumps();
-
-
-
-            cleanupGrassClumps();
         }
     }
 
@@ -168,6 +161,9 @@ public partial class GrassMeshMaker : Node3D
     /// <summary>
     /// Clears the Rids and sets visible to 0 for multi-meshes that are out of range
     /// DOESNT ACTUALLY DELETE THE MULTIMESH not sure why TODO how do you actually clear something from RenderingServer
+    /// ALSO TODO use visibility ranges to just fade in-out, then we can just say fuck it and generate a bunch of chunks and let them sit for a long time
+    /// after we generate it a ring out from us we can generate beyond that into the fade out distance, the problem is still how to update mesh and distance stuff
+    /// re-examine expert approach
     /// </summary>
     public void cleanupGrassClumps()
     {
@@ -182,7 +178,7 @@ public partial class GrassMeshMaker : Node3D
         {
             for (; l < grassChunks.GetLength(1); l++)
             {
-                if (k < widthIndex - 5 || k > widthIndex + 5 || l < heightIndex - 5 || l > heightIndex + 5)
+                if (k < widthIndex - 10 || k > widthIndex + 10 || l < heightIndex - 10 || l > heightIndex + 10)
                 {
                     if (grassChunks[k, l].Item1.IsValid || grassChunks[k, l].Item2.IsValid)
                     {
@@ -218,7 +214,7 @@ public partial class GrassMeshMaker : Node3D
         Stopwatch stopwatch = Stopwatch.StartNew();
         int chunksUpdatedThisFrame = 0;
         int maxChunksPerFrame = 4; // Adjust this value for performance vs grass loading
-        for (; i <= 3; i++)
+        for (; i <= 7; i++)
         {
             for (; j <= i; j++)
             {
@@ -263,15 +259,15 @@ public partial class GrassMeshMaker : Node3D
             if (!grassChunks[currentWidthIndex, currentHeightIndex].Item1.IsValid && !grassChunks[currentWidthIndex, currentHeightIndex].Item2.IsValid)
             {
                 grassChunks[currentWidthIndex, currentHeightIndex].Item1 = InitializeRenderServerGrassClump(lowLODMesh, currentWidthIndex, currentHeightIndex, rowLength, instanceCount, 30, 30, randomSeed, 0);
-                grassChunks[currentWidthIndex, currentHeightIndex].Item2 = InitializeRenderServerGrassClump(lowLODMesh, currentWidthIndex, currentHeightIndex, rowLength, instanceCount, 30, 30, randomSeed, 1);
+                grassChunks[currentWidthIndex, currentHeightIndex].Item2 = InitializeRenderServerGrassClump(mediumLODMesh, currentWidthIndex, currentHeightIndex, rowLength, instanceCount, 30, 30, randomSeed, 1);
                 RenderingServer.MultimeshSetVisibleInstances(grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item2, instanceCount / 4);
-                RenderingServer.MultimeshSetVisibleInstances(grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item4, instanceCount / 4);
-                grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item3 = 2;
+                RenderingServer.MultimeshSetVisibleInstances(grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item4, instanceCount / 16);
                 grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item1 = 2;
+                grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item3 = 1;
             }
             // Calculate the distance from the player to the current chunk
 
-            Vector3 chunkPosition = new Vector3(currentWidthIndex * 30, 0, currentHeightIndex * 30); //TODO REPLACE 0 with a local Y heightmap check and player Y
+            Vector3 chunkPosition = new Vector3(currentWidthIndex * 30 + 15, 0, currentHeightIndex * 30 + 15); //TODO REPLACE 0 with a local Y heightmap check and player Y
             Vector3 playerPosition = new Vector3(player.Transform.Origin.X, 0, player.Transform.Origin.Z);
 
             float real_distance = (chunkPosition - playerPosition).Length() / 30.0f;
@@ -283,40 +279,23 @@ public partial class GrassMeshMaker : Node3D
 
             // Calculate the number of instances for each LOD
             int item2LODInstanceCount = (int)(instanceCount * transitionFactor1);
-            int item4LODInstanceCount = (int)(instanceCount * transitionFactor2);
+            int item4LODInstanceCount = (int)(instanceCount * transitionFactor2 / 4);
 
-            //Item2 management between high and medium
-            if (distance <= 5 && grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item1 != 0)
+            //Item4 management between high and low
+            if (real_distance <= 6 && grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item1 != 0)
             {
                 RenderingServer.MultimeshSetMesh(grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item2, highLODMesh.GetRid());
                 grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item1 = 0;
             }
-            else if (distance > 5 && grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item1 != 1)
+            else if (real_distance > 6 && grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item1 != 2)
             {
-                RenderingServer.MultimeshSetMesh(grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item2, mediumLODMesh.GetRid());
-                grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item1 = 1;
+                RenderingServer.MultimeshSetMesh(grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item2, lowLODMesh.GetRid());
+                grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item1 = 2;
             }
 
-            //Item4 management between high and low
-            if (distance <= 10 && grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item3 != 0)
+            if (real_distance > 6 || grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item1 == 2)
             {
-                RenderingServer.MultimeshSetMesh(grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item4, highLODMesh.GetRid());
-                grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item3 = 0;
-            }
-            else if (distance > 10 && grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item3 != 2)
-            {
-                RenderingServer.MultimeshSetMesh(grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item4, lowLODMesh.GetRid());
-                grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item3 = 2;
-            }
-
-
-            if (distance > 5)
-            {
-                item2LODInstanceCount = item2LODInstanceCount / 4;
-            }
-            if (distance > 10)
-            {
-                item4LODInstanceCount = item4LODInstanceCount / 8;
+                item2LODInstanceCount = item2LODInstanceCount / 16;
             }
             RenderingServer.MultimeshSetVisibleInstances(grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item2, item2LODInstanceCount);
             RenderingServer.MultimeshSetVisibleInstances(grassChunkMultimeshs[currentWidthIndex, currentHeightIndex].Item4, item4LODInstanceCount);
@@ -326,7 +305,7 @@ public partial class GrassMeshMaker : Node3D
     public void SetupGrass(String target, Image givenHeightMap)
     {
         heightMap = givenHeightMap;
-        player = GetTree().CurrentScene.GetNode<CharacterBody3D>(target);
+        player = GetNode<CharacterBody3D>("../../../"+target);
         GD.Print(player.Transform.Origin.X);
         Stopwatch stopwatch = Stopwatch.StartNew();
 
@@ -535,7 +514,9 @@ public partial class GrassMeshMaker : Node3D
         multiMeshAABB = multiMeshAABB.Expand(new Vector3(0, 400, 0));
         RenderingServer.InstanceSetCustomAabb(instance, multiMeshAABB);
         RenderingServer.InstanceGeometrySetCastShadowsSetting(instance, RenderingServer.ShadowCastingSetting.Off);
-        RenderingServer.InstanceSetTransform(instance, new Transform3D(Basis.Identity, new Vector3(widthIndex * fieldWidth + (fieldWidth/2), 0, heightIndex * fieldHeight + (fieldHeight / 2))));
+        RenderingServer.InstanceSetTransform(instance, new Transform3D(Basis.Identity, new Vector3(widthIndex * fieldWidth + (fieldWidth/2), 0.0f, heightIndex * fieldHeight + (fieldHeight / 2))));
+        //RenderingServer.InstanceGeometrySetVisibilityRange(instance, 0.0f, 300.0f, 0.0f, 50.0f, RenderingServer.VisibilityRangeFadeMode.Self);
+
         if (innerClumpIndex == 0)
         {
             grassChunkMultimeshs[widthIndex, heightIndex].Item2 = grassChunk;
