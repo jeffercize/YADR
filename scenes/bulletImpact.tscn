@@ -1,0 +1,27 @@
+[gd_scene load_steps=4 format=3 uid="uid://de1fvb02gicxq"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_v84kk"]
+angle_min = 214.2
+angle_max = 258.5
+radial_velocity_min = 3.0
+radial_velocity_max = 10.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2uaa2"]
+emission_enabled = true
+emission = Color(0.913725, 0.913725, 0.376471, 1)
+emission_energy_multiplier = 5.0
+
+[sub_resource type="SphereMesh" id="SphereMesh_iqvqy"]
+material = SubResource("StandardMaterial3D_2uaa2")
+radius = 0.01
+height = 0.01
+
+[node name="BulletImpact" type="GPUParticles3D"]
+emitting = false
+amount = 19
+one_shot = true
+explosiveness = 0.98
+randomness = 0.81
+fixed_fps = 60
+process_material = SubResource("ParticleProcessMaterial_v84kk")
+draw_pass_1 = SubResource("SphereMesh_iqvqy")

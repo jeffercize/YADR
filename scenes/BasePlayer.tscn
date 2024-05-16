@@ -1,10 +1,8 @@
-[gd_scene load_steps=12 format=3 uid="uid://bj7qsw8rmr8yx"]
+[gd_scene load_steps=9 format=3 uid="uid://fag0fpfytixb"]
 
-[ext_resource type="Script" path="res://scripts/player/Player.cs" id="1_x0nq7"]
-[ext_resource type="PackedScene" uid="uid://c5blodn213j26" path="res://scenes/ui/hud.tscn" id="2_gm66n"]
-[ext_resource type="Texture2D" uid="uid://co6e13plxgvsw" path="res://assets/icons/crosshairs/Outline/crosshair005.png" id="2_wmuf7"]
-[ext_resource type="Script" path="res://scripts/player/Inventory.cs" id="4_ifbkc"]
-[ext_resource type="Script" path="res://scripts/player/Equipment.cs" id="5_aqamj"]
+[ext_resource type="Script" path="res://scripts/player/BasePlayer.cs" id="1_ekfu1"]
+[ext_resource type="Script" path="res://scripts/player/Inventory.cs" id="4_8yb4d"]
+[ext_resource type="Script" path="res://scripts/player/Equipment.cs" id="5_lx7nc"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_42t1x"]
 
@@ -13,21 +11,14 @@ material = SubResource("StandardMaterial3D_42t1x")
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_w6k7i"]
 
-[sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_baiq7"]
-auto_exposure_enabled = true
-dof_blur_far_enabled = true
-dof_blur_far_distance = 150.0
-dof_blur_far_transition = 200.0
-dof_blur_amount = 0.05
-
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_uq26v"]
 radius = 0.05
 height = 1.0
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_qbkrf"]
 
-[node name="Player" type="CharacterBody3D"]
-script = ExtResource("1_x0nq7")
+[node name="BasePlayer" type="CharacterBody3D"]
+script = ExtResource("1_ekfu1")
 
 [node name="mesh" type="MeshInstance3D" parent="."]
 mesh = SubResource("CapsuleMesh_xxrac")
@@ -35,9 +26,8 @@ mesh = SubResource("CapsuleMesh_xxrac")
 [node name="collider" type="CollisionShape3D" parent="."]
 shape = SubResource("CapsuleShape3D_w6k7i")
 
-[node name="pov" type="Camera3D" parent="."]
+[node name="pov" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.694054, -0.256157)
-attributes = SubResource("CameraAttributesPractical_baiq7")
 
 [node name="pointing" type="RayCast3D" parent="pov"]
 transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0)
@@ -62,37 +52,15 @@ transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, -0.
 mesh = SubResource("CapsuleMesh_uq26v")
 skeleton = NodePath("../../..")
 
-[node name="hud" parent="." instance=ExtResource("2_gm66n")]
-
-[node name="TextureRect" type="TextureRect" parent="hud"]
-modulate = Color(1, 1, 1, 0.784314)
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -36.0
-offset_top = -36.0
-offset_right = 36.0
-offset_bottom = 36.0
-grow_horizontal = 2
-grow_vertical = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
-texture = ExtResource("2_wmuf7")
-
 [node name="Inventory" type="Node" parent="."]
-script = ExtResource("4_ifbkc")
+script = ExtResource("4_8yb4d")
 height = 30
 width = 14
 
 [node name="Equipment" type="Node" parent="."]
-script = ExtResource("5_aqamj")
+script = ExtResource("5_lx7nc")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
 libraries = {
 "": SubResource("AnimationLibrary_qbkrf")
 }
-
-[editable path="hud"]
