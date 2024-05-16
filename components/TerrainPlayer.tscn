@@ -31,7 +31,7 @@ point_count = 3
 transparency = 1
 cull_mode = 2
 vertex_color_use_as_albedo = true
-albedo_color = Color(0.74902, 0.819608, 0.811765, 0.0431373)
+albedo_color = Color(0.74902, 0.819608, 0.811765, 0.160784)
 use_particle_trails = true
 
 [sub_resource type="RibbonTrailMesh" id="RibbonTrailMesh_tiaho"]
@@ -71,16 +71,17 @@ shape = SubResource("SeparationRayShape3D_twc2s")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 mesh = SubResource("CapsuleMesh_lsqiy")
 
-[node name="GPUParticles3D" type="GPUParticles3D" parent="."]
-amount = 4525
+[node name="RainGPUParticles" type="GPUParticles3D" parent="."]
+amount = 20000
 lifetime = 2.0
 randomness = 0.45
 visibility_aabb = AABB(-19.252, -10, -19.083, 38.503, 24.079, 38.167)
 trail_enabled = true
-trail_lifetime = 0.2
+trail_lifetime = 0.1
 process_material = SubResource("ParticleProcessMaterial_npmnv")
 draw_pass_1 = SubResource("RibbonTrailMesh_tiaho")
 
-[node name="GPUParticlesCollisionBox3D" type="GPUParticlesCollisionBox3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.74439, -1.06226, -0.905592)
-size = Vector3(72.1295, 2.09912, 66.9786)
+[node name="GPUParticlesCollisionHeightField3D" type="GPUParticlesCollisionHeightField3D" parent="."]
+size = Vector3(50, 2, 50)
+resolution = 3
+follow_camera_enabled = true
