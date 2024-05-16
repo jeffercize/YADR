@@ -60,8 +60,8 @@ public class ClientChatHandler
         chatMessage.Sender = id;
 
         ChatString chatString = new ChatString();
-        chatString.Message = message;
-        chatMessage.Message = chatString;
+        chatString.Text = message;
+        chatMessage.ChatString = chatString;
 
         return chatMessage;
     }

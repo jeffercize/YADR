@@ -4,7 +4,7 @@ using System;
 
 public partial class PlayerManager : Node3D
 {
-    Dictionary<ulong, BasePlayer> players = new Dictionary<ulong, BasePlayer>();
+    public Dictionary<ulong, Player> players = new Dictionary<ulong, Player>();
 
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
@@ -18,28 +18,43 @@ public partial class PlayerManager : Node3D
 	
 	}
 
-    public void SpawnLocalPlayer()
-    {
-
-        Player player = ResourceLoader.Load<PackedScene>("res://scenes/Player.tscn").Instantiate<Player>();
-
-        player.input = Global.InputManager.localInput;
-        AddChild(player);
-        player.Position = new Vector3(10, 10, 0);
-        Input.MouseMode = Input.MouseModeEnum.Captured;
 
 
-        //debug
-        
-        AddChild(GenerateRemotePlayer(Global.instance.clientID));
-    }
 
-
-    public static BasePlayer GenerateRemotePlayer(ulong clientID)
+    public Player CreateAndRegisterNewPlayer(ulong clientID)
 	{
-        BasePlayer remotePlayer = ResourceLoader.Load<PackedScene>("res://scenes/BasePlayer.tscn").Instantiate<BasePlayer>();
-        Global.InputManager.BindRemoteClientInput(clientID, remotePlayer);
-		return remotePlayer;
+        Player player = ResourceLoader.Load<PackedScene>("res://scenes/Player.tscn").Instantiate<Player>();
+        if (Global.instance.clientID == clientID)
+        {
+            player.clientID = Global.instance.clientID;
+            player.input = Global.InputManager.localInput;
+        }
+        else
+        {
+            Global.InputManager.BindRemoteClientInput(clientID, player);
+        }
+        Global.debugLog("Registering new player with ID: " + clientID);
+        players.Add(clientID, player);
+		return player;
     }
 
+
+    public void SpawnPlayer(Player player, Vector3 GlobalPosition)
+    {
+        Global.debugLog("Spawning player: " + player.clientID);
+        AddChild(player);
+        player.GlobalPosition = GlobalPosition;
+        player.spawned = true;
+    }
+
+    public void SpawnAll()
+    {
+        Global.debugLog("Spawning all known players. Num: " + players.Count);
+        Vector3 offset = Vector3.Zero;
+        foreach (Player player in players.Values)
+        {
+            SpawnPlayer(player, offset);
+            offset.X += 20;
+        }
+    }
 }

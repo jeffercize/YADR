@@ -1,4 +1,5 @@
 using Godot;
+using NetworkMessages;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -6,25 +7,8 @@ using System.Net;
 public partial class InputManager: Node
 {
 
-    public delegate void InputEventHandler(ulong clientID, InputManager.ActionEnum action, bool newState);
+    public delegate void InputEventHandler(ulong clientID, ActionMessage actionMessage);
     public static event InputEventHandler InputEvent = delegate { };
-
-    public static string[] actionList = { "sprint", "scope", "aim", "inventory", "jump", "crouch", "prone", "walk", "leanleft", "leanright", "interact" };
-
-    public enum ActionEnum
-    {
-        jump,
-        sprint,
-        walk,
-        crouch,
-        prone,
-        aim,
-        leanleft,
-        leanright,
-        scope,
-        interact,
-        inventory,
-    }
 
     public PlayerInputData localInput = new();
 
@@ -38,10 +22,11 @@ public partial class InputManager: Node
 
 
 
-    public void BindRemoteClientInput(ulong remoteClient, BasePlayer player)
+    public void BindRemoteClientInput(ulong remoteClient, Player player)
     {
         remoteInputs.Add(remoteClient, new PlayerInputData());
         player.input = remoteInputs[remoteClient];
+        player.clientID = remoteClient;
     }
 
     public override void _PhysicsProcess(double delta)
@@ -49,7 +34,7 @@ public partial class InputManager: Node
         InputSyncCounter += delta;
         if (InputSyncCounter > InputSyncTimer)
         {
-            //NetworkInputHandler.CreateAndSendInputSyncMessage(Global.instance.clientID, localInput);
+            //ClientInputHandler.CreateAndSendInputSyncMessage(Global.instance.clientID, localInput);
             InputSyncCounter = 0;
         }
 
@@ -62,9 +47,32 @@ public partial class InputManager: Node
 
     public override void _Ready()
     {
-        ClientInputHandler.NetworkActionDeltaEvent += onActionDelta;
-        ClientInputHandler.NetworkInputDeltaEvent += onInputDelta;
-        ClientInputHandler.NetworkInputSyncEvent += onInputSync;
+        ClientInputHandler.NetworkInputActionEvent += onNetworkInputActionEvent;
+        ClientInputHandler.NetworkInputMovementDirectionEvent += onNetworkInputMovementDirectionEvent;
+        ClientInputHandler.NetworkInputFullCaptureEvent += onNetworkInputFullCaptureEvent;
+    }
+
+    private void onNetworkInputFullCaptureEvent(InputFullCaptureMessage message)
+    {
+        throw new NotImplementedException();
+    }
+
+    private void onNetworkInputMovementDirectionEvent(InputMovementDirectionMessage message)
+    {
+        if (remoteInputs.TryGetValue((ulong)message.InputOf.SteamID, out PlayerInputData value))
+        {
+            value.direction.X = message.Direction.X;
+            value.direction.Y = message.Direction.Y;
+        }
+    }
+
+    private void onNetworkInputActionEvent(InputActionMessage message)
+    {
+        if(remoteInputs.TryGetValue((ulong)message.InputOf.SteamID, out PlayerInputData value))
+        {
+            value.actionStates[message.Action.ActionType] = message.Action.ActionState;
+        }
+        InputEvent.Invoke((ulong)message.InputOf.SteamID, message.Action);
     }
 
     public override void _Input(InputEvent @event)
@@ -72,7 +80,7 @@ public partial class InputManager: Node
         checkMouse(@event);
         checkControllerAxis(@event);
         checkDirectionKeys(@event);
-        foreach(InputManager.ActionEnum action in Enum.GetValues(typeof(ActionEnum)))
+        foreach(ActionType action in Enum.GetValues(typeof(ActionType)))
         {
             checkAction(@event, action);
         }
@@ -90,27 +98,33 @@ public partial class InputManager: Node
             localInput.direction = Input.GetVector("moveForward", "moveBackward", "moveLeft", "moveRight");
             if (!@event.IsEcho())
             {
-                ClientInputHandler.CreateAndSendInputDeltaMessage(Global.instance.clientID, ClientInputHandler.InputType.MOVEDIRECTION, localInput.direction);
+                ClientInputHandler.CreateAndSendInputMovementDirectionMessage(Global.instance.clientID, localInput.direction);
             }
         }
 
     }
 
-    private void checkAction(InputEvent @event, InputManager.ActionEnum action)
+    private void checkAction(InputEvent @event, ActionType action)
     {
-        if (@event.IsAction(action.ToString()))
+        string actionName = Enum.GetName(typeof(ActionType), action);
+
+        if (@event.IsAction(actionName))
         {
-            if (@event.IsActionPressed(Enum.GetName( typeof(InputManager.ActionEnum),action)))
+            ActionMessage msg = new ActionMessage();
+            msg.ActionType = action;
+            if (@event.IsActionPressed(actionName))
             {
-                localInput.actionStates[action] = true;
-                InputEvent.Invoke(Global.instance.clientID, action, true);
-                ClientInputHandler.CreateAndSendActionDeltaMessage(Global.instance.clientID, action, true);
+                localInput.actionStates[action] = ActionState.Pressed;
+                msg.ActionState = ActionState.Pressed;
+                InputEvent.Invoke(Global.instance.clientID, msg);
+                ClientInputHandler.CreateAndSendActionDeltaMessage(Global.instance.clientID, action, ActionState.Pressed);
             }
-            else if (@event.IsActionReleased(Enum.GetName(typeof(InputManager.ActionEnum), action)))
+            else if (@event.IsActionReleased(actionName))
             {
-                localInput.actionStates[action] = false;
-                InputEvent.Invoke(Global.instance.clientID, action, false);
-                ClientInputHandler.CreateAndSendActionDeltaMessage(Global.instance.clientID, action, false);
+                localInput.actionStates[action] = ActionState.Released;
+                msg.ActionState = ActionState.Released;
+                InputEvent.Invoke(Global.instance.clientID, msg);
+                ClientInputHandler.CreateAndSendActionDeltaMessage(Global.instance.clientID, action, ActionState.Released);
             }
         }
     }
@@ -128,45 +142,6 @@ public partial class InputManager: Node
         //throw new NotImplementedException();
     }
 
-    private void onInputSync(ulong clientID, Vector2 direction, Vector2 lookDelta, Vector3 lookDirection, Dictionary<InputManager.ActionEnum, bool> actions)
-    {
-        if (remoteInputs.TryGetValue(clientID, out PlayerInputData input))
-        {
-            remoteInputs[clientID].direction = direction;
-            remoteInputs[clientID].lookDelta = lookDelta;
-            remoteInputs[clientID].actionStates = new Dictionary<InputManager.ActionEnum, bool>(actions);
-            remoteInputs[clientID].lookDirection = lookDirection; 
-        }
-    }
 
-    private void onInputDelta(ulong clientID, ClientInputHandler.InputType type, Vector2 newState)
-    {
-        if (remoteInputs.TryGetValue(clientID, out PlayerInputData input))
-        {
-            switch (type)
-            {
-                case ClientInputHandler.InputType.MOVEDIRECTION:
-                        input.direction = newState;
-                    break;
-                case ClientInputHandler.InputType.LOOKDELTA:
-                        input.direction = newState;
-                    break;
-                default:
-                    break;
-            }
-        }
-    }
-
-    private void onActionDelta(ulong clientID, InputManager.ActionEnum action, bool newState)
-    {
-        Global.NetworkManager.networkDebugLog("InputChad here, just got an action delta for player: " + clientID);
-        if (remoteInputs.TryGetValue(clientID, out PlayerInputData remoteInput))
-        {
-            Global.NetworkManager.networkDebugLog("     Yeah we got that player in our files. Applying action state.");
-            remoteInput.actionStates[action] = newState;
-            InputEvent.Invoke(clientID, action, newState);
-        }
-
-    }
 
 }

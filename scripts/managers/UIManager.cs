@@ -1,4 +1,5 @@
 using Godot;
+using NetworkMessages;
 using System;
 
 public partial class UIManager : Control
@@ -22,9 +23,9 @@ public partial class UIManager : Control
         InputManager.InputEvent += inputHandler;
     }
 
-    private void inputHandler(ulong clientID, InputManager.ActionEnum action, bool newState)
+    private void inputHandler(ulong clientID, ActionMessage actionMessage)
     {
-        if (action.Equals("inventory") && newState==true)
+        if (actionMessage.ActionType == ActionType.OpenInventory && actionMessage.ActionState == ActionState.Pressed)
         {
             ToggleInventory();
         }

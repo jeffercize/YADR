@@ -2,7 +2,23 @@
 package NetworkMessages;
 
 enum ActionType {
-	jump = 0;
+	Jump = 0;
+	Sprint = 1;
+	Crouch = 2;
+	Prone = 3;
+	Walk = 4;
+	LeanLeft = 5;
+	LeanRight = 6;
+
+	OpenInventory = 20;
+	Interact = 21;
+
+	Fire = 30;
+	Aim = 31;
+	Scope = 32;
+	Reload = 33;
+	
+
 }
 
 enum ActionState {
@@ -23,66 +39,82 @@ message Identity {
 		int64 ipAddress = 3;
 	}
 }
-message ChatString
-{
-	string message = 1;
+message ChatString {
+	string text = 1;
 }
 message ChatMessage {
 	Identity sender = 1;
-	ChatString message = 2;
+	ChatString chatString = 2;
 } 
 
 
 
-message Action{
-	ActionType action = 1;
-	ActionState state = 2;
+message ActionMessage{
+	ActionType actionType = 1;
+	ActionState actionState = 2;
 }
 
 message InputActionMessage {
 	Identity inputOf = 1;
-	Action action = 2;
+	ActionMessage action = 2;
 }
 
 
 
-message Vector2 {
+message DirectionVector {
 	float x = 1;
 	float y = 2;
+	optional float z = 3;
 }
 
-message Vector3 {
-	float x = 1;
-	float y = 2;
-	float z = 3;
-}
 
-message Axis {
-	AxisType type = 1;
-	oneof vector {
-		Vector2 vec2 = 2;
-		Vector3 vec3 = 3;
-	}
-}
-
-message InputAxisMessage {
+message InputMovementDirectionMessage {
 	Identity inputOf = 1;
-	AxisType axis = 2;
-    Axis inputAxis = 3;
+    DirectionVector direction = 2;
 }
 
+message InputLookDeltaMessage {
+	Identity inputOf = 1;
+	DirectionVector delta = 2;
+}
 
+message InputLookDirectionMessage {
+	Identity inputOf = 1;
+	DirectionVector direction = 2;
+}
 
 message InputFullCaptureMessage {
 	Identity inputOf = 1;
-	repeated Action actions = 2;
-	repeated Axis axises = 3;
+	DirectionVector movementDirection = 2;
+	repeated ActionMessage actions = 3;
+
+}
+
+
+
+message Position {
+	float X =1;
+	float Y =2;
+	float Z=3;
 }
 
 
 message PlayerStateFullCapture {
 	Identity stateOf = 1;
-	Vector3 position = 2;
-	Vector3 rotation = 3;
-	Vector3 velocity = 4;
+}
+
+
+
+message ServerMessagePlayerJoin{
+	Identity newPlayer = 1;
+
+}
+
+message ServerMessageSpawnPlayer {
+	Identity player = 1;
+	Position position = 2;
+}
+
+message ServerMessageLaunchGame {
+	int64 mode =1;
 }

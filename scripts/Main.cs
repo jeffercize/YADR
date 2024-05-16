@@ -37,7 +37,7 @@ public partial class Main : Node
     //will grab this input no matter what. TODO: I'm gonna forget to remove this
     public override void _Input(InputEvent @event)
     {
-        if (@event.IsActionPressed("quit")) { GetTree().Quit(); }
+        if (@event.IsActionPressed("Quit")) { GetTree().Quit(); }
     }
 
 }

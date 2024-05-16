@@ -1,28 +1,19 @@
 ﻿using Godot;
-using System;
+using NetworkMessages;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
-using static ClientChatHandler;
-using static System.Collections.Specialized.BitVector32;
+using Google.Protobuf;
 
-
-
-    public class ClientInputHandler
+public class ClientInputHandler
     {
 
-    public delegate void NetworkActionDeltaEventHandler(ulong clientID, InputManager.ActionEnum action, bool newState);
-    public static event NetworkActionDeltaEventHandler NetworkActionDeltaEvent = delegate { };
+    public delegate void NetworkInputActionEventHandler(InputActionMessage message);
+    public static event NetworkInputActionEventHandler NetworkInputActionEvent = delegate { };
 
-    public delegate void NetworkInputDeltaEventHandler(ulong clientID, InputType type, Vector2 newState);
-    public static event NetworkInputDeltaEventHandler NetworkInputDeltaEvent = delegate { };
+    public delegate void NetworkInputMovementDirectionEventHandler(InputMovementDirectionMessage message);
+    public static event NetworkInputMovementDirectionEventHandler NetworkInputMovementDirectionEvent = delegate { };
 
-    public delegate void NetworkInputSyncEventHandler(ulong clientID, Vector2 direction, Vector2 lookDelta, Vector3 lookDirection, Dictionary<InputManager.ActionEnum, bool> actions);
-    public static event NetworkInputSyncEventHandler NetworkInputSyncEvent = delegate { };
+    public delegate void NetworkInputFullCaptureEventHandler(InputFullCaptureMessage message);
+    public static event NetworkInputFullCaptureEventHandler NetworkInputFullCaptureEvent = delegate { };
 
     static bool disable = false;
 
@@ -33,135 +24,103 @@ using static System.Collections.Specialized.BitVector32;
     }
 
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct ActionDeltaMessage
+    internal static void handleInputSyncMessage(byte[] data)
     {
-       public ulong clientID;
-       public InputManager.ActionEnum action;
-       public bool newState;
-
-        public ActionDeltaMessage deserialize<ActionDeltaMessage>(byte[] bytes)
-        {
-            throw new NotImplementedException();
-        }
-
+        InputFullCaptureMessage message = InputFullCaptureMessage.Parser.ParseFrom(data);
+        Global.NetworkManager.networkDebugLog("Got an input full capture message from player: " + message.InputOf.SteamID);
+        NetworkInputFullCaptureEvent.Invoke(message);
     }
 
 
-    public struct InputDeltaMessage
+    internal static void HandleInputMovementDirectionMessage(byte[] data)
     {
-        public ulong clientID;
-        public InputType type;
-        public Vector2 newState;
+        InputMovementDirectionMessage message = InputMovementDirectionMessage.Parser.ParseFrom(data);
+        Global.NetworkManager.networkDebugLog("Player: " + message.InputOf.Name + " just changed movement direction.");
+        NetworkInputMovementDirectionEvent.Invoke(message);
     }
 
-
-    public struct InputSyncMessage
+    internal static void HandleInputActionMessage(byte[] data)
     {
-        public ulong clientID;
-        public Vector2 direction;
-        public Vector2 lookDelta;
-        public Vector3 lookDirection;
-        public byte[] actionsSerialized;
-    }
-
-
-    internal static void handleInputSyncMessage(ulong clientID, InputSyncMessage message)
-    {
-        Global.NetworkManager.networkDebugLog("Got an Input sync message.");
-        Dictionary<InputManager.ActionEnum, bool> actions = JsonSerializer.Deserialize< Dictionary<InputManager.ActionEnum, bool>>(message.actionsSerialized.GetStringFromUtf8());
-        NetworkInputSyncEvent.Invoke(clientID, message.direction, message.lookDelta, message.lookDirection, actions);
-    }
-
-
-    internal static void handleInputDeltaMessage(InputDeltaMessage message)
-    {
-        if (message.type == InputType.LOOKDELTA) { return; }
-        Global.NetworkManager.networkDebugLog("Got an Input delta message.");
-        NetworkInputDeltaEvent.Invoke(message.clientID, message.type, message.newState);
-    }
-
-    internal static void handleActionDeltaMessage(ActionDeltaMessage message)
-    {
-        Global.NetworkManager.networkDebugLog("Got an action delta message from player: " + message.clientID);
-        NetworkActionDeltaEvent.Invoke(message.clientID, message.action, message.newState);
+        InputActionMessage message = InputActionMessage.Parser.ParseFrom(data);
+        Global.NetworkManager.networkDebugLog("Player: " + message.InputOf.Name + " just did action: " + message.Action.ActionType.ToString());
+        NetworkInputActionEvent.Invoke(message);
     }
 
 
     internal static void CreateAndSendInputSyncMessage(ulong clientID, PlayerInputData input)
     {
-        if (!Global.NetworkManager.isActive || disable) { return; }
-
-       InputSyncMessage msg = new InputSyncMessage();
-        msg.clientID = clientID;
-
-
-        msg.actionsSerialized = JsonSerializer.Serialize(input.actionStates).ToUtf8Buffer();
-
-
-        Global.NetworkManager.networkDebugLog("CLIENT - Sending InputSync Message");
-
-        byte[] data = Global.StructureToByteArray(msg);
-
-        NetworkManager.SendSteamMessage(NetworkManager.MessageType.INPUT_FULLCAPTURE, Global.NetworkManager.client.connectionToServer, data);
-
-    }
-
-    internal static void CreateAndSendActionDeltaMessage(ulong clientID, InputManager.ActionEnum action, bool newState)
-    {
-        if (!Global.NetworkManager.isActive || disable) { return; }
-
-        ActionDeltaMessage msg = new ActionDeltaMessage();
-        msg.clientID = clientID;
-        msg.action = action;
-        msg.newState = newState;
-         
-
-        Global.NetworkManager.networkDebugLog("CLIENT - Sending Action Delta Message from id:" +msg.clientID);
-
-        byte[] data = Global.StructureToByteArray(msg);
-        ActionDeltaMessage fuck = new ActionDeltaMessage();
-        Global.ByteArrayToStructure(data, fuck);
-        Global.NetworkManager.networkDebugLog("fuck: " + fuck.clientID);
-
+        if (!Global.NetworkManager.isActive ) { return; }
         
-        int size = Marshal.SizeOf(msg);
-        byte[] arr = new byte[size];
-        IntPtr ptr = IntPtr.Zero;
-        ptr = Marshal.AllocHGlobal(size);
-        Marshal.StructureToPtr(msg, ptr, true);
-        Marshal.Copy(ptr, arr, 0, size);
-        Marshal.FreeHGlobal(ptr);
+        InputFullCaptureMessage message = new InputFullCaptureMessage();
+
+        Identity identity = new Identity();
+        identity.Name = Global.instance.clientName;
+        identity.SteamID = (long)clientID;
+        message.InputOf = identity;
+
+        DirectionVector movementDirectionVector = new DirectionVector();
+        movementDirectionVector.X = input.direction.X;
+        movementDirectionVector.Y = input.direction.Y;
+        message.MovementDirection = movementDirectionVector;
+
+        foreach (ActionType action in input.actionStates.Keys)
+        {
+            ActionMessage actionMessage = new ActionMessage();
+            actionMessage.ActionType = action;
+            actionMessage.ActionState = input.actionStates[action];
+            message.Actions.Add(actionMessage);
+        }
 
 
-
-        NetworkManager.SendSteamMessage(NetworkManager.MessageType.INPUT_ACTION, Global.NetworkManager.client.connectionToServer, data);
+        byte[] bytes = message.ToByteArray();
+        NetworkManager.SendSteamMessage(NetworkManager.MessageType.INPUT_FULLCAPTURE, Global.NetworkManager.client.connectionToServer, bytes);
     }
 
-    internal static void CreateAndSendInputDeltaMessage(ulong clientID, InputType type, Vector2 newState)
+    internal static void CreateAndSendActionDeltaMessage(ulong clientID, ActionType type, ActionState state)
     {
-        if (!Global.NetworkManager.isActive || disable) { return; }
+        if (!Global.NetworkManager.isActive) { return; }
 
-        InputDeltaMessage msg = new InputDeltaMessage();
-        msg.clientID = clientID;
-        msg.type = type;
-        msg.newState = newState;
+        InputActionMessage msg = new InputActionMessage();
 
+        ActionMessage actionMessage = new ActionMessage();
+        ActionType actionType = type;
+        ActionState actionState = state;
+        actionMessage.ActionState = actionState;
+        actionMessage.ActionType = actionType;
 
-        Global.NetworkManager.networkDebugLog("CLIENT - Sending Input Delta Message");
+        msg.Action = actionMessage;
 
-        byte[] data = Global.StructureToByteArray(msg);
-        //Global.debugLog("bet im dead");
-        NetworkManager.SendSteamMessage(NetworkManager.MessageType.INPUT_MOVEMENTDIRECTION, Global.NetworkManager.client.connectionToServer ,data);
+        Identity identity = new Identity();
+        identity.SteamID = (long)clientID;
+        identity.Name = Global.instance.clientName;
+
+        msg.InputOf = identity;
+
+        byte[] bytes = msg.ToByteArray();
+
+        NetworkManager.SendSteamMessage(NetworkManager.MessageType.INPUT_ACTION, Global.NetworkManager.client.connectionToServer, bytes);
+    }
+
+    internal static void CreateAndSendInputMovementDirectionMessage(ulong clientID, Vector2 newState)
+    {
+        if (!Global.NetworkManager.isActive) { return; }
+        
+        InputMovementDirectionMessage msg = new InputMovementDirectionMessage();
+
+        Identity identity = new Identity();
+        identity.SteamID = (long)clientID;
+        identity.Name = Global.instance.clientName;
+        msg.InputOf = identity;
+        
+        DirectionVector directionVector = new DirectionVector();
+        directionVector.X = newState.X;
+        directionVector.Y = newState.Y;
+        msg.Direction = directionVector;
+
+        byte[] bytes = msg.ToByteArray();
+
+        NetworkManager.SendSteamMessage(NetworkManager.MessageType.INPUT_MOVEMENTDIRECTION, Global.NetworkManager.client.connectionToServer ,bytes);
     }
 
 }
 
-public interface INetworkMessage
-{
-
-    public byte[] serialize();
-    public T deserialize<T>(byte[] bytes);
-
-    public int getSize();
-}
