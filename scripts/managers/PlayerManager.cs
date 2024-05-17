@@ -18,16 +18,24 @@ public partial class PlayerManager : Node3D
 	
 	}
 
-    double PlayerStateSyncTimer = .5f;
+    double PlayerStateSyncTimer = 1f;
     double PlayerStateSyncCounter = 0f;
     public override void _PhysicsProcess(double delta)
     {
-        PlayerStateSyncCounter += delta;
-        if (PlayerStateSyncCounter > PlayerStateSyncTimer)
+        if (Global.NetworkManager.isHost)
         {
-            //ClientPlayerStateHandler.CreateAndSendPlayerStateMessage()
-            PlayerStateSyncCounter = 0;
+            PlayerStateSyncCounter += delta;
+            if (PlayerStateSyncCounter > PlayerStateSyncTimer)
+            {
+                foreach (Player player in players.Values)
+                {
+                    ClientPlayerStateHandler.CreateAndSendPlayerPositionMessage(player);
+                    Global.NetworkManager.networkDebugLog("Client/Host - Sending Position Sync for Player: " + player.clientID);
+                }
+                PlayerStateSyncCounter = 0;
+            }
         }
+
 
     }
 
