@@ -7,7 +7,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Godot.Collections;
 
-public partial class CodeGenerated : Node
+public partial class CodeGenerated : Node3D
 {
     public override void _Ready()
     {

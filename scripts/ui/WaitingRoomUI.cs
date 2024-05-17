@@ -1,14 +1,11 @@
 using Godot;
-using Steamworks.Data;
 using Steamworks;
 using System;
-using Networking;
-
 /// <summary>
 /// Controls the UI elements on the Waiting Room Screen
 /// </summary>
 public partial class WaitingRoomUI : Control
-{
+{/*
     /// <summary>
     /// Subscribe to some events. If this is my lobby, I get cool buttons
     /// </summary>
@@ -92,5 +89,5 @@ public partial class WaitingRoomUI : Control
         SteamFriends.OpenGameInviteOverlay(GetNode<SteamLobby>("/root/main/SteamLobby").lobbyId);
     }
 
-
+    */
 }
