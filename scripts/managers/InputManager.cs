@@ -34,7 +34,7 @@ public partial class InputManager: Node
         InputSyncCounter += delta;
         if (InputSyncCounter > InputSyncTimer)
         {
-            ClientInputHandler.CreateAndSendInputSyncMessage(Global.instance.clientID, localInput);
+            //ClientInputHandler.CreateAndSendInputSyncMessage(Global.instance.clientID, localInput);
             InputSyncCounter = 0;
         }
 
