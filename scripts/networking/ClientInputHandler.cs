@@ -53,7 +53,7 @@ public class ClientInputHandler
 
     internal static void HandleInputLookDirectionMessage(InputLookDirectionMessage message)
     {
-        Global.NetworkManager.networkDebugLog("Player: " + message.InputOf.Name + " DirectionSYNC ");
+        //Global.NetworkManager.networkDebugLog("Player: " + message.InputOf.Name + " DirectionSYNC ");
         NetworkInputLookDirectionEvent.Invoke(message);
     }
     internal static void CreateAndSendInputSyncMessage(ulong clientID, PlayerInputData input)

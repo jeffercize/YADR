@@ -141,7 +141,7 @@ using System.Threading.Tasks;
     private void onNetworkInputLookDirectionEvent(InputLookDirectionMessage message)
     {
         if (isMe) { return; }
-        Global.debugLog("Player direction set by networking:  X: " + message.Direction.X + " Y: " + message.Direction.Y);
+        //Global.debugLog("Player direction set by networking:  X: " + message.Direction.X + " Y: " + message.Direction.Y);
         pov.Rotation = new Vector3(message.Direction.X, 0, 0);
 
         //Rotates the entire player (camera is child, so it comes along) on Y (left/right)
