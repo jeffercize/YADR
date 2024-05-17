@@ -19,7 +19,7 @@ using System.Threading.Tasks;
     public PlayerInputData input;
     public ulong clientID = 0;
     public bool spawned = false;
-
+    public bool isMe = false;
     //Movement Vars
     public Vector3 newVelocity = Vector3.Zero;
     public float gravity = ProjectSettings.GetSetting("physics/3d/default_gravity").AsSingle();
@@ -122,13 +122,29 @@ using System.Threading.Tasks;
         Global.debugLog("Testing to see if this player is me. PlayerID: " + clientID + " VS. my globalID: " + Global.instance.clientID);
         if (Global.instance.isMe(clientID))
         {
+            isMe = true;
             Global.debugLog("woah this is me");
             cam = new Camera3D();
             pov.AddChild(cam);
             cam.Current = true;
             Global.UIManager.connectToPlayer(this);
             Input.MouseMode = Input.MouseModeEnum.Captured;
+            Global.InputManager.SetProcessInput(true);
         }
+        else
+        {
+            ClientInputHandler.NetworkInputLookDirectionEvent += onNetworkInputLookDirectionEvent;
+        }
+
+    }
+
+    private void onNetworkInputLookDirectionEvent(InputLookDirectionMessage message)
+    {
+        if ((ulong)message.InputOf.SteamID == clientID) { return; }
+        pov.Rotation = new Vector3(message.Direction.X, 0, 0);
+
+        //Rotates the entire player (camera is child, so it comes along) on Y (left/right)
+        Rotation = new Vector3(0, message.Direction.Y, 0);
 
     }
 
@@ -180,13 +196,16 @@ using System.Threading.Tasks;
     public override void _Process(double delta)
     {
 
-        //Rotates the camera on X (Up/Down) and clamps so it doesnt go too far.
-        pov.Rotation = new Vector3((float)Mathf.Clamp(pov.Rotation.X - input.lookDelta.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
+        if (isMe)
+        {
+            //Rotates the camera on X (Up/Down) and clamps so it doesnt go too far.
+            pov.Rotation = new Vector3((float)Mathf.Clamp(pov.Rotation.X - input.lookDelta.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
 
-
-        //Rotates the entire player (camera is child, so it comes along) on Y (left/right)
-        Rotation = new Vector3(0, Rotation.Y - input.lookDelta.X * (float)delta, 0);
-        input.lookDelta = Vector2.Zero;
+            //Rotates the entire player (camera is child, so it comes along) on Y (left/right)
+            Rotation = new Vector3(0, Rotation.Y - input.lookDelta.X * (float)delta, 0);
+            input.lookDelta = Vector2.Zero;
+            ClientInputHandler.CreateAndSendInputLookDirectionMessage(Global.instance.clientID, new Vector3(pov.Rotation.X, Rotation.Y, 0));
+        }
         // debugPointer();
 
         if (leftHeldItem != Item.NONE)

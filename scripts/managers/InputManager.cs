@@ -17,7 +17,7 @@ public partial class InputManager: Node
     public float mouseSens = .1f;
 
 
-    double InputSyncTimer = 5f;
+    double InputSyncTimer = 1f;
     double InputSyncCounter = 0f;
 
 
@@ -47,6 +47,7 @@ public partial class InputManager: Node
 
     public override void _Ready()
     {
+        SetProcessInput(false);
         ClientInputHandler.NetworkInputActionEvent += onNetworkInputActionEvent;
         ClientInputHandler.NetworkInputMovementDirectionEvent += onNetworkInputMovementDirectionEvent;
         ClientInputHandler.NetworkInputFullCaptureEvent += onNetworkInputFullCaptureEvent;
@@ -168,7 +169,7 @@ public partial class InputManager: Node
         if (@event is InputEventMouseMotion mouse && Input.MouseMode==Input.MouseModeEnum.Captured)
         {
             localInput.lookDelta = mouse.Relative * mouseSens;
-            ClientInputHandler.CreateAndSendInputLookDeltaMessage(Global.instance.clientID, localInput.lookDelta);
+            //ClientInputHandler.CreateAndSendInputLookDeltaMessage(Global.instance.clientID, localInput.lookDelta);
         }
     }
 
