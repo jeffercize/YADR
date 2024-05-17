@@ -34,5 +34,16 @@ public partial class MainMenu : Control
         GetNode<Main>("/root/main").switchLevelName("WaitingRoom.tscn");
         GetNode<Main>("/root/main").switchUIName("WaitingRoomUI.tscn");
 
+<<<<<<< Updated upstream
+=======
+
+    }
+
+    private void genPressed()
+    {
+        Global.LevelManager.loadScene("res://components/TerrainPlayer.tscn");
+        Global.LevelManager.loadScene("res://scenes/TerrainGeneration.tscn");
+        Global.UIManager.clearUI();
+>>>>>>> Stashed changes
     }
 }
