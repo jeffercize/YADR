@@ -107,6 +107,7 @@ public partial class Server: Node
 
     private void handleNetworkData(SteamNetworkingMessage_t message)
     {
+        Global.debugLog("server here: got this stupid ass packet with type: " + (MessageType)message.m_nUserData);
         handleNetworkData(message.m_identityPeer, (MessageType)message.m_nUserData, NetworkManager.IntPtrToBytes(message.m_pData, message.m_cbSize));
     }
 
