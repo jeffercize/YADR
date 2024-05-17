@@ -1,13 +1,14 @@
-[gd_scene load_steps=13 format=3 uid="uid://cofnhdcclon1w"]
+[gd_scene load_steps=17 format=3 uid="uid://cofnhdcclon1w"]
 
 [ext_resource type="Script" path="res://scripts/terrain/CodeGenerated.cs" id="1_btvwy"]
 [ext_resource type="Terrain3DStorage" uid="uid://dkqwrhjieitw7" path="res://terrainData/TerrainGeneration.res" id="4_muabl"]
 [ext_resource type="Script" path="res://scripts/terrain/RuntimeNavigationBaker.gd" id="5_445ur"]
 [ext_resource type="Terrain3DTextureList" uid="uid://dal3jhw6241qg" path="res://terrainData/texture_list.tres" id="6_sj1ir"]
 [ext_resource type="Terrain3DMaterial" uid="uid://c7yygu7xtcpun" path="res://terrainData/CodeGenerated.tres" id="7_ov2mj"]
-[ext_resource type="Script" path="res://scripts/terrain/grass/GrassMeshMaker.cs" id="8_hyt63"]
+[ext_resource type="Script" path="res://scripts/terrain/GrassMeshMaker.cs" id="8_hyt63"]
 [ext_resource type="Script" path="res://scripts/terrain/WeatherController.cs" id="8_n3tlt"]
-[ext_resource type="Shader" path="res://scripts/terrain/grass/grassShader.gdshader" id="9_07r24"]
+[ext_resource type="Shader" path="res://shaders/terrain/grassShader.gdshader" id="9_07r24"]
+[ext_resource type="Shader" path="res://shaders/terrain/Sky.gdshader" id="9_op5fu"]
 
 [sub_resource type="NavigationMesh" id="NavigationMesh_vs6am"]
 geometry_parsed_geometry_type = 1
@@ -28,7 +29,21 @@ material = SubResource("ShaderMaterial_dop3f")
 transform_format = 1
 mesh = SubResource("BoxMesh_652tm")
 
+<<<<<<< Updated upstream
 [node name="CodeGenerated" type="Node"]
+=======
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_yehpb"]
+shader = ExtResource("9_op5fu")
+
+[sub_resource type="Sky" id="Sky_wlclh"]
+sky_material = SubResource("ShaderMaterial_yehpb")
+
+[sub_resource type="Environment" id="Environment_32pfd"]
+background_mode = 2
+sky = SubResource("Sky_wlclh")
+
+[node name="CodeGenerated" type="Node3D"]
+>>>>>>> Stashed changes
 script = ExtResource("1_btvwy")
 
 [node name="RuntimeNavigationBaker" type="Node" parent="."]
@@ -56,3 +71,6 @@ multimesh = SubResource("MultiMesh_3gj5r")
 
 [node name="World" type="Node3D" parent="."]
 script = ExtResource("8_n3tlt")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="World"]
+environment = SubResource("Environment_32pfd")

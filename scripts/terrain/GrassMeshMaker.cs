@@ -36,22 +36,6 @@ public partial class GrassMeshMaker : Node3D
     {
         Random rand = new Random();
         randomSeed = rand.Next(int.MaxValue - 1000000); //subtract 1 mil because we use it in math and I dont want to overflow
-
-/*        int width = 8192;
-        int height = 4096;
-        Image testImg = Image.Create(width, height, false, Image.Format.Rgb8);
-
-        for (int y = 0; y < height; y++)
-        {
-            for (int x = 0; x < width; x++)
-            {
-                float gradient = (float)x / (width/10 - 1); // Calculate the gradient value based on the x-coordinate
-                Color color = new Color(gradient, 0, 0); // Create a color from the gradient value
-                testImg.SetPixel(x, y, color); // Set the pixel color
-            }
-        }
-        //testImg.FlipY(); // Flip the image vertically because Godot's coordinate system starts from the top-left corner
-        SetupGrass("Player", testImg);*/
     }
 
     public (float factor1, float factor2) CalculateFactorsOld(float distance)
