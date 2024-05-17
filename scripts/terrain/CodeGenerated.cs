@@ -608,7 +608,7 @@ public partial class CodeGenerated : Node3D
         //terrain.AsGodotObject().Call("set_show_debug_collision", true);
         terrain.AsGodotObject().Call("set_collision_enabled", true);
         GrassMeshMaker GrassMeshMaker = (GrassMeshMaker)GetNode("GrassMeshMaker");
-        GrassMeshMaker.SetupGrass("LevelManager/Player", final_img);
+        GrassMeshMaker.SetupGrass("/Player", final_img);
 
         //Enable runtime navigation baking using the terrain
         Node runtime_nav_baker = GetNode("RuntimeNavigationBaker");
