@@ -2,6 +2,7 @@
 using NetworkMessages;
 using System.Collections.Generic;
 using Google.Protobuf;
+using System;
 
 public class ClientInputHandler
     {
@@ -12,16 +13,17 @@ public class ClientInputHandler
     public delegate void NetworkInputMovementDirectionEventHandler(InputMovementDirectionMessage message);
     public static event NetworkInputMovementDirectionEventHandler NetworkInputMovementDirectionEvent = delegate { };
 
+    public delegate void NetworkInputLookDeltaEventHandler(InputLookDeltaMessage message);
+    public static event NetworkInputLookDeltaEventHandler NetworkInputLookDeltaEvent = delegate { };
+
+    public delegate void NetworkInputLookDirectionEventHandler(InputLookDirectionMessage message);
+    public static event NetworkInputLookDirectionEventHandler NetworkInputLookDirectionEvent = delegate { };
+
     public delegate void NetworkInputFullCaptureEventHandler(InputFullCaptureMessage message);
     public static event NetworkInputFullCaptureEventHandler NetworkInputFullCaptureEvent = delegate { };
 
     static bool disable = false;
 
-    public enum InputType
-    {
-        MOVEDIRECTION,
-        LOOKDELTA,
-    }
 
 
     internal static void handleInputSyncMessage(InputFullCaptureMessage message)
@@ -43,7 +45,17 @@ public class ClientInputHandler
         NetworkInputActionEvent.Invoke(message);
     }
 
+    internal static void HandleInputLookDeltaMessage(InputLookDeltaMessage message)
+    {
+        //Global.NetworkManager.networkDebugLog("Player: " + message.InputOf.Name + " just did action: " + message.Action.ActionType.ToString());
+        NetworkInputLookDeltaEvent.Invoke(message);
+    }
 
+    internal static void HandleInputLookDirectionMessage(InputLookDirectionMessage message)
+    {
+        //Global.NetworkManager.networkDebugLog("Player: " + message.InputOf.Name + " just did action: " + message.Action.ActionType.ToString());
+        NetworkInputLookDirectionEvent.Invoke(message);
+    }
     internal static void CreateAndSendInputSyncMessage(ulong clientID, PlayerInputData input)
     {
         if (!Global.NetworkManager.isActive ) { return; }
@@ -112,6 +124,46 @@ public class ClientInputHandler
 
         NetworkManager.SendSteamMessage(Global.NetworkManager.client.connectionToServer, MessageType.InputMovementDirection, msg);
     }
+
+    internal static void CreateAndSendInputLookDeltaMessage(ulong clientID, Vector2 delta)
+    {
+        if (!Global.NetworkManager.isActive) { return; }
+
+        InputLookDeltaMessage msg = new InputLookDeltaMessage();
+
+        Identity identity = new Identity();
+        identity.SteamID = (long)clientID;
+        identity.Name = Global.instance.clientName;
+        msg.InputOf = identity;
+
+        DirectionVector directionVector = new DirectionVector();
+        directionVector.X = delta.X;
+        directionVector.Y = delta.Y;
+        msg.Delta = directionVector;
+
+        NetworkManager.SendSteamMessage(Global.NetworkManager.client.connectionToServer, MessageType.InputLookDelta, msg);
+    }
+
+    internal static void CreateAndSendInputLookDirectionMessage(ulong clientID, Vector3 direction)
+    {
+        if (!Global.NetworkManager.isActive) { return; }
+
+        InputLookDirectionMessage msg = new InputLookDirectionMessage();
+
+        Identity identity = new Identity();
+        identity.SteamID = (long)clientID;
+        identity.Name = Global.instance.clientName;
+        msg.InputOf = identity;
+
+        DirectionVector directionVector = new DirectionVector();
+        directionVector.X = direction.X;
+        directionVector.Y = direction.Y;
+        directionVector.Z = direction.Z;
+        msg.Direction = directionVector;
+
+        NetworkManager.SendSteamMessage(Global.NetworkManager.client.connectionToServer, MessageType.InputLookDirection, msg);
+    }
+
 
 }
 

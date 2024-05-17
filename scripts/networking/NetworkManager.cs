@@ -149,7 +149,13 @@ public partial class NetworkManager: Node
  
     }
 
-    public ESteamNetworkingConnectionState GetConnectionState(HSteamNetConnection conn)
+    public static ulong getConnectionRemoteID(HSteamNetConnection remote)
+    {
+        SteamNetworkingSockets.GetConnectionInfo(remote, out SteamNetConnectionInfo_t info);
+        return info.m_identityRemote.GetSteamID64();
+    }
+
+    public static ESteamNetworkingConnectionState GetConnectionState(HSteamNetConnection conn)
     {
         SteamNetworkingSockets.GetConnectionInfo(conn, out SteamNetConnectionInfo_t info);
         return info.m_eState;
@@ -205,7 +211,7 @@ public partial class NetworkManager: Node
     {
         byte[] data = NetworkManager.IntPtrToBytes(message.m_pData, message.m_cbSize);
         YADRNetworkMessageWrapper wrapper = YADRNetworkMessageWrapper.Parser.ParseFrom(data);
-        sender = message.m_nConnUserData;
+        sender = (long)message.m_identityPeer.GetSteamID64();
         return wrapper;
     }
 

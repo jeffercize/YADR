@@ -17,7 +17,7 @@ public partial class InputManager: Node
     public float mouseSens = .1f;
 
 
-    double InputSyncTimer = 1f;
+    double InputSyncTimer = 5f;
     double InputSyncCounter = 0f;
 
 
@@ -34,7 +34,7 @@ public partial class InputManager: Node
         InputSyncCounter += delta;
         if (InputSyncCounter > InputSyncTimer)
         {
-            //ClientInputHandler.CreateAndSendInputSyncMessage(Global.instance.clientID, localInput);
+            ClientInputHandler.CreateAndSendInputSyncMessage(Global.instance.clientID, localInput);
             InputSyncCounter = 0;
         }
 
@@ -50,11 +50,46 @@ public partial class InputManager: Node
         ClientInputHandler.NetworkInputActionEvent += onNetworkInputActionEvent;
         ClientInputHandler.NetworkInputMovementDirectionEvent += onNetworkInputMovementDirectionEvent;
         ClientInputHandler.NetworkInputFullCaptureEvent += onNetworkInputFullCaptureEvent;
+        ClientInputHandler.NetworkInputLookDeltaEvent += onNetworkInputLookDeltaEvent;
+        ClientInputHandler.NetworkInputLookDirectionEvent += onNetworkInputLookDirectionEvent;
+    }
+
+    private void onNetworkInputLookDirectionEvent(InputLookDirectionMessage message)
+    {
+        if (remoteInputs.TryGetValue((ulong)message.InputOf.SteamID, out PlayerInputData value))
+        {
+            value.lookDirection.X = message.Direction.X;
+            value.lookDirection.Y = message.Direction.Y;
+            value.lookDirection.Z = message.Direction.Z;
+        }
+    }
+
+    private void onNetworkInputLookDeltaEvent(InputLookDeltaMessage message)
+    {
+        if (remoteInputs.TryGetValue((ulong)message.InputOf.SteamID, out PlayerInputData value))
+        {
+            value.lookDelta.X = message.Delta.X;
+            value.lookDelta.Y = message.Delta.Y;
+        }
     }
 
     private void onNetworkInputFullCaptureEvent(InputFullCaptureMessage message)
     {
-        throw new NotImplementedException();
+        if (remoteInputs.TryGetValue((ulong)message.InputOf.SteamID, out PlayerInputData value))
+        {
+            value.lookDirection.X = message.LookDirection.X;
+            value.lookDirection.Y = message.LookDirection.Y;
+            value.lookDirection.Z = message.LookDirection.Z;
+            value.lookDelta.X = message.LookDelta.X;
+            value.lookDelta.Y = message.LookDelta.Y;
+            value.direction.X = message.MovementDirection.X;
+            value.direction.Y = message.MovementDirection.Y;
+
+            foreach (ActionMessage actionMessage in message.Actions)
+            {
+                value.actionStates[actionMessage.ActionType] = actionMessage.ActionState;
+            }
+        }
     }
 
     private void onNetworkInputMovementDirectionEvent(InputMovementDirectionMessage message)
@@ -133,7 +168,7 @@ public partial class InputManager: Node
         if (@event is InputEventMouseMotion mouse && Input.MouseMode==Input.MouseModeEnum.Captured)
         {
             localInput.lookDelta = mouse.Relative * mouseSens;
-            //NetworkInputHandler.CreateAndSendInputDeltaMessage(Global.instance.clientID, NetworkInputHandler.InputType.LOOKDELTA,localInput.lookDelta);
+            ClientInputHandler.CreateAndSendInputLookDeltaMessage(Global.instance.clientID, localInput.lookDelta);
         }
     }
 
