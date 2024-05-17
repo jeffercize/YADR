@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://bj7qsw8rmr8yx"]
+[gd_scene load_steps=11 format=3 uid="uid://bj7qsw8rmr8yx"]
 
 [ext_resource type="Script" path="res://scripts/player/Player.cs" id="1_x0nq7"]
 [ext_resource type="PackedScene" uid="uid://c5blodn213j26" path="res://scenes/ui/hud.tscn" id="2_gm66n"]
@@ -12,13 +12,6 @@
 material = SubResource("StandardMaterial3D_42t1x")
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_w6k7i"]
-
-[sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_baiq7"]
-auto_exposure_enabled = true
-dof_blur_far_enabled = true
-dof_blur_far_distance = 150.0
-dof_blur_far_transition = 200.0
-dof_blur_amount = 0.05
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_uq26v"]
 radius = 0.05
@@ -35,9 +28,8 @@ mesh = SubResource("CapsuleMesh_xxrac")
 [node name="collider" type="CollisionShape3D" parent="."]
 shape = SubResource("CapsuleShape3D_w6k7i")
 
-[node name="pov" type="Camera3D" parent="."]
+[node name="pov" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.694054, -0.256157)
-attributes = SubResource("CameraAttributesPractical_baiq7")
 
 [node name="pointing" type="RayCast3D" parent="pov"]
 transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0)

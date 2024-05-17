@@ -119,7 +119,7 @@ using System.Threading.Tasks;
         Equipment.equipMessage += onEquip;
         Equipment.unequipMessage += onUnequip;
 
-
+        Global.debugLog("Testing to see if this player is me. PlayerID: " + clientID + " VS. my globalID: " + Global.instance.clientID);
         if (Global.instance.isMe(clientID))
         {
             Global.debugLog("woah this is me");

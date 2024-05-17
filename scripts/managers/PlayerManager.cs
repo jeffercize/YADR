@@ -26,14 +26,16 @@ public partial class PlayerManager : Node3D
         Player player = ResourceLoader.Load<PackedScene>("res://scenes/Player.tscn").Instantiate<Player>();
         if (Global.instance.clientID == clientID)
         {
+            Global.debugLog("Registering new local player with ID: " + clientID);
             player.clientID = Global.instance.clientID;
             player.input = Global.InputManager.localInput;
         }
         else
         {
+            Global.debugLog("Registering new remote player with ID: " + clientID);
             Global.InputManager.BindRemoteClientInput(clientID, player);
         }
-        Global.debugLog("Registering new player with ID: " + clientID);
+
         players.Add(clientID, player);
 		return player;
     }

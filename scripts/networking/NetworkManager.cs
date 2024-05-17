@@ -72,6 +72,7 @@ public partial class NetworkManager: Node
         AddChild(client);
         server = new Server(localConnection);
         AddChild(server);
+        Global.PlayerManager.CreateAndRegisterNewPlayer(Global.instance.clientID);
 
 
         if (isOffline)
