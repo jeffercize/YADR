@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3 uid="uid://cofnhdcclon1w"]
+[gd_scene load_steps=13 format=3 uid="uid://cofnhdcclon1w"]
 
 [ext_resource type="Script" path="res://scripts/terrain/CodeGenerated.cs" id="1_btvwy"]
 [ext_resource type="Terrain3DStorage" uid="uid://dkqwrhjieitw7" path="res://terrainData/TerrainGeneration.res" id="4_muabl"]
@@ -8,7 +8,6 @@
 [ext_resource type="Script" path="res://scripts/terrain/GrassMeshMaker.cs" id="8_hyt63"]
 [ext_resource type="Script" path="res://scripts/terrain/WeatherController.cs" id="8_n3tlt"]
 [ext_resource type="Shader" path="res://shaders/terrain/grassShader.gdshader" id="9_07r24"]
-[ext_resource type="Shader" path="res://shaders/terrain/Sky.gdshader" id="9_op5fu"]
 
 [sub_resource type="NavigationMesh" id="NavigationMesh_vs6am"]
 geometry_parsed_geometry_type = 1
@@ -28,16 +27,6 @@ material = SubResource("ShaderMaterial_dop3f")
 [sub_resource type="MultiMesh" id="MultiMesh_3gj5r"]
 transform_format = 1
 mesh = SubResource("BoxMesh_652tm")
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_yehpb"]
-shader = ExtResource("9_op5fu")
-
-[sub_resource type="Sky" id="Sky_wlclh"]
-sky_material = SubResource("ShaderMaterial_yehpb")
-
-[sub_resource type="Environment" id="Environment_32pfd"]
-background_mode = 2
-sky = SubResource("Sky_wlclh")
 
 [node name="CodeGenerated" type="Node3D"]
 script = ExtResource("1_btvwy")
@@ -67,6 +56,3 @@ multimesh = SubResource("MultiMesh_3gj5r")
 
 [node name="World" type="Node3D" parent="."]
 script = ExtResource("8_n3tlt")
-
-[node name="WorldEnvironment" type="WorldEnvironment" parent="World"]
-environment = SubResource("Environment_32pfd")

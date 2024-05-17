@@ -289,12 +289,11 @@ public partial class GrassMeshMaker : Node3D
     public void SetupGrass(String target, Image givenHeightMap)
     {
         heightMap = givenHeightMap;
-        player = GetNode<CharacterBody3D>("../../../"+target);
-        GD.Print(player.Transform.Origin.X);
+        player = GetNode<CharacterBody3D>("../../"+target);
         Stopwatch stopwatch = Stopwatch.StartNew();
 
         ShaderMaterial grassMat = new ShaderMaterial();
-        Shader grassShader = GD.Load<Shader>("res://scripts/terrain/grass/grassShader.gdshader");
+        Shader grassShader = GD.Load<Shader>("res://shaders/terrain/grassShader.gdshader");
         grassMat.Shader = grassShader;
 
         heightMapTexture = ImageTexture.CreateFromImage(heightMap);
