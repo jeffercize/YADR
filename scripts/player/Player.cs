@@ -1,73 +1,58 @@
-using Godot;
-using GodotPlugins.Game;
-using Networking;
-using Steamworks;
+﻿using Godot;
+using NetworkMessages;
 using System;
 using System.Collections.Generic;
-using System.Runtime;
-using System.Transactions;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-public partial class Player : Character
-{
+    public partial class Player: Character
+    {
 
-    public Vector3 newVelocity = Vector3.Zero;
-    public Inventory inventory;
+    public Player() { }
+    public Player(ulong clientID) { this.clientID = clientID; }
+
+
+    //Core properties of Player
     public Equipment equipment;
-    public Item heldItem = Item.NONE;
-    public Node3D holdPoint;
-    RayCast3D pointing;
+    public Inventory inventory;
+    public PlayerInputData input;
+    public ulong clientID = 0;
+    public bool spawned = false;
 
-    public Main.Gamestate lastKnownGamestate;
-
-
-    //Internal vars
-    private Camera3D camera;
-    private Vector2 lookDelta;
-    public Friend account;
-    public bool isMe;
-    public gameUI gameUI;
-    Vector2 inputDir = Vector2.Zero;
-
-
-
-    public PlayerInput input;
-
-    [Export]
-    public string steamName;
-
-    //Movement
-
-    public const float jumpSpeed = 7.5f;
-
-    [Export]
+    //Movement Vars
+    public Vector3 newVelocity = Vector3.Zero;
     public float gravity = ProjectSettings.GetSetting("physics/3d/default_gravity").AsSingle();
 
-
     const float maxSpeed = 5.0f;
-
     float maxSpeedX = maxSpeed;
     float maxSpeedZ = maxSpeed;
 
+    const float maxSpeedDefault = 5.0f;
+    float maxSpeedDefaultX = maxSpeedDefault;
+    float maxSpeedDefaultZ = maxSpeedDefault;
+
+    const float maxSpeedAim = 3.0f;
+    float maxSpeedAimX = maxSpeedAim;
+    float maxSpeedAimZ = maxSpeedAim;
+
+    const float maxSpeedSprint = 10.0f;
+    float maxSpeedSprintX = 5.0f;
+    float maxSpeedSprintZ = maxSpeedSprint;
 
     const float airControlMod = 0.5f;
-
     float airControlModX = airControlMod;
     float airControlModZ = airControlMod;
 
-
-    const float accelerationSpeed = 150.0f;
-
+    const float accelerationSpeed = 50.0f;
     float accelerationSpeedX = accelerationSpeed;
     float accelerationSpeedZ = accelerationSpeed;
 
-
-
-    const float decelerationSpeed = 150.0f;
-
+    const float decelerationSpeed = 50.0f;
     float decelerationSpeedZ = decelerationSpeed;
     float decelerationSpeedX = decelerationSpeed;
 
-    //Jumping
+    //Jumping vars
     public Vector3 jumpVelocity = new Vector3(0, 5, 0);
     public int jumps = 2;
     public int maxJumps = 2;
@@ -79,11 +64,13 @@ public partial class Player : Character
     public bool inAir = false;
 
 
-
     //Camera
-    public float fov = 90;
-    public float sprintfov = 120;
-    public float scopefov = 70;
+    public Node3D pov;
+    public Camera3D cam;
+    public RayCast3D pointing;
+    public float fov = 80;
+    public float sprintfov = 90;
+    public float scopefov = 60;
 
     public const float cameraSens = .6f;
 
@@ -94,90 +81,157 @@ public partial class Player : Character
     public const float mouseSens = 1f;
 
 
+    //Viewmodel stuff
+    public Item rightHeldItem = Item.NONE;
+    public Item leftHeldItem = Item.NONE;
+    public Node3D leftHoldPoint;
+    public Vector3 leftHoldPointOriginPos;
+    public Node3D rightHoldPoint;
+    public Vector3 rightHoldPointOriginPos;
 
 
-    public Player(Friend f)
-    {
-        account = f;
-        isMe = f.IsMe;
-    }
+    public Vector3 leftGunTargetPos;
+    public float leftGunTargetRecoilRotation;
 
-    public Player() { }
+    public Vector3 leftGunOriginPos;
+    public float leftGunOriginRecoilRotation;
 
-    public Player(ulong senderSteamID)
-    {
-        account = new Friend(senderSteamID);
-    }
 
-    public void init(Friend f)
-    {
-        account = f;
-        isMe = f.IsMe;
-        Name = f.Id.Value.ToString();
-        steamName = f.Name;
-        Position = new Vector3(0, 0, 0);
-    }
 
     public override void _Ready()
     {
+        Global.debugLog("PlayerID: " + clientID + " has arrived on the scenetree.");
 
         inventory = GetNode<Inventory>("Inventory");
+        inventory.spatialParent = this;
         equipment = GetNode<Equipment>("Equipment");
-
-        //Every player has an input object, gets data from input if local, or network if remote
-        input = new PlayerInput(this.account.Id.ToString());
-        input.Name = "InputOf:" + account.Name;
-        AddChild(input);
-
-        holdPoint = GetNode<Node3D>("holdPoint");
+        equipment.connectedCharacter = this;
+        pov = GetNode<Node3D>("pov");
+        pointing = GetNode<RayCast3D>("pov/pointing");
 
 
+        leftHoldPoint = GetNode<Node3D>("pov/leftHoldPoint");
+        rightHoldPoint = GetNode<Node3D>("pov/rightHoldPoint");
+        leftHoldPointOriginPos = leftHoldPoint.Position;
+        rightHoldPointOriginPos = rightHoldPoint.Position;
 
-        if (isMe)
+        InputManager.InputEvent += onInputEvent;
+        Equipment.equipMessage += onEquip;
+        Equipment.unequipMessage += onUnequip;
+
+
+        if (Global.instance.isMe(clientID))
         {
-            camera = GetNode<Camera3D>("pov");
-            camera.Name = "CameraOf_" + account.Name;
-            camera.Current = true;
-
-            gameUI = ResourceLoader.Load<PackedScene>("res://scenes/ui/gameUI.tscn").Instantiate<gameUI>();
-            gameUI.Name = "gameUI";
-            gameUI.player = this;
-            GetNode("/root/main/ui").AddChild(gameUI);
-
-            Global.ui.gameUI = gameUI;
-
+            Global.debugLog("woah this is me");
+            cam = new Camera3D();
+            pov.AddChild(cam);
+            cam.Current = true;
+            Global.UIManager.connectToPlayer(this);
             Input.MouseMode = Input.MouseModeEnum.Captured;
         }
 
-        pointing = GetNode<RayCast3D>("CameraOf_Canb/pointing");
-        PlayerInput.input_jump += jump;
-
-        Equipment.equipMessage += onEquip;
-        Equipment.unequipMessage += onUnequip;
     }
 
-    private void onUnequip(EquipSlot slot, Item item)
+    private void onUnequip(Equipment equipment, string slotName, Item item)
     {
-        if (slot.connectedEquipment == equipment)
-        {
-            if (slot.Name.Equals("weapon1"))
-            {
-                heldItem = Item.NONE;
+        throw new NotImplementedException();
+    }
 
+    private void onEquip(Equipment equipment, string slotName, Item item)
+    {
+        throw new NotImplementedException();
+    }
+
+    private void onInputEvent(ulong clientID, ActionMessage actionMessage)
+    {
+        if (clientID==this.clientID && actionMessage != null)
+        {
+            if (actionMessage.ActionType == ActionType.Jump && actionMessage.ActionState == ActionState.Pressed)
+            {
+                onJump();
             }
         }
     }
 
-    private void onEquip(EquipSlot slot, Item item)
+    public void ForceSyncState(Player state)
     {
-        if (slot.connectedEquipment == equipment)
+
+    }
+
+
+    public void onJump()
+    {
+        if (jumps > 0)
         {
-            if (slot.Name.Equals("weapon1"))
+            jumping = true;
+            jumps -= 1;
+
+            //nullify the down velocity (Y) if using momentum cancel
+            if (jumpMomentumCancel && Velocity.Y < 0)
             {
-                heldItem = item;
-                holdPoint.AddChild(item);
-                item.GlobalTransform = holdPoint.GlobalTransform;
+                newVelocity.Y = 0;
             }
+
+            newVelocity += jumpVelocity;
+        }
+    }
+    //
+    //CAMERA SHIT////////////////////////////////////////////////
+    public override void _Process(double delta)
+    {
+
+        //Rotates the camera on X (Up/Down) and clamps so it doesnt go too far.
+        pov.Rotation = new Vector3((float)Mathf.Clamp(pov.Rotation.X - input.lookDelta.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
+
+
+        //Rotates the entire player (camera is child, so it comes along) on Y (left/right)
+        Rotation = new Vector3(0, Rotation.Y - input.lookDelta.X * (float)delta, 0);
+        input.lookDelta = Vector2.Zero;
+        // debugPointer();
+
+        if (leftHeldItem != Item.NONE)
+        {
+            RayCast3D ray = leftHeldItem.GetNode<RayCast3D>("barrelRay");
+            if (ray != null && ray.IsColliding())
+            {
+                float distance = ray.GetCollisionPoint().DistanceTo(ray.GlobalPosition);
+                float target = MathF.Abs(ray.TargetPosition.Y);
+                float diff = target - distance;
+                Vector3 targetVec = new Vector3(leftHoldPointOriginPos.X, leftHoldPointOriginPos.Y, leftHoldPointOriginPos.Z + diff);
+                float targetZ = Mathf.Lerp(leftHoldPoint.Position.Z, targetVec.Z, .3f);
+                Vector3 newVec = new Vector3(leftHoldPointOriginPos.X, leftHoldPointOriginPos.Y, targetZ);
+                leftHoldPoint.Position = newVec;
+            }
+            else if (ray != null && !ray.IsColliding())
+            {
+                float targetZ = Mathf.Lerp(leftHoldPoint.Position.Z, leftHoldPointOriginPos.Z, .05f);
+                Vector3 newVec = new Vector3(leftHoldPointOriginPos.X, leftHoldPointOriginPos.Y, targetZ);
+                leftHoldPoint.Position = newVec;
+            }
+        }
+
+        if (rightHeldItem != Item.NONE)
+        {
+            RayCast3D ray = rightHeldItem.GetNode<RayCast3D>("barrelRay");
+            if (ray != null && ray.IsColliding())
+            {
+                float distance = ray.GetCollisionPoint().DistanceTo(ray.GlobalPosition);
+                float target = MathF.Abs(ray.TargetPosition.Y);
+                float diff = target - distance;
+                Vector3 targetVec = new Vector3(rightHoldPointOriginPos.X, rightHoldPointOriginPos.Y, rightHoldPointOriginPos.Z + diff);
+                float targetZ = Mathf.Lerp(rightHoldPoint.Position.Z, targetVec.Z, .3f);
+                Vector3 newVec = new Vector3(rightHoldPointOriginPos.X, rightHoldPointOriginPos.Y, targetZ);
+                rightHoldPoint.Position = newVec;
+            }
+            else if (ray != null && !ray.IsColliding())
+            {
+                float targetZ = Mathf.Lerp(rightHoldPoint.Position.Z, rightHoldPointOriginPos.Z, .05f);
+                Vector3 newVec = new Vector3(rightHoldPointOriginPos.X, rightHoldPointOriginPos.Y, targetZ);
+
+                rightHoldPoint.Position = newVec;
+            }
+
+
         }
     }
 
@@ -187,29 +241,34 @@ public partial class Player : Character
     //MOVEMENT SHIT ///////////////////////////////////////////////
     public override void _PhysicsProcess(double delta)
     {
-        inputDir = input.direction;
+        handleInputDirection(delta);
+        handleJumpingAndFalling(delta);
+        handleLookingDirection(delta);
 
-        //Collect our current Input direction (drop the Y piece), and multiply it by our Transform Basis, rotating it so that forward input becomes forward in the direction we are facing
-        Vector3 dir = Transform.Basis * new Vector3(inputDir.Y, 0, inputDir.X);
+        //Upate our vector and shoot it off to the physics engine
+        Velocity = newVelocity;
+        MoveAndSlide();
 
-        //Create our desired vector, the direction we're going at max speed
-        Vector3 targetVec = new Vector3(dir.X * maxSpeedX, 0, dir.Z * maxSpeedZ);
+        //Velocity is updated by the physics engine at this point, store it to modify next frame.
+        newVelocity = Velocity;
 
-
-        //I honestly have no idea what the dot operator does. This uses our acceleration if we're inputing in the direction of motion, otherwise use our deceleration
-        if (dir.Dot(newVelocity) > 0)
+        //MP Sync 
+        if (Global.NetworkManager.isActive)
         {
-            //Yeah, I learned ternary operators, what are you gonna do about it.
-            newVelocity.X = Mathf.MoveToward(Velocity.X, targetVec.X, accelerationSpeedX * (float)delta * (IsOnFloor() ? 1 : airControlModX));
-            newVelocity.Z = Mathf.MoveToward(Velocity.Z, targetVec.Z, accelerationSpeedZ * (float)delta * (IsOnFloor() ? 1 : airControlModZ));
-        }
-        else
-        {
-            newVelocity.X = Mathf.MoveToward(Velocity.X, targetVec.X, decelerationSpeedX * (float)delta * (IsOnFloor() ? 1 : airControlModX));
-            newVelocity.Z = Mathf.MoveToward(Velocity.Z, targetVec.Z, decelerationSpeedZ * (float)delta * (IsOnFloor() ? 1 : airControlModZ));
-        }
 
+        }
+    }
 
+    private void handleLookingDirection(double delta)
+    {
+        pov.Rotation = new Vector3((float)Mathf.Clamp(pov.Rotation.X - input.lookDelta.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
+        //Rotates the entire player (camera is child, so it comes along) on Y (left/right)
+        Rotation = new Vector3(0, Rotation.Y - input.lookDelta.X * (float)delta, 0);
+        input.lookDelta = Vector2.Zero;
+    }
+
+    private void handleJumpingAndFalling(double delta)
+    {
         //Lets get the Y component sorted - gravity and jumping
         if (!IsOnFloor())
         {
@@ -250,152 +309,19 @@ public partial class Player : Character
             }
 
         }
-
-        //Upate our vector and shoot it off to the physics engine
-        Velocity = newVelocity;
-        MoveAndSlide();
-        newVelocity = Velocity;
     }
 
-
-    public void jump()
+    private void handleInputDirection(double delta)
     {
-        if (jumps > 0)
-        {
-            jumping = true;
-            jumps -= 1;
+        //Collect our current Input direction (drop the Y piece), and multiply it by our Transform Basis, rotating it so that forward input becomes forward in the direction we are facing
+        Vector3 dir = Transform.Basis * new Vector3(input.direction.Y * maxSpeedX, 0, input.direction.X * maxSpeedZ);
 
-            //nullify the down velocity (Y) if using momentum cancel
-            if (jumpMomentumCancel && Velocity.Y < 0)
-            {
-                newVelocity.Y = 0;
-            }
+        //Create our desired vector, the direction we're going at max speed
+        Vector3 targetVec = new Vector3(dir.X, 0, dir.Z);
 
-            newVelocity += jumpVelocity;
-        }
-    }
-
-    //CAMERA SHIT////////////////////////////////////////////////
-    public override void _Process(double delta)
-    {
-        if (isMe)
-        {
-            //Rotates the camera on X (Up/Down) and clamps so it doesnt go too far.
-            camera.Rotation = new Vector3((float)Mathf.Clamp(camera.Rotation.X - input.lookDelta.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
-        }
-
-        //Rotates the entire player (camera is child, so it comes along) on Y (left/right)
-        Rotation = new Vector3(0, Rotation.Y - input.lookDelta.X * (float)delta, 0);
-
-
-        Node3D pointed = pointing.GetCollider() as Node3D;
-        if (pointed != null)
-        {
-            if (pointing.GetCollider() is Node3D)
-            {
-                GetNode<Label>("hud/debugPanel/debugLabel").Text = "Pointing: " + pointed.Name;
-            }
-            else
-            {
-                GetNode<Label>("hud/debugPanel/debugLabel").Text = "Pointing: None";
-            }
-        }
-        else
-        {
-            GetNode<Label>("hud/debugPanel/debugLabel").Text = "Pointing: None";
-        }
-
-
-        if (Input.IsActionJustPressed("interact"))
-        {
-            Global.debugLog("Interact Pressed");
-            //GetNode<Label>("hud/bottomRight/equipped").Text = "Equipped: " + pointed.Name;
-
-            if (pointed is Item item)
-            {
-                //Item item = (Item)pointed.GetParent();
-                Global.debugLog("Picked up Item");
-                inventory.autoPlaceItem(item);
-                item.GetParent().RemoveChild(item);
-            }
-
-
-        }
-
-
-
-        if (heldItem != Item.NONE)
-        {
-            if (isMe)
-            {
-                //draw held item on hud
-            }
-
-            //draw held item in world
-        }
-
-
-    }
-    // OTHER SHIT ///////////////////////////////////////////////
-
-    public void createBind(string newAction, Key key)
-    {
-        InputMap.AddAction(newAction);
-        InputEventKey e = new InputEventKey();
-        e.Keycode = key;
-        InputMap.ActionAddEvent(newAction, e);
-    }
-
-    //Some dumb debug shit I'm going to forget to turn off
-    public override void _UnhandledKeyInput(InputEvent @event)
-    {
-        if (Input.IsActionJustPressed("DEBUG_capture"))
-        {
-            Input.MouseMode = Input.MouseModeEnum.Captured;
-        }
-        if (Input.IsActionJustPressed("DEBUG_uncapture"))
-        {
-            Input.MouseMode = Input.MouseModeEnum.Visible;
-        }
-        /*if (Input.IsActionJustPressed("DEBUG_cam"))
-        {
-            if (camera.Current == false)
-            {
-                camera.Current = true;
-                GetNode<Camera3D>("/root/game/debugCam").Current = false;
-            }
-            else
-            {
-                camera.Current = false;
-                GetNode<Camera3D>("/root/game/debugCam").Current = true;
-            }
-        }*/
-    }
-
-    // override object.Equals
-    public override bool Equals(object obj)
-    {
-        //       
-        // See the full list of guidelines at
-        //   http://go.microsoft.com/fwlink/?LinkID=85237  
-        // and also the guidance for operator== at
-        //   http://go.microsoft.com/fwlink/?LinkId=85238
-        //
-
-        if (obj == null || GetType() != obj.GetType())
-        {
-            return false;
-        }
-
-        // TODO: write your implementation of Equals() here
-        Player other = obj as Player;
-        return other.account.Id.Value == account.Id.Value;
-    }
-
-    // override object.GetHashCode
-    public override int GetHashCode()
-    {
-        // TODO: write your implementation of GetHashCode() here
-        return account.Id.Value.GetHashCode();
+        //Set the velocity
+        newVelocity.X = targetVec.X;
+        newVelocity.Z = targetVec.Z;
     }
 }
+

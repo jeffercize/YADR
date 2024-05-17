@@ -2,7 +2,6 @@ using Godot;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using static Networking.SteamNetwork;
 
 public partial class InventoryUI : Container
 {
@@ -11,10 +10,10 @@ public partial class InventoryUI : Container
     public int slotSizeY = 50;
     float DRAG_START_DIST = 25;
     public Godot.Collections.Array<Vector2> points = new Godot.Collections.Array<Vector2>();
-    public gameUI gameUI;
     Vector2 startMousePos = Vector2.Zero;
     Item tempItem = Item.NONE;
     public Inventory connectedInventory { get; set; }
+
 
     public InventoryUI(Inventory inventory)
     {
@@ -25,7 +24,7 @@ public partial class InventoryUI : Container
 
     public override void _Ready()
     {
-        gameUI = GetNode<gameUI>("/root/main/ui/gameUI");
+
     }
 
 
@@ -71,15 +70,15 @@ public partial class InventoryUI : Container
 
         }
 
-        if (gameUI.dragItem != Item.NONE)
+        if (Global.UIManager.dragItem != Item.NONE)
         {
-            if (!mapToLocalCoordsSnappy(GetLocalMousePosition(), gameUI.dragItem.width, gameUI.dragItem.height, out Vector2 mouseVec))
+            if (!mapToLocalCoordsSnappy(GetLocalMousePosition(), Global.UIManager.dragItem.width, Global.UIManager.dragItem.height, out Vector2 mouseVec))
             {
                 return;
             }
             int x = (int)mouseVec.X;
             int y = (int)mouseVec.Y;
-            Item fake = new Item(gameUI.dragItem.width, gameUI.dragItem.height);
+            Item fake = new Item(Global.UIManager.dragItem.width, Global.UIManager.dragItem.height);
             if (connectedInventory.phantomPlaceItemAtCoordsOverlapOne(x, y, fake, out Item overlap))
             {
                 Vector2 topLeft = new Vector2(fake.invTopLeft.X * slotSizeX, fake.invTopLeft.Y * slotSizeY);
@@ -145,20 +144,20 @@ public partial class InventoryUI : Container
         }
         QueueRedraw();
         Vector2 mouseVec = Vector2.Inf;
-        if (gameUI.dragItem == Item.NONE)
+        if (Global.UIManager.dragItem == Item.NONE)
         {
             if (!mapToLocalCoordsPrecise(GetLocalMousePosition(), out mouseVec))
             {
                 return;
             }
         }
-        else if (gameUI.dragItem != Item.NONE)
+        else if (Global.UIManager.dragItem != Item.NONE)
         {
-            if (!mapToLocalCoordsSnappy(GetLocalMousePosition(), gameUI.dragItem.width, gameUI.dragItem.height, out mouseVec))
+            if (!mapToLocalCoordsSnappy(GetLocalMousePosition(), Global.UIManager.dragItem.width, Global.UIManager.dragItem.height, out mouseVec))
             {
                 return;
             }
-            if (gameUI.dragItem.height == 1 )
+            if (Global.UIManager.dragItem.height == 1 )
             {
 
             }
@@ -167,7 +166,7 @@ public partial class InventoryUI : Container
         int y = (int)mouseVec.Y;
         if (Input.IsActionJustPressed("LCLICK")) //sent for one frame when Lmouse first goes down
         {
-            if (gameUI.dragItem == Item.NONE)
+            if (Global.UIManager.dragItem == Item.NONE)
             {
                 if (connectedInventory.items.TryGetValue(new Vector2(x, y), out tempItem))
                 {
@@ -183,9 +182,9 @@ public partial class InventoryUI : Container
         }
         else if (Input.IsActionJustReleased("LCLICK")) //sent for one frame when Lmouse goes back up
         {
-            if (gameUI.dragItem == Item.NONE)
+            if (Global.UIManager.dragItem == Item.NONE)
             {
-                if (connectedInventory.removeItemAtCoords(x, y, out gameUI.dragItem))
+                if (connectedInventory.removeItemAtCoords(x, y, out Global.UIManager.dragItem))
                 {
                     debugLog("[INV]Release (Click) Pickup! (" + x + "," + y + ")");
                     GetNode<AudioStreamPlayer>("/root/main/uisfx").Stream = ResourceLoader.Load<AudioStreamWav>("res://assets/audio/ui/mouseclick1.wav");
@@ -201,29 +200,29 @@ public partial class InventoryUI : Container
                     debugLog("[INV]Release! Coords: (" + x + "," + y + ")");
                 }
             }
-            else if (gameUI.dragItem != Item.NONE)
+            else if (Global.UIManager.dragItem != Item.NONE)
             {
-                if (connectedInventory.phantomPlaceItemAtCoordsOverlapOne(x, y, gameUI.dragItem, out Item overlap))
+                if (connectedInventory.phantomPlaceItemAtCoordsOverlapOne(x, y, Global.UIManager.dragItem, out Item overlap))
                 {
                     if (overlap!=Item.NONE)
                     {
-                        if (overlap.combineWith(gameUI.dragItem, out Item remain))
+                        if (overlap.combineWith(Global.UIManager.dragItem, out Item remain))
                         {
-                            gameUI.dragItem = remain;
+                            Global.UIManager.dragItem = remain;
                         }
                         else
                         {
                             Item temp = Item.NONE;
                             connectedInventory.removeItemAtCoords(overlap.invTopLeft, out temp);
-                            connectedInventory.placeItemAtCoords(x, y, gameUI.dragItem);
-                            gameUI.dragItem = temp;
+                            connectedInventory.placeItemAtCoords(x, y, Global.UIManager.dragItem);
+                            Global.UIManager.dragItem = temp;
                         }
 
                     }
                     else
                     {
-                        connectedInventory.placeItemAtCoords(x, y, gameUI.dragItem);
-                        gameUI.dragItem = Item.NONE;
+                        connectedInventory.placeItemAtCoords(x, y, Global.UIManager.dragItem);
+                        Global.UIManager.dragItem = Item.NONE;
                     }
                     debugLog("[INV]Drag or click Drop! (" + x + "," + y + ")");
                     GetNode<AudioStreamPlayer>("/root/main/uisfx").Stream = ResourceLoader.Load<AudioStreamWav>("res://assets/audio/ui/mouserelease1.wav");
@@ -242,9 +241,9 @@ public partial class InventoryUI : Container
         }
         else if (Input.IsActionPressed("LCLICK")) //sent every frame the Lmouse button is down
         {
-            if (gameUI.dragItem == Item.NONE && tempItem != Item.NONE && startMousePos.DistanceTo(GetLocalMousePosition()) > DRAG_START_DIST && startMousePos != Vector2.Zero)
+            if (Global.UIManager.dragItem == Item.NONE && tempItem != Item.NONE && startMousePos.DistanceTo(GetLocalMousePosition()) > DRAG_START_DIST && startMousePos != Vector2.Zero)
             {
-                if (connectedInventory.removeItemAtCoords((int)tempItem.invTopLeft.X, (int)tempItem.invTopLeft.Y, out gameUI.dragItem))
+                if (connectedInventory.removeItemAtCoords((int)tempItem.invTopLeft.X, (int)tempItem.invTopLeft.Y, out Global.UIManager.dragItem))
                 {
                     debugLog("[INV]Drag Pickup! A distance of " + startMousePos.DistanceTo(GetLocalMousePosition()));
                     GetNode<AudioStreamPlayer>("/root/main/uisfx").Stream = ResourceLoader.Load<AudioStreamWav>("res://assets/audio/ui/mouseclick1.wav");

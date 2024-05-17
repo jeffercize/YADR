@@ -1,31 +1,41 @@
-[gd_scene load_steps=6 format=3 uid="uid://gpvkhmphgswl"]
+[gd_scene load_steps=10 format=3 uid="uid://gpvkhmphgswl"]
 
 [ext_resource type="Script" path="res://scripts/Main.cs" id="1_wiw4r"]
 [ext_resource type="AudioStream" uid="uid://m1qnnxntnkq" path="res://import/click4.wav" id="2_aicxg"]
-[ext_resource type="Script" path="res://scenes/ui.cs" id="2_gdcb3"]
+[ext_resource type="Script" path="res://scripts/managers/UIManager.cs" id="2_gdcb3"]
 [ext_resource type="AudioStream" uid="uid://dsadnt3yyjesu" path="res://import/Gregoire Lourme - Commando Team (Action) [loop cut].ogg" id="3_lhhe4"]
-[ext_resource type="Script" path="res://scenes/level.cs" id="4_w3l1c"]
+[ext_resource type="Script" path="res://scripts/managers/InputManager.cs" id="4_rs1vn"]
+[ext_resource type="Script" path="res://scripts/managers/LevelManager.cs" id="4_w3l1c"]
+[ext_resource type="Script" path="res://scripts/networking/NetworkManager.cs" id="5_d6dd4"]
+[ext_resource type="Script" path="res://scripts/managers/AudioManager.cs" id="6_5rbi3"]
+[ext_resource type="Script" path="res://scripts/managers/PlayerManager.cs" id="7_y76u6"]
 
 [node name="main" type="Node"]
 script = ExtResource("1_wiw4r")
 
-[node name="ui" type="CanvasLayer" parent="."]
+[node name="UIManager" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("2_gdcb3")
 
-[node name="level" type="Node3D" parent="."]
+[node name="LevelManager" type="Node3D" parent="."]
 script = ExtResource("4_w3l1c")
 
-[node name="players" type="Node" parent="."]
+[node name="InputManager" type="Node" parent="."]
+script = ExtResource("4_rs1vn")
 
-[node name="network" type="Node" parent="."]
+[node name="NetworkManager" type="Node" parent="."]
+script = ExtResource("5_d6dd4")
 
-[node name="server" type="Node" parent="network"]
+[node name="AudioManager" type="AudioStreamPlayer" parent="."]
+script = ExtResource("6_5rbi3")
 
-[node name="client" type="Node" parent="network"]
-
-[node name="lobby" type="Node" parent="network"]
-
-[node name="clients" type="Node" parent="network/lobby"]
+[node name="PlayerManager" type="Node3D" parent="."]
+script = ExtResource("7_y76u6")
 
 [node name="uisfx" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("2_aicxg")
