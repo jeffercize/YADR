@@ -38,7 +38,7 @@ public partial class WeatherController : Node3D
         mySun = new DirectionalLight3D();
 
         mySun.DirectionalShadowMaxDistance = 256.0f;
-        mySun.RotateX(-60);
+        mySun.Rotation = new Vector3(-60.0f, 0.0f, 0.0f);
         mySun.LightColor = (new Color(0.5f, 0.5f, 0.5f));
         mySun.LightEnergy = 0.2f;
 		mySun.ShadowEnabled = true;
@@ -123,7 +123,7 @@ public partial class WeatherController : Node3D
         myEnvironment.Environment.VolumetricFogEmission = new Color(0.15f, 0.15f, 0.15f);
 
         mySun.DirectionalShadowMaxDistance = 256.0f;
-        mySun.RotateX(-60);
+        mySun.Rotation = new Vector3(-60.0f, 0.0f, 0.0f);
         mySun.LightColor = (new Color(0.6f, 0.6f, 0.6f));
         mySun.LightEnergy = 0.4f;
         mySun.ShadowEnabled = true;
@@ -151,7 +151,7 @@ public partial class WeatherController : Node3D
         myEnvironment.Environment.VolumetricFogEnabled = false;
 
         mySun.DirectionalShadowMaxDistance = 256.0f;
-        mySun.RotateX(-60);
+        mySun.Rotation = new Vector3(-60.0f, 0.0f, 0.0f);
         mySun.LightColor = (new Color(0.9f, 0.9f, 0.9f));
         mySun.LightEnergy = 1.0f;
         mySun.ShadowEnabled = true;

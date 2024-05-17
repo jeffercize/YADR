@@ -36,8 +36,6 @@ public partial class MainMenu : Control
         Global.LevelManager.loadScene("res://scenes/MPDebug.tscn");
 
 
-<<<<<<< Updated upstream
-=======
 
     }
 
@@ -46,13 +44,6 @@ public partial class MainMenu : Control
         Global.LevelManager.loadScene("res://components/TerrainPlayer.tscn");
         Global.LevelManager.loadScene("res://scenes/TerrainGeneration.tscn");
         Global.UIManager.clearUI();
->>>>>>> Stashed changes
     }
 
-    private void genPressed()
-    {
-        Global.LevelManager.loadScene("res://scenes/TerrainGeneration.tscn");
-        Global.LevelManager.loadScene("res://components/TerrainPlayer.tscn");
-        Global.UIManager.clearUI();
-    }
 }
