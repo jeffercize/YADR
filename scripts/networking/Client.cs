@@ -81,22 +81,10 @@ public partial class Client: Node
         for(int i = 0; i<numMessages; i++)
             {
             if (messages[i] == IntPtr.Zero) { continue; } //Sanity check. 
-            handleNetworkData(SteamNetworkingMessage_t.FromIntPtr(messages[i]));
+            SteamNetworkingMessage_t steamMsg = SteamNetworkingMessage_t.FromIntPtr(messages[i]);
+            YADRNetworkMessageWrapper wrappedMessage = DecodeSteamMessage(steamMsg, out long sender);
+            handleNetworkData(wrappedMessage, sender);
         }
-    }
-
-    /// <summary>
-    /// Overloaded method sig just to make things easier. Takes apart the SteamMessage into its important peices and sends them on.
-    /// </summary>
-    /// <param name="message"></param>
-    private void handleNetworkData(SteamNetworkingMessage_t message)
-    {
-        //Read m_cbSize bytes starting at m_pData (payload size and payload pointer) out to a managed byte array
-        byte[] payload = NetworkManager.IntPtrToBytes(message.m_pData, message.m_cbSize);
-
-        //send those pieces of the message we care about onward.
-
-        handleNetworkData(message.m_identityPeer, (MessageType)message.m_nUserData, payload);
     }
 
     /// <summary>
@@ -105,43 +93,43 @@ public partial class Client: Node
     /// <param name="identity">Will be either a CSteamID (ulong) or an ipaddress. See SteamNetworkingIdentity</param>
     /// <param name="type">enum message type</param>
     /// <param name="data">raw bytearray of protobuf payload</param>
-    private void handleNetworkData(SteamNetworkingIdentity identity, MessageType type, byte[] data)
+    private void handleNetworkData(YADRNetworkMessageWrapper message, long sender)
     {
 
-        switch (type)
+        switch (message.Type)
         {
-            case MessageType.CHAT_BASIC:
+            case MessageType.ChatBasic:
                 Global.NetworkManager.networkDebugLog("Client - Chat Message Received.");
-                ClientChatHandler.handleChatMessage(data);
+                ClientChatHandler.handleChatMessage(message.ChatBasic);
                 break;
 
-            case MessageType.INPUT_MOVEMENTDIRECTION:
+            case MessageType.InputMovementDirection:
                 Global.NetworkManager.networkDebugLog("Client - Input Delta Message Received.");
-                ClientInputHandler.HandleInputMovementDirectionMessage(data);
+                ClientInputHandler.HandleInputMovementDirectionMessage(message.InputMovementDirection);
                 break;
-            case MessageType.INPUT_ACTION:
+            case MessageType.InputAction:
                 Global.NetworkManager.networkDebugLog("Client - Action Delta Message Received.");
-                ClientInputHandler.HandleInputActionMessage(data);
+                ClientInputHandler.HandleInputActionMessage(message.InputAction);
                 break;
-            case MessageType.INPUT_FULLCAPTURE:
+            case MessageType.InputFullCapture:
                 Global.NetworkManager.networkDebugLog("Client - Full Input Sync Message Received.");
-                ClientInputHandler.handleInputSyncMessage(data);
+                ClientInputHandler.handleInputSyncMessage(message.InputFullCapture);
                 break;
 
-            case MessageType.SERVER_NEWPLAYER:
+            case MessageType.ServerAlertNewPlayer:
                 Global.NetworkManager.networkDebugLog("Client - Got the new player notice from server.");
-                ServerMessagePlayerJoin joinMessage = ServerMessagePlayerJoin.Parser.ParseFrom(data);
-                Global.PlayerManager.CreateAndRegisterNewPlayer((ulong)joinMessage.NewPlayer.SteamID);
+
+                Global.PlayerManager.CreateAndRegisterNewPlayer((ulong)message.ServerAlertNewPlayer.NewPlayer.SteamID);
                 break;
-            case MessageType.SERVER_SPAWNPLAYER:
+            /*case MessageType.SERVER_SPAWNPLAYER:
                 Global.NetworkManager.networkDebugLog("Client - Got the spawn player command from server.");
                 ServerMessageSpawnPlayer spawnMessage = ServerMessageSpawnPlayer.Parser.ParseFrom(data);
                 if (Global.PlayerManager.players.TryGetValue((ulong)spawnMessage.Player.SteamID, out Player player))
                 {
                     Global.PlayerManager.SpawnPlayer(player, new Vector3(spawnMessage.Position.X,spawnMessage.Position.Y,spawnMessage.Position.Z));
                 }
-                break;
-            case MessageType.SERVER_LAUNCHGAME:
+                break;*/
+            case MessageType.ServerCommandLaunchGame:
                 Global.NetworkManager.networkDebugLog("Client - Got the launch game command from server.");
                 Global.UIManager.clearUI();
                 Global.PlayerManager.SpawnAll();

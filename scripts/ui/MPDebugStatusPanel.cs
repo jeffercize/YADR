@@ -11,7 +11,7 @@ public partial class MPDebugStatusPanel : Panel
         ClientChatHandler.ChatMessageReceived += NetworkChatHandler_ChatMessageReceived;
 	}
 
-    private void NetworkChatHandler_ChatMessageReceived(ChatMessage message)
+    private void NetworkChatHandler_ChatMessageReceived(ChatBasicMessage message)
     {
 		if (IsInsideTree() && IsVisibleInTree())
 		{

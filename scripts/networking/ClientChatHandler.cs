@@ -7,18 +7,15 @@ using NetworkMessages;
 public class ClientChatHandler
 {
 
-    public delegate void NetworkChatEventHandler(ChatMessage message);
+    public delegate void NetworkChatEventHandler(ChatBasicMessage message);
     /// <summary>
     /// Local (non-networked) event that fires when a chat message is received from the network
     /// </summary>
     public static event NetworkChatEventHandler ChatMessageReceived = delegate { };
 
-    public static void handleChatMessage(byte[] data)
+    public static void handleChatMessage(ChatBasicMessage msg)
     {
         if (!Global.NetworkManager.isActive) { return; }
-
-        //Use protobuf parsing to convert from raw byte array to structured object. thanks protobuf!
-        ChatMessage msg = ChatMessage.Parser.ParseFrom(data);
 
         //Send out a local event with the chat message, any objects that want a chat message can grab this and display it.
         ChatMessageReceived.Invoke(msg);
@@ -33,13 +30,10 @@ public class ClientChatHandler
     {
         if (!Global.NetworkManager.isActive) { return; }
 
-        ChatMessage msg = GenerateChatMessage(Global.instance.clientName, (long)Global.instance.clientID, text);
-
-        //Use protobuf serializing to convert from structured object to raw byte array. thanks protobuf!
-        msg.ToByteArray();
+        ChatBasicMessage msg = GenerateChatMessage(Global.instance.clientName, (long)Global.instance.clientID, text);
 
         //Sends the raw byte array, along with the message type (we know it's chat cause we're the chat handler) to the server.
-        NetworkManager.SendSteamMessage(NetworkManager.MessageType.CHAT_BASIC, Global.NetworkManager.client.connectionToServer, msg.ToByteArray());
+        NetworkManager.SendSteamMessage(Global.NetworkManager.client.connectionToServer, MessageType.ChatBasic, msg);
     }
 
     /// <summary>
@@ -50,9 +44,9 @@ public class ClientChatHandler
     /// <param name="message"></param>
     /// <param name="useIP"></param>
     /// <returns></returns>
-    public static ChatMessage GenerateChatMessage(string senderName, long senderID, string message, bool useIP = false)
+    public static ChatBasicMessage GenerateChatMessage(string senderName, long senderID, string message, bool useIP = false)
     {
-        ChatMessage chatMessage = new();
+        ChatBasicMessage chatMessage = new();
 
         Identity id = new Identity();
         id.Name = senderName;

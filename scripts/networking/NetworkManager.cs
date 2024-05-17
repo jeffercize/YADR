@@ -1,10 +1,11 @@
 ﻿using Godot;
+using NetworkMessages;
 using Steamworks;
 using System;
 using System.Collections.Generic;
 using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
-
+using Google.Protobuf;
 using static Steamworks.SteamNetworkingSockets;
 
 /// <summary>
@@ -48,15 +49,6 @@ public partial class NetworkManager: Node
     public enum NETWORK_MODE { STEAM, NONSTEAM, OFFLINE };
     private NETWORK_MODE networkMode;
 
-    public enum MessageType { 
-        CHAT_BASIC,
-        INPUT_MOVEMENTDIRECTION,
-        INPUT_ACTION,
-        INPUT_FULLCAPTURE,
-        SERVER_NEWPLAYER,
-        SERVER_SPAWNPLAYER,
-        SERVER_LAUNCHGAME
-    }
 
     /// <summary>
     /// Starts the game. Despite being in network manager this also starts singleplayer due to the unified internal server approach.
@@ -109,7 +101,7 @@ public partial class NetworkManager: Node
     {
         if(isActive && isHost)
         {
-            server.ServerLaunchGame();
+            server.SendServerCommandLaunchGame();
         }
         else
         {
@@ -206,6 +198,78 @@ public partial class NetworkManager: Node
         Marshal.Copy(ptr, retval, 0, cbSize);
         return retval;
     }
+    
+
+    public static YADRNetworkMessageWrapper DecodeSteamMessage(SteamNetworkingMessage_t message, out long sender)
+    {
+        byte[] data = NetworkManager.IntPtrToBytes(message.m_pData, message.m_cbSize);
+        YADRNetworkMessageWrapper wrapper = YADRNetworkMessageWrapper.Parser.ParseFrom(data);
+        sender = message.m_nConnUserData;
+        return wrapper;
+    }
+
+    public static YADRNetworkMessageWrapper WrapMessage(MessageType type, IMessage message)
+    {
+        YADRNetworkMessageWrapper wrappedMessage = new YADRNetworkMessageWrapper();
+        wrappedMessage.Type=type;
+
+        switch (type)
+        {
+            case MessageType.ChatDebug:
+                wrappedMessage.ChatDebug = (ChatDebugMessage)message;
+                break;
+            case MessageType.ChatBasic:
+                wrappedMessage.ChatBasic = (ChatBasicMessage)message;
+                break;
+
+            case MessageType.InputDebug:
+                wrappedMessage.InputDebug = (InputDebugMessage)message;
+                break;
+            case MessageType.InputAction:
+                wrappedMessage.InputAction = (InputActionMessage)message;
+                break;
+            case MessageType.InputMovementDirection:
+                wrappedMessage.InputMovementDirection = (InputMovementDirectionMessage)message;
+                break;
+            case MessageType.InputLookDelta:
+                wrappedMessage.InputLookDelta = (InputLookDeltaMessage)message;
+                break;
+            case MessageType.InputLookDirection:
+                wrappedMessage.InputLookDirection = (InputLookDirectionMessage)message;
+                break;
+            case MessageType.InputFullCapture:
+                wrappedMessage.InputFullCapture = (InputFullCaptureMessage)message;
+                break;
+
+            case MessageType.ServerAlertDebug:
+                wrappedMessage.ServerAlertDebug = (ServerAlertDebugMessage)message;
+                break;
+            case MessageType.ServerAlertNewPlayer:
+                wrappedMessage.ServerAlertNewPlayer = (ServerAlertNewPlayerMessage)message;
+                break;
+
+            case MessageType.ServerCommandDebug:
+                wrappedMessage.ServerCommandDebug = (ServerCommandDebugMessage)message;
+                break;
+            case MessageType.ServerCommandSpawnPlayer:
+                wrappedMessage.ServerCommandSpawnPlayer = (ServerCommandSpawnPlayerMessage)message;
+                break;
+            case MessageType.ServerCommandLaunchGame:
+                wrappedMessage.ServerCommandLaunchGame = (ServerCommandLaunchGameMessage)message;
+                break;
+
+            default:
+                break;
+        }
+        return wrappedMessage;
+    }
+
+
+    public static bool SendSteamMessage(HSteamNetConnection target, MessageType type, IMessage message ,int sendFlags = k_nSteamNetworkingSend_ReliableNoNagle)
+    {
+
+        return SendSteamMessage(target, WrapMessage(type, message), sendFlags);
+    }
 
     /// <summary>
     /// Sends a message using the SteamNetworkingSockets library. In theory, this should be agnostic to steam vs non-steam networking.
@@ -215,12 +279,13 @@ public partial class NetworkManager: Node
     /// <param name="data"></param>
     /// <param name="sendFlags"></param>
     /// <returns></returns>
-    public static bool SendSteamMessage(MessageType type, HSteamNetConnection target, byte[] data, int sendFlags = k_nSteamNetworkingSend_ReliableNoNagle)
+    public static bool SendSteamMessage(HSteamNetConnection target, YADRNetworkMessageWrapper message, int sendFlags = k_nSteamNetworkingSend_ReliableNoNagle)
     {
         var msgPtrsToSend = new IntPtr[] { IntPtr.Zero };
         var ptr = IntPtr.Zero;
         try
         {
+            byte[] data = message.ToByteArray();
             ptr = SteamNetworkingUtils.AllocateMessage(data.Length);
 
             var msg = SteamNetworkingMessage_t.FromIntPtr(ptr);
@@ -231,8 +296,6 @@ public partial class NetworkManager: Node
 
             msg.m_nFlags = NetworkManager.k_nSteamNetworkingSend_ReliableNoNagle;
             msg.m_conn = target;
-            msg.m_nUserData = (long)type;
-            Global.NetworkManager.networkDebugLog("Sending message with requested type: " + type + " and stored type: " + (MessageType)msg.m_nUserData + " translated to long form: " + msg.m_nUserData);
             // Copies the bytes of the managed message back into the native structure located at ptr
             Marshal.StructureToPtr(msg, ptr, false);
 
