@@ -29,6 +29,16 @@ material = SubResource("ShaderMaterial_dop3f")
 transform_format = 1
 mesh = SubResource("BoxMesh_652tm")
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_yehpb"]
+shader = ExtResource("9_op5fu")
+
+[sub_resource type="Sky" id="Sky_wlclh"]
+sky_material = SubResource("ShaderMaterial_yehpb")
+
+[sub_resource type="Environment" id="Environment_32pfd"]
+background_mode = 2
+sky = SubResource("Sky_wlclh")
+
 [node name="CodeGenerated" type="Node3D"]
 script = ExtResource("1_btvwy")
 
