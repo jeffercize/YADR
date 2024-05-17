@@ -18,7 +18,18 @@ public partial class PlayerManager : Node3D
 	
 	}
 
+    double PlayerStateSyncTimer = .5f;
+    double PlayerStateSyncCounter = 0f;
+    public override void _PhysicsProcess(double delta)
+    {
+        PlayerStateSyncCounter += delta;
+        if (PlayerStateSyncCounter > PlayerStateSyncTimer)
+        {
+            //ClientPlayerStateHandler.CreateAndSendPlayerStateMessage()
+            PlayerStateSyncCounter = 0;
+        }
 
+    }
 
 
     public Player CreateAndRegisterNewPlayer(ulong clientID)

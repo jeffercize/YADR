@@ -96,15 +96,15 @@ public partial class Client: Node
                 break;
 
             case MessageType.InputMovementDirection:
-                Global.NetworkManager.networkDebugLog("Client - Input Movement Direction Message Received.");
+               // Global.NetworkManager.networkDebugLog("Client - Input Movement Direction Message Received.");
                 ClientInputHandler.HandleInputMovementDirectionMessage(message.InputMovementDirection);
                 break;
             case MessageType.InputLookDelta:
-                Global.NetworkManager.networkDebugLog("Client - Input Look Delta Message Received.");
+                //Global.NetworkManager.networkDebugLog("Client - Input Look Delta Message Received.");
                 ClientInputHandler.HandleInputLookDeltaMessage(message.InputLookDelta);
                 break;
             case MessageType.InputLookDirection:
-                Global.NetworkManager.networkDebugLog("Client - Input Look Direction Message Received.");
+               // Global.NetworkManager.networkDebugLog("Client - Input Look Direction Message Received.");
                 ClientInputHandler.HandleInputLookDirectionMessage(message.InputLookDirection);
                 break;
             case MessageType.InputAction:
