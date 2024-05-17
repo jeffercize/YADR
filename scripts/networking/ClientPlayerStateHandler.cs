@@ -32,7 +32,7 @@ public class ClientPlayerStateHandler
 
     }
 
-    public void handlePlayerStatePositionMessage(PlayerStatePositionMessage message)
+    public static void handlePlayerStatePositionMessage(PlayerStatePositionMessage message)
     {
         NetworkPlayerStatePositionEvent.Invoke(message);
     }
