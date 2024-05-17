@@ -40,23 +40,15 @@ public partial class Client: Node
     /// </summary>
     public Client() { }
 
-    public delegate void NewPlayerJoinEventHandler(ulong clientID);
-    public static event NewPlayerJoinEventHandler NewPlayerJoinEvent = delegate { };
 
 
     public override void _Ready()
     {
         //Hooks up the connection status change event to a function
         SteamNetConnectionStatusChange = Callback<SteamNetConnectionStatusChangedCallback_t>.Create(onSteamNetConnectionStatusChange);
-        NewPlayerJoinEvent += onNewPlayerJoinEvent;
-    }
-
-    private void onNewPlayerJoinEvent(ulong clientID)
-    {
-        Player remotePlayer = Global.PlayerManager.CreateAndRegisterNewPlayer(clientID);
-        Global.PlayerManager.SpawnPlayer(remotePlayer, new Vector3(0,10,0));
 
     }
+
 
     /// <summary>
     /// Called by the underlying Steam API in response to any underlying connection status change
@@ -104,8 +96,16 @@ public partial class Client: Node
                 break;
 
             case MessageType.InputMovementDirection:
-                Global.NetworkManager.networkDebugLog("Client - Input Delta Message Received.");
+                Global.NetworkManager.networkDebugLog("Client - Input Movement Direction Message Received.");
                 ClientInputHandler.HandleInputMovementDirectionMessage(message.InputMovementDirection);
+                break;
+            case MessageType.InputLookDelta:
+                Global.NetworkManager.networkDebugLog("Client - Input Look Delta Message Received.");
+                ClientInputHandler.HandleInputLookDeltaMessage(message.InputLookDelta);
+                break;
+            case MessageType.InputLookDirection:
+                Global.NetworkManager.networkDebugLog("Client - Input Look Direction Message Received.");
+                ClientInputHandler.HandleInputLookDirectionMessage(message.InputLookDirection);
                 break;
             case MessageType.InputAction:
                 Global.NetworkManager.networkDebugLog("Client - Action Delta Message Received.");
@@ -117,7 +117,9 @@ public partial class Client: Node
                 break;
 
             case MessageType.ServerAlertNewPlayer:
-                Global.NetworkManager.networkDebugLog("Client - Got the new player notice from server.");
+                long id = message.ServerAlertNewPlayer.NewPlayer.SteamID;
+                string name = message.ServerAlertNewPlayer.NewPlayer.Name;
+                Global.NetworkManager.networkDebugLog("Client - Got the new player notice from server: " + id + " " + name);
 
                 Global.PlayerManager.CreateAndRegisterNewPlayer((ulong)message.ServerAlertNewPlayer.NewPlayer.SteamID);
                 break;
@@ -131,6 +133,7 @@ public partial class Client: Node
                 break;*/
             case MessageType.ServerCommandLaunchGame:
                 Global.NetworkManager.networkDebugLog("Client - Got the launch game command from server.");
+                Global.LevelManager.loadScene("res://scenes/MPDebug.tscn");
                 Global.UIManager.clearUI();
                 Global.PlayerManager.SpawnAll();
                 break;

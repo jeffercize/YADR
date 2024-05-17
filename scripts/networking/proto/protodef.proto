@@ -138,6 +138,8 @@ message InputFullCaptureMessage {
 	Identity inputOf = 1;
 	DirectionVector movementDirection = 2;
 	repeated ActionMessage actions = 3;
+	DirectionVector lookDelta = 4;
+	DirectionVector lookDirection = 5;
 }
 
 message Position {

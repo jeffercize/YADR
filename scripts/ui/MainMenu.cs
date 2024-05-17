@@ -33,7 +33,7 @@ public partial class MainMenu : Control
         GetNode<AudioStreamPlayer>("/root/main/music").Stop();
         //Global.NetworkManager.startServer();
         Global.NetworkManager.launchGame();
-        Global.LevelManager.loadScene("res://scenes/MPDebug.tscn");
+
 
 
     }

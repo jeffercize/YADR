@@ -43,10 +43,17 @@ public partial class Server: Node
             if (acceptAllConnections)
             {
                 SteamNetworkingSockets.AcceptConnection(conn);
-                onPlayerJoin(conn, (ulong)@event.m_info.m_identityRemote.GetSteamID());
-                clients.Add(conn);
-                Global.NetworkManager.networkDebugLog("Accepting external connection.");
+                Global.NetworkManager.networkDebugLog("Accepting external connection from ID: " + @event.m_info.m_identityRemote.GetSteamID64());
             }
+        }
+        if (@event.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_Connected)
+        {
+            HSteamNetConnection conn = @event.m_hConn;
+            clients.Add(conn);
+            onPlayerJoin(conn, (ulong)@event.m_info.m_identityRemote.GetSteamID64());
+
+            Global.NetworkManager.networkDebugLog("Connection from ID: " + @event.m_info.m_identityRemote.GetSteamID64() + " complete!");
+
         }
     }
 
@@ -54,11 +61,13 @@ public partial class Server: Node
     {
         foreach (HSteamNetConnection c in clients)
         {
+            if (NetworkManager.getConnectionRemoteID(c) == clientID) { continue; }
             ServerAlertNewPlayerMessage msg = new();
             Identity id = new Identity();
-            id.SteamID = SteamNetworkingSockets.GetConnectionUserData(c);
+            id.SteamID = (long)NetworkManager.getConnectionRemoteID(c);
             id.Name = SteamFriends.GetFriendPersonaName((CSteamID)(ulong)id.SteamID);
             msg.NewPlayer = id;
+            Global.NetworkManager.networkDebugLog("sending out new player notice ID: " + msg.NewPlayer.SteamID);
             SendSteamMessage(conn, WrapMessage(MessageType.ServerAlertNewPlayer, msg));
         }
 
@@ -67,7 +76,19 @@ public partial class Server: Node
         identity.SteamID = (long)clientID;
         identity.Name = SteamFriends.GetFriendPersonaName((CSteamID)(ulong)identity.SteamID);
         message.NewPlayer = identity;
+        Global.NetworkManager.networkDebugLog("sending out new player notice2 ID: " + message.NewPlayer.SteamID);
         BroadcastMessage(WrapMessage(MessageType.ServerAlertNewPlayer,message));
+    }
+
+
+    public static ServerAlertNewPlayerMessage ConstructNewPlayerMessage(ulong clientID)
+    {
+        ServerAlertNewPlayerMessage msg = new();
+        Identity id = new Identity();
+        id.SteamID = (long)clientID;
+        id.Name = SteamFriends.GetFriendPersonaName((CSteamID)(ulong)id.SteamID);
+        msg.NewPlayer = id;
+        return msg;
     }
 
     public void SendServerCommandLaunchGame()
@@ -145,30 +166,15 @@ public partial class Server: Node
         }
     }
 
-    private void BroadcastMessageWithExclusion(SteamNetworkingIdentity exclude, YADRNetworkMessageWrapper message)
-    {
-        Global.NetworkManager.networkDebugLog("Server starting broadcast of messagetype: " + message.Type + " with exclusion.");
-        foreach (HSteamNetConnection c in clients)
-        {
-            SteamNetConnectionInfo_t info = new();
-            SteamNetworkingSockets.GetConnectionInfo(c,out info);
-            if (info.m_identityRemote.Equals(exclude))
-            {
-                continue;
-            }
-            NetworkManager.SendSteamMessage(c,message);
-        }
-    }
     private void BroadcastMessageWithExclusion(long exclude, YADRNetworkMessageWrapper message)
     {
-        Global.NetworkManager.networkDebugLog("Server starting broadcast of messagetype: " + message.Type + " with exclusion.");
-        SteamNetworkingIdentity ident = new();
-        ident.SetSteamID((CSteamID)(ulong)exclude);
+        Global.NetworkManager.networkDebugLog("Server starting broadcast of messagetype: " + message.Type + " while excluding ID: " + exclude);
+
         foreach (HSteamNetConnection c in clients)
         {
             SteamNetConnectionInfo_t info = new();
             SteamNetworkingSockets.GetConnectionInfo(c, out info);
-            if (info.m_identityRemote.GetSteamID().Equals(ident.GetSteamID()))
+            if (info.m_identityRemote.GetSteamID64() == (ulong)exclude)
             {
                 continue;
             }
