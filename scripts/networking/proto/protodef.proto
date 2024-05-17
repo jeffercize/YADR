@@ -23,6 +23,9 @@ enum MessageType
 	ServerCommandSpawnPlayer = 31;
 	ServerCommandLaunchGame = 32;
 	ServerCommandReservedTo = 39;
+
+	PlayerStateDebug = 40;
+	PlayerStatePosition = 41;
 }
 
 enum ActionType {
@@ -63,7 +66,7 @@ message YADRNetworkMessageWrapper
 		InputDebugMessage inputDebug = 9910;
 		InputActionMessage inputAction = 2;
 		InputMovementDirectionMessage inputMovementDirection = 3;
-		InputLookDeltaMessage inputLookDelta = 4;
+		InputLookDeltaMessage inputLookDelta = 9913;
 		InputLookDirectionMessage inputLookDirection = 5;
 		InputFullCaptureMessage inputFullCapture = 6;
 
@@ -73,6 +76,9 @@ message YADRNetworkMessageWrapper
 		ServerCommandDebugMessage serverCommandDebug = 9930;
 		ServerCommandSpawnPlayerMessage serverCommandSpawnPlayer = 9931;
 		ServerCommandLaunchGameMessage serverCommandLaunchGame = 9932;
+
+		PlayerStateDebugMessage playerStateDebug = 9940;
+		PlayerStatePositionMessage playerStatePosition = 7;
 	}
 }
 
@@ -148,7 +154,16 @@ message Position {
 	float Z=3;
 }
 
-message PlayerStateFullCapture {
+message PlayerStateDebugMessage {
+
+}
+
+message PlayerStatePositionMessage {
+	Identity playerIdentity = 1;
+	Position position = 2;
+}
+
+message PlayerStateFullCaptureMessage {
 	Identity stateOf = 1;
 }
 

@@ -134,6 +134,21 @@ using System.Threading.Tasks;
         else
         {
             ClientInputHandler.NetworkInputLookDirectionEvent += onNetworkInputLookDirectionEvent;
+            ClientPlayerStateHandler.NetworkPlayerStatePositionEvent += onNetworkPlayerStatePositionEvent;
+        }
+
+    }
+
+    private void onNetworkPlayerStatePositionEvent(PlayerStatePositionMessage message)
+    {
+        if (isMe) { return; }
+        if (message.PlayerIdentity.SteamID == (long)clientID)
+        {
+            Vector3 newPos = new();
+            newPos.X = message.Position.X;
+            newPos.Y = message.Position.Y;
+            newPos.Z = message.Position.Z;
+            this.GlobalPosition = newPos;
         }
 
     }

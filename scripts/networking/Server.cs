@@ -157,7 +157,7 @@ public partial class Server: Node
     }
 
 
-    private void BroadcastMessage(YADRNetworkMessageWrapper message)
+    public void BroadcastMessage(YADRNetworkMessageWrapper message)
     {
         //Global.NetworkManager.networkDebugLog("Server starting broadcast of messagetype: " + message.Type);
         foreach (HSteamNetConnection c in clients)
@@ -166,7 +166,7 @@ public partial class Server: Node
         }
     }
 
-    private void BroadcastMessageWithExclusion(long exclude, YADRNetworkMessageWrapper message)
+    public void BroadcastMessageWithExclusion(long exclude, YADRNetworkMessageWrapper message)
     {
        // Global.NetworkManager.networkDebugLog("Server starting broadcast of messagetype: " + message.Type + " while excluding ID: " + exclude);
 
