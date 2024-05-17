@@ -1,62 +1,40 @@
 using Godot;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using static Networking.SteamNetwork;
 
 [GlobalClass]
 public partial class EquipSlot : Control
 {
+    public Equipable equip;
 
     [Export]
-    public Item item = Item.NONE;
-
     public Equipment connectedEquipment;
-
-    [Export]
-    public Equipable.EquipType EquippableType;
-    public List<Equipable.EquipType> EquippableTypes = new();
 
     [Export]
     int DRAG_START_DIST = 50;
     public Vector2 startMousePos = Vector2.Zero;
 
-
-
-
-
-    public EquipSlot()
+    public override void _Ready()
     {
-        EquippableType = Equipable.EquipType.ANY;
-        EquippableTypes.Add(Equipable.EquipType.ANY);
+        this.ProcessMode = ProcessModeEnum.Disabled;
     }
-
-    public EquipSlot(Equipable.EquipType type)
-    {
-        EquippableType = type;
-        EquippableTypes.Add(type);
-    }
-
-    public EquipSlot(List<Equipable.EquipType> types)
-    {
-        EquippableTypes = types;
-    }
-
 
     public override void _Draw()
     {
-        if (item != Item.NONE)
+        if (equip != null)
         {
-            Vector2 rectSize = new Vector2(item.width * Global.ui.gameUI.playerInventoryUI.slotSizeX, item.height * Global.ui.gameUI.playerInventoryUI.slotSizeX);
+            Vector2 rectSize = new Vector2(equip.width * Global.UIManager.playerInventoryUI.slotSizeX, equip.height * Global.UIManager.playerInventoryUI.slotSizeX);
 
             //DrawRect(itemBox, Colors.Azure, false, 5);
-            DrawTextureRect(item.icon, GetChild<Panel>(0).GetRect().Grow(-10f), false);
+            DrawTextureRect(equip.icon, GetChild<Panel>(0).GetRect().Grow(-10f), false);
         }
         else
         {
-            DrawString(GetThemeDefaultFont(), GetChild<Panel>(0).GetRect().GetCenter(), EquippableType.ToString());
+            DrawString(GetThemeDefaultFont(), GetChild<Panel>(0).GetRect().GetCenter(), this.Name);
 
         }
-        if (Global.ui.gameUI.dragItem != null && Global.ui.gameUI.dragItem != Item.NONE && canEquip(Global.ui.gameUI.dragItem))
+        if (Global.UIManager.dragItem != null && Global.UIManager.dragItem != Item.NONE && connectedEquipment.canEquip(this.Name,Global.UIManager.dragItem))
         {
             DrawRect(GetChild<Panel>(0).GetRect().Grow(10f), Colors.Aqua, false, 4);
         }
@@ -65,7 +43,11 @@ public partial class EquipSlot : Control
 
     public override void _Process(double delta)
     {
-
+        if (connectedEquipment == null)
+        {
+            //connectedEquipment = Global.self.equipment;
+        }
+        connectedEquipment.slots.TryGetValue(this.Name, out equip);
         if (!IsVisibleInTree())
         {
             return;
@@ -75,9 +57,9 @@ public partial class EquipSlot : Control
         {
             if (Input.IsActionJustPressed("LCLICK", true)) //sent for one frame when Lmouse first goes down
             {
-                if (Global.ui.gameUI.dragItem == Item.NONE)
+                if (!Global.UIManager.hasDragItem())
                 {
-                    if (item != Item.NONE && startMousePos == Vector2.Zero)
+                    if (equip != Item.NONE && startMousePos == Vector2.Zero)
                     {
                         Global.debugLog(this.Name + "Click on item!. Testing to see if drag...");
                         startMousePos = GetLocalMousePosition();
@@ -91,28 +73,29 @@ public partial class EquipSlot : Control
             }
             else if (Input.IsActionJustReleased("LCLICK", true)) //sent for one frame when Lmouse goes back up
             {
-                if (Global.ui.gameUI.dragItem == Item.NONE && item != Item.NONE)
+                if (!Global.UIManager.hasDragItem() && hasEquip())
                 {
                     Global.debugLog(this.Name + "Click pickup, Item Unequipped!");
-                    Global.ui.gameUI.dragItem = item;
+                   
+                    connectedEquipment.unequip(this.Name, out equip);
+                    Global.UIManager.dragItem = equip;
                     GetNode<AudioStreamPlayer>("/root/main/uisfx").Stream = ResourceLoader.Load<AudioStreamWav>("res://assets/audio/ui/mouseclick1.wav");
                     GetNode<AudioStreamPlayer>("/root/main/uisfx").Play();
-                    item = Item.NONE;
+                    
                     startMousePos = Vector2.Zero;
-                    connectedEquipment.unequip(this.Name, Global.ui.gameUI.dragItem);
+
                     QueueRedraw();
                 }
-                else if (Global.ui.gameUI.dragItem != Item.NONE && item == Item.NONE)
+                else if (Global.UIManager.hasDragItem() && !this.hasEquip())
                 {
-                    if (canEquip(Global.ui.gameUI.dragItem))
+                    if (connectedEquipment.canEquip(this.Name,Global.UIManager.dragItem))
                     {
                         Global.debugLog(this.Name + "Drag or click Drop! Item Equipped!");
                         GetNode<AudioStreamPlayer>("/root/main/uisfx").Stream = ResourceLoader.Load<AudioStreamWav>("res://assets/audio/ui/mouserelease1.wav");
                         GetNode<AudioStreamPlayer>("/root/main/uisfx").Play();
-                        item = Global.ui.gameUI.dragItem;
-                        Global.ui.gameUI.dragItem = Item.NONE;
                         startMousePos = Vector2.Zero;
-                        connectedEquipment.equip(this.Name,item as Equipable);
+                        connectedEquipment.equip(this.Name, Global.UIManager.dragItem as Equipable);
+                        Global.UIManager.dragItem = Item.NONE;
                         QueueRedraw();
                     }
                     else
@@ -120,18 +103,23 @@ public partial class EquipSlot : Control
                         Global.debugLog(this.Name + "Item doesnt fit in this slot!");
                     }
                 }
-                else if (Global.ui.gameUI.dragItem != Item.NONE && item != Item.NONE)
+                else if (Global.UIManager.hasDragItem() && this.hasEquip())
                 {
-                    if (item.combineWith(Global.ui.gameUI.dragItem, out Item remain))
+                    if (equip.combineWith(Global.UIManager.dragItem, out Item remain))
                     {
-                        Global.ui.gameUI.dragItem = remain;
+                        Global.UIManager.dragItem = remain;
                     }
                     else
                     {
-                        Global.debugLog(this.Name + "These items cannot combine");
-                        Item temp = item;
-                        item = Global.ui.gameUI.dragItem;
-                        Global.ui.gameUI.dragItem = temp;
+                        if (Global.UIManager.dragItem is Equipable e)
+                        {
+                            Global.debugLog(this.Name + "These items cannot combine,swapping...");
+                            connectedEquipment.unequip(this.Name, out Equipable oldEquip);
+                            connectedEquipment.equip(this.Name, e);
+                            Global.UIManager.dragItem = oldEquip;
+                        }
+
+
                     }
                 }
             }
@@ -139,31 +127,23 @@ public partial class EquipSlot : Control
 
         if (Input.IsActionPressed("LCLICK", true)) //sent every frame the Lmouse button is down
         {
-            if (Global.ui.gameUI.dragItem == Item.NONE && item != Item.NONE && startMousePos.DistanceTo(GetLocalMousePosition()) > DRAG_START_DIST && startMousePos != Vector2.Zero)
+            if (!Global.UIManager.hasDragItem() && hasEquip() && startMousePos.DistanceTo(GetLocalMousePosition()) > DRAG_START_DIST && startMousePos != Vector2.Zero)
             {
                 Global.debugLog(this.Name + "Drag Pickup!");
                 GetNode<AudioStreamPlayer>("/root/main/uisfx").Stream = ResourceLoader.Load<AudioStreamWav>("res://assets/audio/ui/mouseclick1.wav");
                 GetNode<AudioStreamPlayer>("/root/main/uisfx").Play();
-                Global.ui.gameUI.dragItem = item;
-                item = Item.NONE;
                 startMousePos = Vector2.Zero;
-                connectedEquipment.unequip(this.Name, Global.ui.gameUI.dragItem);
+                connectedEquipment.unequip(this.Name,out equip);
+                Global.UIManager.dragItem = equip;
                 QueueRedraw();
             }
         }
 
     }
 
-    public bool canEquip(Item item)
+    private bool hasEquip()
     {
-        if (item is Equipable equip)
-        {
-            if (EquippableType==equip.type || EquippableType==Equipable.EquipType.ANY || EquippableTypes.Contains(equip.type))
-            {
-                return true;
-            }
-        }
-        return false;
+        connectedEquipment.slots.TryGetValue(this.Name, out Equipable temp);
+        return temp != null;
     }
-    
 }

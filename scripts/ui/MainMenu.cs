@@ -8,6 +8,7 @@ public partial class MainMenu : Control
     // Called when the node enters the scene tree for the first time.
     public override void _Ready()
     {
+
         GetNode<Button>("Play").Pressed += playPressed;
         GetNode<Button>("Options").Pressed += optionsPressed;
         GetNode<Button>("Quit").Pressed += quitPressed;
@@ -17,7 +18,6 @@ public partial class MainMenu : Control
     {
         //TODO: Popup confirm
         GetNode<AudioStreamPlayer>("/root/main/uisfx").Play();
-        SteamClient.Shutdown();
         GetTree().Quit();
     }
 
@@ -31,8 +31,17 @@ public partial class MainMenu : Control
     {
         GetNode<AudioStreamPlayer>("/root/main/uisfx").Play();
         GetNode<AudioStreamPlayer>("/root/main/music").Stop();
-        GetNode<Main>("/root/main").switchLevelName("WaitingRoom.tscn");
-        GetNode<Main>("/root/main").switchUIName("WaitingRoomUI.tscn");
+        //Global.NetworkManager.startServer();
+        Global.NetworkManager.launchGame();
+        Global.LevelManager.loadScene("res://scenes/MPDebug.tscn");
 
+
+    }
+
+    private void genPressed()
+    {
+        Global.LevelManager.loadScene("res://scenes/TerrainGeneration.tscn");
+        Global.LevelManager.loadScene("res://components/TerrainPlayer.tscn");
+        Global.UIManager.clearUI();
     }
 }

@@ -130,4 +130,14 @@ public partial class Item : RigidBody3D, IEquatable<Item>
         mesh.CreateConvexCollision();
         return temp;
     }
+
+    internal void lockAll()
+    {
+        AxisLockAngularX = true;
+        AxisLockAngularY = true;
+        AxisLockAngularZ = true;
+        AxisLockLinearX = true;
+        AxisLockLinearY = true;
+        AxisLockLinearZ = true;
+    }
 }
