@@ -29,6 +29,7 @@ material = SubResource("ShaderMaterial_dop3f")
 transform_format = 1
 mesh = SubResource("BoxMesh_652tm")
 
+[node name="CodeGenerated" type="Node3D"]
 <<<<<<< Updated upstream
 [node name="CodeGenerated" type="Node"]
 =======

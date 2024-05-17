@@ -1,6 +1,5 @@
-[gd_scene load_steps=7 format=3 uid="uid://ckvuy8e54f4lh"]
+[gd_scene load_steps=6 format=3 uid="uid://ckvuy8e54f4lh"]
 
-[ext_resource type="Script" path="res://scripts/player/Equipment.cs" id="1_81akm"]
 [ext_resource type="PackedScene" uid="uid://dn0nbxwjpjxd3" path="res://scenes/ui/EquipSlotUI.tscn" id="2_ub338"]
 [ext_resource type="Script" path="res://scripts/ui/HealthUI.cs" id="4_qn8mh"]
 [ext_resource type="Script" path="res://scripts/ui/CharacterUI.cs" id="5_08fcu"]
@@ -35,84 +34,51 @@ grow_vertical = 2
 mouse_filter = 0
 use_hidden_tabs_for_min_size = true
 
-[node name="Equipment" type="Control" parent="LeftTabs"]
+[node name="playerEquipment" type="Control" parent="LeftTabs"]
 layout_mode = 2
 mouse_filter = 2
-script = ExtResource("1_81akm")
+metadata/_tab_index = 0
 
-[node name="helmet" parent="LeftTabs/Equipment" instance=ExtResource("2_ub338")]
-layout_mode = 1
-offset_left = -90.5
-offset_top = -464.5
-offset_right = 130.5
-offset_bottom = -246.5
-EquippableType = 1
-
-[node name="gloves" parent="LeftTabs/Equipment" instance=ExtResource("2_ub338")]
-layout_mode = 1
-offset_left = 204.5
-offset_top = -192.5
-offset_right = 413.5
-offset_bottom = 15.5
-EquippableType = 6
-
-[node name="quick3" parent="LeftTabs/Equipment" instance=ExtResource("2_ub338")]
+[node name="head" parent="LeftTabs/playerEquipment" instance=ExtResource("2_ub338")]
 layout_mode = 1
 offset_left = -103.5
-offset_top = 353.5
-offset_right = 5.5
-offset_bottom = 461.5
+offset_top = -460.5
+offset_right = 117.5
+offset_bottom = -242.5
 
-[node name="quick2" parent="LeftTabs/Equipment" instance=ExtResource("2_ub338")]
+[node name="leftHand" parent="LeftTabs/playerEquipment" instance=ExtResource("2_ub338")]
 layout_mode = 1
-offset_left = -256.5
-offset_top = 347.5
-offset_right = -143.5
-offset_bottom = 459.5
+offset_left = -432.5
+offset_top = -143.5
+offset_right = -167.5
+offset_bottom = 51.5
 
-[node name="quick1" parent="LeftTabs/Equipment" instance=ExtResource("2_ub338")]
+[node name="rightHand" parent="LeftTabs/playerEquipment" instance=ExtResource("2_ub338")]
 layout_mode = 1
-offset_left = -410.5
-offset_top = 343.5
-offset_right = -293.5
-offset_bottom = 459.5
+offset_left = 180.5
+offset_top = -150.5
+offset_right = 438.5
+offset_bottom = 55.5
 
-[node name="boots" parent="LeftTabs/Equipment" instance=ExtResource("2_ub338")]
+[node name="chest" parent="LeftTabs/playerEquipment" instance=ExtResource("2_ub338")]
 layout_mode = 1
-offset_left = -87.5
-offset_top = 76.5
-offset_right = 131.5
-offset_bottom = 295.5
-EquippableType = 5
+offset_left = -142.5
+offset_top = -212.5
+offset_right = 152.5
+offset_bottom = 78.5
 
-[node name="weapon2" parent="LeftTabs/Equipment" instance=ExtResource("2_ub338")]
+[node name="back" parent="LeftTabs/playerEquipment" instance=ExtResource("2_ub338")]
 layout_mode = 1
-offset_left = -397.5
-offset_top = -26.5
-offset_right = -195.5
-offset_bottom = 175.5
-EquippableType = 8
-
-[node name="weapon1" parent="LeftTabs/Equipment" instance=ExtResource("2_ub338")]
-layout_mode = 1
-offset_left = -394.5
-offset_top = -249.5
-offset_right = -198.5
-offset_bottom = -53.5
-EquippableType = 8
-
-[node name="bodyarmor" parent="LeftTabs/Equipment" instance=ExtResource("2_ub338")]
-layout_mode = 1
-offset_left = -105.5
-offset_top = -214.5
-offset_right = 150.5
-offset_bottom = 41.5
-EquippableType = 4
+offset_left = 210.5
+offset_top = -374.5
+offset_right = 404.5
+offset_bottom = -183.5
 
 [node name="Health" type="Control" parent="LeftTabs"]
 visible = false
 layout_mode = 2
 script = ExtResource("4_qn8mh")
+metadata/_tab_index = 1
 
 [node name="HealthDoll" type="Control" parent="LeftTabs/Health"]
 z_index = 2
@@ -248,6 +214,7 @@ text = "0 / 100"
 visible = false
 layout_mode = 2
 script = ExtResource("5_08fcu")
+metadata/_tab_index = 2
 
 [node name="Panel" type="Panel" parent="LeftTabs/Character"]
 layout_mode = 0
