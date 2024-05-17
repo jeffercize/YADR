@@ -13,9 +13,13 @@ public partial class MPDebugStatusPanel : Panel
 
     private void NetworkChatHandler_ChatMessageReceived(ChatMessage message)
     {
-		Label msg = new Label();
-		msg.Text = message.Sender.Name + ": " + message.ChatString.Text;
-		GetNode<VBoxContainer>("ChatPanel/output/chatLog").AddChild(msg);
+		if (IsInsideTree() && IsVisibleInTree())
+		{
+            Label msg = new Label();
+            msg.Text = message.Sender.Name + ": " + message.ChatString.Text;
+            GetNode<VBoxContainer>("ChatPanel/output/chatLog").AddChild(msg);
+        }
+
 
     }
 

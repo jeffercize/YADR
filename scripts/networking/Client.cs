@@ -95,6 +95,7 @@ public partial class Client: Node
         byte[] payload = NetworkManager.IntPtrToBytes(message.m_pData, message.m_cbSize);
 
         //send those pieces of the message we care about onward.
+
         handleNetworkData(message.m_identityPeer, (MessageType)message.m_nUserData, payload);
     }
 

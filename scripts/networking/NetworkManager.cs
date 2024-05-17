@@ -232,7 +232,7 @@ public partial class NetworkManager: Node
             msg.m_nFlags = NetworkManager.k_nSteamNetworkingSend_ReliableNoNagle;
             msg.m_conn = target;
             msg.m_nUserData = (long)type;
-
+            Global.NetworkManager.networkDebugLog("Sending message with requested type: " + type + " and stored type: " + (MessageType)msg.m_nUserData + " translated to long form: " + msg.m_nUserData);
             // Copies the bytes of the managed message back into the native structure located at ptr
             Marshal.StructureToPtr(msg, ptr, false);
 
