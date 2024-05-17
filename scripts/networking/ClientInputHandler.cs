@@ -24,24 +24,21 @@ public class ClientInputHandler
     }
 
 
-    internal static void handleInputSyncMessage(byte[] data)
+    internal static void handleInputSyncMessage(InputFullCaptureMessage message)
     {
-        InputFullCaptureMessage message = InputFullCaptureMessage.Parser.ParseFrom(data);
         Global.NetworkManager.networkDebugLog("Got an input full capture message from player: " + message.InputOf.SteamID);
         NetworkInputFullCaptureEvent.Invoke(message);
     }
 
 
-    internal static void HandleInputMovementDirectionMessage(byte[] data)
+    internal static void HandleInputMovementDirectionMessage(InputMovementDirectionMessage message)
     {
-        InputMovementDirectionMessage message = InputMovementDirectionMessage.Parser.ParseFrom(data);
         Global.NetworkManager.networkDebugLog("Player: " + message.InputOf.Name + " just changed movement direction.");
         NetworkInputMovementDirectionEvent.Invoke(message);
     }
 
-    internal static void HandleInputActionMessage(byte[] data)
+    internal static void HandleInputActionMessage(InputActionMessage message)
     {
-        InputActionMessage message = InputActionMessage.Parser.ParseFrom(data);
         Global.NetworkManager.networkDebugLog("Player: " + message.InputOf.Name + " just did action: " + message.Action.ActionType.ToString());
         NetworkInputActionEvent.Invoke(message);
     }
@@ -71,9 +68,7 @@ public class ClientInputHandler
             message.Actions.Add(actionMessage);
         }
 
-
-        byte[] bytes = message.ToByteArray();
-        NetworkManager.SendSteamMessage(NetworkManager.MessageType.INPUT_FULLCAPTURE, Global.NetworkManager.client.connectionToServer, bytes);
+        NetworkManager.SendSteamMessage(Global.NetworkManager.client.connectionToServer, MessageType.InputFullCapture, message);
     }
 
     internal static void CreateAndSendActionDeltaMessage(ulong clientID, ActionType type, ActionState state)
@@ -96,9 +91,7 @@ public class ClientInputHandler
 
         msg.InputOf = identity;
 
-        byte[] bytes = msg.ToByteArray();
-
-        NetworkManager.SendSteamMessage(NetworkManager.MessageType.INPUT_ACTION, Global.NetworkManager.client.connectionToServer, bytes);
+        NetworkManager.SendSteamMessage( Global.NetworkManager.client.connectionToServer, MessageType.InputAction,msg);
     }
 
     internal static void CreateAndSendInputMovementDirectionMessage(ulong clientID, Vector2 newState)
@@ -117,9 +110,7 @@ public class ClientInputHandler
         directionVector.Y = newState.Y;
         msg.Direction = directionVector;
 
-        byte[] bytes = msg.ToByteArray();
-
-        NetworkManager.SendSteamMessage(NetworkManager.MessageType.INPUT_MOVEMENTDIRECTION, Global.NetworkManager.client.connectionToServer ,bytes);
+        NetworkManager.SendSteamMessage(Global.NetworkManager.client.connectionToServer, MessageType.InputMovementDirection, msg);
     }
 
 }

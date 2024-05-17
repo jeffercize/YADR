@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using static NetworkManager;
 using Google.Protobuf;
-
 public partial class Server: Node
     {
 
@@ -25,7 +24,6 @@ public partial class Server: Node
     public Server(HSteamNetConnection localClient)
     {
         clients.Add(localClient);
-        onPlayerJoin(Global.instance.clientID);
     }
 
     public Server() { }
@@ -45,49 +43,38 @@ public partial class Server: Node
             if (acceptAllConnections)
             {
                 SteamNetworkingSockets.AcceptConnection(conn);
+                onPlayerJoin(conn, (ulong)@event.m_info.m_identityRemote.GetSteamID());
                 clients.Add(conn);
                 Global.NetworkManager.networkDebugLog("Accepting external connection.");
-
-                onPlayerJoin((ulong)@event.m_info.m_identityRemote.GetSteamID());
-                
             }
         }
     }
 
-    public void onPlayerJoin(ulong clientID)
+    public void onPlayerJoin(HSteamNetConnection conn ,ulong clientID)
     {
-        ServerMessagePlayerJoin message = new ServerMessagePlayerJoin();
+        foreach (HSteamNetConnection c in clients)
+        {
+            ServerAlertNewPlayerMessage msg = new();
+            Identity id = new Identity();
+            id.SteamID = SteamNetworkingSockets.GetConnectionUserData(c);
+            id.Name = SteamFriends.GetFriendPersonaName((CSteamID)(ulong)id.SteamID);
+            msg.NewPlayer = id;
+            SendSteamMessage(conn, WrapMessage(MessageType.ServerAlertNewPlayer, msg));
+        }
+
+        ServerAlertNewPlayerMessage message = new();
         Identity identity = new Identity();
         identity.SteamID = (long)clientID;
         identity.Name = SteamFriends.GetFriendPersonaName((CSteamID)(ulong)identity.SteamID);
         message.NewPlayer = identity;
-
-        //BroadcastMessageWithExclusion(@event.m_info.m_identityRemote, NetworkManager.MessageType.SERVER_NEWPLAYER, message.ToByteArray());
-        BroadcastMessage(NetworkManager.MessageType.SERVER_NEWPLAYER, message.ToByteArray());
+        BroadcastMessage(WrapMessage(MessageType.ServerAlertNewPlayer,message));
     }
 
-    public void ServerSpawnPlayer(ulong clientID)
+    public void SendServerCommandLaunchGame()
     {
-        Identity identity = new Identity();
-        identity.SteamID = (long)clientID;
-        identity.Name = SteamFriends.GetFriendPersonaName((CSteamID)(ulong)identity.SteamID);
-        ServerMessageSpawnPlayer message2 = new ServerMessageSpawnPlayer();
-        message2.Player = identity;
-        Position pos =  new Position();
-        pos.X = 0;
-        pos.Y = 20;
-        pos.Z = 0;
-        message2.Position = pos;
-
-        BroadcastMessage(MessageType.SERVER_SPAWNPLAYER, message2.ToByteArray());
-
-    }
-
-    public void ServerLaunchGame()
-    {
-        ServerMessageLaunchGame msg = new ServerMessageLaunchGame();
+        ServerCommandLaunchGameMessage msg = new();
         msg.Mode = 1;
-        BroadcastMessage(MessageType.SERVER_LAUNCHGAME, msg.ToByteArray());
+        BroadcastMessage(WrapMessage(MessageType.ServerCommandLaunchGame, msg));
         Global.NetworkManager.networkDebugLog("Server - Broadcasting server launch command");
     }
 
@@ -100,70 +87,67 @@ public partial class Server: Node
             for (int i = 0; i < numMessages; i++)
             {
                 if (messages[i] == IntPtr.Zero) { continue; }
-                handleNetworkData(SteamNetworkingMessage_t.FromIntPtr(messages[i]));
+                SteamNetworkingMessage_t steamMsg = SteamNetworkingMessage_t.FromIntPtr(messages[i]);
+                YADRNetworkMessageWrapper wrappedMessage = DecodeSteamMessage(steamMsg, out long sender);
+                handleNetworkData(wrappedMessage,sender);
             }
         }
     }
 
-    private void handleNetworkData(SteamNetworkingMessage_t message)
+    private void handleNetworkData(YADRNetworkMessageWrapper message,long sender)
     {
-        Global.debugLog("server here: got this stupid ass packet with type: " + (MessageType)message.m_nUserData);
-        handleNetworkData(message.m_identityPeer, (MessageType)message.m_nUserData, NetworkManager.IntPtrToBytes(message.m_pData, message.m_cbSize));
-    }
-
-
-    private void handleNetworkData(SteamNetworkingIdentity identity, MessageType type, byte[] data)
-    {
-       
-        switch (type)
+        switch (message.Type)
         {
-            case MessageType.CHAT_BASIC:
-                Global.NetworkManager.networkDebugLog("Server - Chat Message Received - Broadcasting!");
-                BroadcastMessage(type, data);   
-                break;
-            case MessageType.INPUT_MOVEMENTDIRECTION:
-                Global.NetworkManager.networkDebugLog("Server - Input Delta Message Recevied!");
-                //Apply this input data to my simulation of the players.
 
-                //forward the inputs to all other players for their sims
-                BroadcastMessageWithExclusion(identity, type, data);
-                //BroadcastMessage(type, data);
+            case MessageType.ChatBasic:
+                BroadcastMessage(message);
                 break;
-            case MessageType.INPUT_ACTION:
-                Global.NetworkManager.networkDebugLog("Server - Action Delta Message Recevied! from: " + identity.GetSteamID());
-                //Apply this input data to my simulation of the players.
 
-                //forward the inputs to all other players for their sims
-                BroadcastMessageWithExclusion(identity, type, data);
-                //BroadcastMessage(type, data);
-                break;
-            case MessageType.INPUT_FULLCAPTURE:
-                Global.NetworkManager.networkDebugLog("Server - Input Sync Message Recevied!");
-                //Apply this input data to my simulation of the players.
 
-                //forward the inputs to all other players for their sims
-                BroadcastMessageWithExclusion(identity, type, data);
-                //BroadcastMessage(type, data);
+            case MessageType.InputAction:
+                BroadcastMessageWithExclusion(sender, message);
                 break;
+            case MessageType.InputMovementDirection:
+                BroadcastMessageWithExclusion(sender, message);
+                break;
+            case MessageType.InputLookDelta:
+                BroadcastMessageWithExclusion(sender, message);
+                break;
+            case MessageType.InputLookDirection:
+                BroadcastMessageWithExclusion(sender, message);
+                break;
+            case MessageType.InputFullCapture:
+                BroadcastMessageWithExclusion(sender, message);
+                break;
+
+
+            case MessageType.ServerAlertNewPlayer:
+                break;
+
+            case MessageType.ServerCommandSpawnPlayer:
+                break;
+            case MessageType.ServerCommandLaunchGame:
+                BroadcastMessage(message);
+                break;
+
             default:
                 break;
         }
     }
 
 
-
-    private void BroadcastMessage(MessageType type, byte[] data)
+    private void BroadcastMessage(YADRNetworkMessageWrapper message)
     {
-        Global.NetworkManager.networkDebugLog("Server starting broadcast of messagetype: " + type.ToString());
+        Global.NetworkManager.networkDebugLog("Server starting broadcast of messagetype: " + message.Type);
         foreach (HSteamNetConnection c in clients)
         {
-            NetworkManager.SendSteamMessage(type,c,data);
+            NetworkManager.SendSteamMessage(c,message);
         }
     }
 
-    private void BroadcastMessageWithExclusion(SteamNetworkingIdentity exclude, MessageType type, byte[] data)
+    private void BroadcastMessageWithExclusion(SteamNetworkingIdentity exclude, YADRNetworkMessageWrapper message)
     {
-        Global.NetworkManager.networkDebugLog("Server starting broadcast of messagetype: " + type.ToString() + " with exclusion.");
+        Global.NetworkManager.networkDebugLog("Server starting broadcast of messagetype: " + message.Type + " with exclusion.");
         foreach (HSteamNetConnection c in clients)
         {
             SteamNetConnectionInfo_t info = new();
@@ -172,8 +156,25 @@ public partial class Server: Node
             {
                 continue;
             }
-            NetworkManager.SendSteamMessage(type, c, data);
+            NetworkManager.SendSteamMessage(c,message);
         }
     }
+    private void BroadcastMessageWithExclusion(long exclude, YADRNetworkMessageWrapper message)
+    {
+        Global.NetworkManager.networkDebugLog("Server starting broadcast of messagetype: " + message.Type + " with exclusion.");
+        SteamNetworkingIdentity ident = new();
+        ident.SetSteamID((CSteamID)(ulong)exclude);
+        foreach (HSteamNetConnection c in clients)
+        {
+            SteamNetConnectionInfo_t info = new();
+            SteamNetworkingSockets.GetConnectionInfo(c, out info);
+            if (info.m_identityRemote.GetSteamID().Equals(ident.GetSteamID()))
+            {
+                continue;
+            }
+            NetworkManager.SendSteamMessage(c, message);
+        }
+    }
+
 
 }
