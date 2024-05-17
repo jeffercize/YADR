@@ -115,7 +115,9 @@ public partial class Client: Node
                 Global.NetworkManager.networkDebugLog("Client - Full Input Sync Message Received.");
                 ClientInputHandler.handleInputSyncMessage(message.InputFullCapture);
                 break;
-
+            case MessageType.PlayerStatePosition:
+                ClientPlayerStateHandler.handlePlayerStatePositionMessage(message.PlayerStatePosition);
+                break;
             case MessageType.ServerAlertNewPlayer:
                 long id = message.ServerAlertNewPlayer.NewPlayer.SteamID;
                 string name = message.ServerAlertNewPlayer.NewPlayer.Name;
