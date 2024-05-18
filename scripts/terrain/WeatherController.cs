@@ -13,7 +13,7 @@ public partial class WeatherController : Node3D
     public override void _Ready()
 	{
         myEnvironment = new WorldEnvironment();
-        myRainMaker = GetNode<GpuParticles3D>("/root/main/players/Player/RainGPUParticles");
+        myRainMaker = GetNode<GpuParticles3D>("/root/main/LevelManager/Player/RainGPUParticles");
         myEnvironment.Environment = new Godot.Environment();
 		myEnvironment.Environment.BackgroundMode = Godot.Environment.BGMode.Sky;
 
@@ -31,12 +31,18 @@ public partial class WeatherController : Node3D
 		myEnvironment.Environment.AmbientLightEnergy = 0.2f;
 		myEnvironment.Environment.TonemapMode = Godot.Environment.ToneMapper.Aces;
 
+        myEnvironment.Environment.VolumetricFogEnabled = true;
+        myEnvironment.Environment.VolumetricFogDensity = 0.02f;
+        myEnvironment.Environment.VolumetricFogEmission = new Color(0.15f, 0.15f, 0.15f);
+
         mySun = new DirectionalLight3D();
 
         mySun.DirectionalShadowMaxDistance = 256.0f;
+        mySun.Rotation = new Vector3(100.0f, 0.0f, 0.0f);
+        mySun.LightColor = (new Color(0.5f, 0.5f, 0.5f));
+        mySun.LightEnergy = 0.2f;
 		mySun.ShadowEnabled = true;
 
-        //tell rain to stop
 
         AddChild(myEnvironment);
         AddChild(mySun);
@@ -83,10 +89,14 @@ public partial class WeatherController : Node3D
 
         myEnvironment.Environment.VolumetricFogEnabled = true;
         myEnvironment.Environment.VolumetricFogDensity = 0.02f;
-        myEnvironment.Environment.VolumetricFogEmission = new Color(0.355f, 0.355f, 0.355f);
+        myEnvironment.Environment.VolumetricFogEmission = new Color(0.15f, 0.15f, 0.15f);
 
-        mySun.DirectionalShadowMaxDistance = 256.0f;
-        mySun.ShadowEnabled = true;
+/*        mySun.DirectionalShadowMaxDistance = 256.0f;
+        mySun.RotateX(-60);
+        mySun.LightColor = (new Color(0.5f, 0.5f, 0.5f));
+        mySun.LightEnergy = 0.2f;
+        mySun.ShadowEnabled = true;*/
+        mySun.Visible = false;
 
         //tell particles to rain
     }
@@ -109,10 +119,14 @@ public partial class WeatherController : Node3D
 
         myEnvironment.Environment.VolumetricFogEnabled = true;
         myEnvironment.Environment.VolumetricFogDensity = 0.02f;
-        myEnvironment.Environment.VolumetricFogEmission = new Color(0.355f, 0.355f, 0.355f);
+        myEnvironment.Environment.VolumetricFogEmission = new Color(0.15f, 0.15f, 0.15f);
 
         mySun.DirectionalShadowMaxDistance = 256.0f;
+        mySun.Rotation = new Vector3(100.0f, 0.0f, 0.0f);
+        mySun.LightColor = (new Color(0.6f, 0.6f, 0.6f));
+        mySun.LightEnergy = 0.4f;
         mySun.ShadowEnabled = true;
+        mySun.Visible = true;
 
         //tell weather particles to not do anything
     }
@@ -136,7 +150,11 @@ public partial class WeatherController : Node3D
         myEnvironment.Environment.VolumetricFogEnabled = false;
 
         mySun.DirectionalShadowMaxDistance = 256.0f;
+        mySun.Rotation = new Vector3(100.0f, 0.0f, 0.0f);
+        mySun.LightColor = (new Color(0.9f, 0.9f, 0.9f));
+        mySun.LightEnergy = 1.0f;
         mySun.ShadowEnabled = true;
+        mySun.Visible = true;
 
         //tell weather particles to not do anything
     }

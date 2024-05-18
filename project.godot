@@ -222,11 +222,13 @@ Reload={
 
 [rendering]
 
+textures/webp_compression/compression_method=4
 lights_and_shadows/positional_shadow/soft_shadow_filter_quality=3
 global_illumination/voxel_gi/quality=1
 camera/depth_of_field/depth_of_field_bokeh_quality=2
 global_illumination/sdfgi/probe_ray_count=2
 environment/volumetric_fog/volume_size=128
+anti_aliasing/quality/msaa_3d=1
 
 [shader_globals]
 

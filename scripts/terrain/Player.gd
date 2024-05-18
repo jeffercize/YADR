@@ -72,5 +72,5 @@ func _input(p_event: InputEvent) -> void:
 		if p_event.pressed and p_event.keycode == KEY_C:
 			collision_enabled = ! collision_enabled
 
-		elif p_event.is_action_released("moveDown") or p_event.is_action_released("jump"):
+		elif p_event.is_action_released("moveDown") or p_event.is_action_released("Jump"):
 			velocity.y = 0
