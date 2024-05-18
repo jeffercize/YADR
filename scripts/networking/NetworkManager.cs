@@ -265,6 +265,8 @@ public partial class NetworkManager: Node
                 wrappedMessage.ServerCommandLaunchGame = (ServerCommandLaunchGameMessage)message;
                 break;
 
+            case MessageType.PlayerStatePosition: wrappedMessage.PlayerStatePosition = (PlayerStatePositionMessage)message; break;
+
             default:
                 break;
         }

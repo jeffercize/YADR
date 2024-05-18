@@ -142,6 +142,7 @@ public partial class Server: Node
                 break;
 
             case MessageType.PlayerStatePosition:
+                Global.NetworkManager.networkDebugLog("Server - got a pos sync for: " + message.PlayerStatePosition.PlayerIdentity.SteamID);
                 BroadcastMessageWithExclusion(sender, message);
                 break;
 
@@ -172,7 +173,10 @@ public partial class Server: Node
     public void BroadcastMessageWithExclusion(long exclude, YADRNetworkMessageWrapper message)
     {
        // Global.NetworkManager.networkDebugLog("Server starting broadcast of messagetype: " + message.Type + " while excluding ID: " + exclude);
-
+       if (message.Type == MessageType.PlayerStatePosition)
+        {
+            Global.NetworkManager.networkDebugLog("GUHGUHGUHGU: " + message.PlayerStatePosition.PlayerIdentity.SteamID);
+        }
         foreach (HSteamNetConnection c in clients)
         {
             SteamNetConnectionInfo_t info = new();
