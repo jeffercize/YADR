@@ -1,10 +1,10 @@
 [gd_scene load_steps=13 format=3 uid="uid://cofnhdcclon1w"]
 
-[ext_resource type="Script" path="res://scripts/terrain/CodeGenerated.cs" id="1_btvwy"]
+[ext_resource type="Script" path="res://scripts/terrain/TerrainGeneration.cs" id="1_btvwy"]
 [ext_resource type="Terrain3DStorage" uid="uid://dkqwrhjieitw7" path="res://terrainData/TerrainGeneration.res" id="4_muabl"]
 [ext_resource type="Script" path="res://scripts/terrain/RuntimeNavigationBaker.gd" id="5_445ur"]
 [ext_resource type="Terrain3DTextureList" uid="uid://dal3jhw6241qg" path="res://terrainData/texture_list.tres" id="6_sj1ir"]
-[ext_resource type="Terrain3DMaterial" uid="uid://c7yygu7xtcpun" path="res://terrainData/CodeGenerated.tres" id="7_ov2mj"]
+[ext_resource type="Terrain3DMaterial" uid="uid://dpd54oijhh4vb" path="res://terrainData/TerrainGeneration.tres" id="7_ov2mj"]
 [ext_resource type="Script" path="res://scripts/terrain/GrassMeshMaker.cs" id="8_hyt63"]
 [ext_resource type="Script" path="res://scripts/terrain/WeatherController.cs" id="8_n3tlt"]
 [ext_resource type="Shader" path="res://shaders/terrain/grassShader.gdshader" id="9_07r24"]
@@ -28,7 +28,7 @@ material = SubResource("ShaderMaterial_dop3f")
 transform_format = 1
 mesh = SubResource("BoxMesh_652tm")
 
-[node name="CodeGenerated" type="Node3D"]
+[node name="TerrainGeneration" type="Node3D"]
 script = ExtResource("1_btvwy")
 
 [node name="RuntimeNavigationBaker" type="Node" parent="."]

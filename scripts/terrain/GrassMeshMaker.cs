@@ -400,14 +400,14 @@ public partial class GrassMeshMaker : Node3D
         // Shuffle the list
         indices = indices.OrderBy(x => rand.Next()).ToList();
 
-        int desiredClumpCount = instanceCount / 10; //15 blades of grass per clump on average
+        int desiredClumpCount = instanceCount / 6; //10 blades of grass per clump on average
         int arraySize = (int)MathF.Ceiling(MathF.Sqrt(desiredClumpCount)); // Calculate the size of the array
         Tuple<float, float, float, int, float>[,] clumpPoints = new Tuple<float, float, float, int, float>[arraySize + 2, arraySize + 2]; //x,y,height,type
-        float clumpingValue = 0.5f;
+        float clumpingValue = 0.4f;
 
         float spacing = fieldWidth / (MathF.Sqrt(desiredClumpCount) - 1);
 
-        // Populate the array
+        // Populate the array of clumps
         for (int i = -1; i <= arraySize; i++)
         {
             for (int j = -1; j <= arraySize; j++)
@@ -424,7 +424,7 @@ public partial class GrassMeshMaker : Node3D
                 clumpPoints[i + 1, j + 1] = new Tuple<float, float, float, int, float>(x + x_jitter, y + y_jitter, rand.NextSingle()+0.4f, 1, facing); //random height from 0 to 1 for now, all grass is type 1
             }
         }
-
+        float chunkHeight = heightMap.GetPixel((int)(widthIndex * fieldWidth + (fieldWidth / 2)), (int)(heightIndex * fieldHeight + (fieldHeight / 2))).R * 400.0f;
         //we randomly insert 0 -> instanceCount and they are also randomly placed with x_loc and y_loc
         foreach (int i in indices)
         {
@@ -459,7 +459,19 @@ public partial class GrassMeshMaker : Node3D
 
 
             // Create a new transform for this instance
-            Transform3D transform = new Transform3D(Basis.Identity, new Vector3((x_loc), 0, (y_loc)));
+            Transform3D transform = new Transform3D(Basis.Identity, new Vector3((x_loc), -chunkHeight, (y_loc)));
+
+            //Rotational Basis
+            // Calculate the angle in radians
+            float angleInRadians = Mathf.Atan2(directionToClump.Y, directionToClump.X);
+            // Convert the angle to degrees
+            float faceDirection = Mathf.RadToDeg(angleInRadians);
+            Basis rotationalBasis = new Basis(new Quaternion(new Vector3(0, 1, 0), faceDirection));
+           
+            if (closestClump.Item3 < 1.0f)
+            {
+                transform.Basis = rotationalBasis * transform.Basis;
+            }
 
             // Add the transform data to the array
             instanceData[instanceDataIndex * 16 + 0] = transform.Basis.X.X;
@@ -478,8 +490,8 @@ public partial class GrassMeshMaker : Node3D
             // Add custom data at the end
             Color customData = new Color(closestClump.Item1, closestClump.Item2, closestClump.Item3, closestClump.Item4);
 
-            instanceData[instanceDataIndex * 16 + 12] = customData.R; //x
-            instanceData[instanceDataIndex * 16 + 13] = customData.G; //y
+            instanceData[instanceDataIndex * 16 + 12] = customData.R; //
+            instanceData[instanceDataIndex * 16 + 13] = customData.G; //
             instanceData[instanceDataIndex * 16 + 14] = customData.B; //height
             instanceData[instanceDataIndex * 16 + 15] = customData.A; //grassType
 
@@ -497,7 +509,7 @@ public partial class GrassMeshMaker : Node3D
         multiMeshAABB = multiMeshAABB.Expand(new Vector3(0, 400, 0));
         RenderingServer.InstanceSetCustomAabb(instance, multiMeshAABB);
         RenderingServer.InstanceGeometrySetCastShadowsSetting(instance, RenderingServer.ShadowCastingSetting.Off);
-        RenderingServer.InstanceSetTransform(instance, new Transform3D(Basis.Identity, new Vector3(widthIndex * fieldWidth + (fieldWidth/2), 0.0f, heightIndex * fieldHeight + (fieldHeight / 2))));
+        RenderingServer.InstanceSetTransform(instance, new Transform3D(Basis.Identity, new Vector3(widthIndex * fieldWidth + (fieldWidth/2), chunkHeight, heightIndex * fieldHeight + (fieldHeight / 2))));
         //RenderingServer.InstanceGeometrySetVisibilityRange(instance, 0.0f, 300.0f, 0.0f, 50.0f, RenderingServer.VisibilityRangeFadeMode.Self);
 
         if (innerClumpIndex == 0)
