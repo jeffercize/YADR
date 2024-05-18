@@ -28,12 +28,14 @@ public class ClientPlayerStateHandler
         message.Position = position;
 
         NetworkManager.SendSteamMessage(Global.NetworkManager.client.connectionToServer, MessageType.PlayerStatePosition, message);
+        Global.NetworkManager.networkDebugLog("Client -  Sending pos sync for : " + message.PlayerIdentity.SteamID);
         //Global.NetworkManager.server.BroadcastMessageWithExclusion((long)Global.instance.clientID,WrapMessage(MessageType.PlayerStatePosition,message));
 
     }
 
     public static void handlePlayerStatePositionMessage(PlayerStatePositionMessage message)
     {
+        Global.NetworkManager.networkDebugLog("Client -  recevied a pos sync for: " + message.PlayerIdentity.SteamID);
         NetworkPlayerStatePositionEvent.Invoke(message);
     }
 }
