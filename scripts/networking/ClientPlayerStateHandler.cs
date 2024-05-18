@@ -27,8 +27,8 @@ public class ClientPlayerStateHandler
         position.Z = player.GlobalPosition.Z;
         message.Position = position;
 
-        //NetworkManager.SendSteamMessage(Global.NetworkManager.client.connectionToServer, MessageType.PlayerStatePosition, message);
-        Global.NetworkManager.server.BroadcastMessageWithExclusion((long)Global.instance.clientID,WrapMessage(MessageType.PlayerStatePosition,message));
+        NetworkManager.SendSteamMessage(Global.NetworkManager.client.connectionToServer, MessageType.PlayerStatePosition, message);
+        //Global.NetworkManager.server.BroadcastMessageWithExclusion((long)Global.instance.clientID,WrapMessage(MessageType.PlayerStatePosition,message));
 
     }
 

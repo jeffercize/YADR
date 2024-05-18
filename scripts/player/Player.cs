@@ -5,9 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
-    public partial class Player: Character
-    {
+public partial class Player: Character
+{
 
     public Player() { }
     public Player(ulong clientID) { this.clientID = clientID; }
@@ -271,7 +270,8 @@ using System.Threading.Tasks;
     }
 
 
-
+    double PlayerStateSyncTimer = 1f;
+    double PlayerStateSyncCounter = 0f;
 
     //MOVEMENT SHIT ///////////////////////////////////////////////
     public override void _PhysicsProcess(double delta)
@@ -287,10 +287,15 @@ using System.Threading.Tasks;
         //Velocity is updated by the physics engine at this point, store it to modify next frame.
         newVelocity = Velocity;
 
-        //MP Sync 
-        if (Global.NetworkManager.isActive)
+        if (isMe)
         {
-
+            PlayerStateSyncCounter += delta;
+            if (PlayerStateSyncCounter > PlayerStateSyncTimer)
+            {
+                ClientPlayerStateHandler.CreateAndSendPlayerPositionMessage(this);
+                Global.NetworkManager.networkDebugLog("Client - Sending Position Sync for me: " + clientID);
+                PlayerStateSyncCounter = 0;
+            }
         }
     }
 

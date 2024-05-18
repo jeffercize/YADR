@@ -20,9 +20,10 @@ public partial class PlayerManager : Node3D
 
     double PlayerStateSyncTimer = 1f;
     double PlayerStateSyncCounter = 0f;
+    bool hostSync =false;
     public override void _PhysicsProcess(double delta)
     {
-        if (Global.NetworkManager.isHost)
+        if (Global.NetworkManager.isHost && hostSync)
         {
             PlayerStateSyncCounter += delta;
             if (PlayerStateSyncCounter > PlayerStateSyncTimer)

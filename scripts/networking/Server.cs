@@ -141,6 +141,9 @@ public partial class Server: Node
                 BroadcastMessageWithExclusion(sender, message);
                 break;
 
+            case MessageType.PlayerStatePosition:
+                BroadcastMessageWithExclusion(sender, message);
+                break;
 
             case MessageType.ServerAlertNewPlayer:
                 break;
