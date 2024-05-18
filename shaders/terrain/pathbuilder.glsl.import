@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://bw5sldgqnx176"
+path="res://.godot/imported/pathbuilder.glsl-e95b41d980f9251f9229f00a7af52f2d.res"
+
+[deps]
+
+source_file="res://shaders/terrain/pathbuilder.glsl"
+dest_files=["res://.godot/imported/pathbuilder.glsl-e95b41d980f9251f9229f00a7af52f2d.res"]
+
+[params]
+
