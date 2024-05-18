@@ -62,11 +62,11 @@ void main() {
         height *= uv.x / 0.2;
     }
 
-    if(distanceToClosest < 20.0 && uv.x > 0.01 && uv.y > 0.01)
+    if(distanceToClosest < 20.0 && uv.x > 0.02 && uv.y > 0.02)
     {
         height = closestPoint.z;
     }
-    else if (distanceToClosest < 60.0 && uv.x > 0.01 && uv.y > 0.01)
+    else if (distanceToClosest < 60.0 && uv.x > 0.02 && uv.y > 0.02)
     {
         float blendFactor = (distanceToClosest - 20.0) / 40.0;
         height = mix(closestPoint.z, height, blendFactor);

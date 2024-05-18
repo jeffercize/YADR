@@ -103,6 +103,7 @@ float easeIn(float x, float t) {
 }
 
 void vertex() {
+	float myTime = time;
 //Variable Prep\\
 	vec3 grassBladeWorldPosTemp = (MODEL_MATRIX * vec4(0.0,0.0,0.0, 1.0)).xyz;
 	VERTEX.y = VERTEX.y * INSTANCE_CUSTOM.z * (hash12(vec2(grassBladeWorldPosTemp.x, grassBladeWorldPosTemp.z))* 0.5 + 0.75);
@@ -136,39 +137,8 @@ void vertex() {
 
 	//random lean
 	float randomLean = remap(hashVal1.w, 0.0, 1.0, 0.1, 0.4) * heightPercent; //replace with sin noise
-
-	//Noise Sampling for Wind\\
-	float noiseSample = noise12(vec2(time * 0.35 * 0.5) + grassBladeWorldPos.xz);
-	randomLean += noiseSample * windStrength;
 	
-	
-
-	float windNoiseSample = noise12(grassBladeWorldPos.xz * 0.5 + time*(windStrength+0.5));
-	float windLeanAngle = remap(windNoiseSample, -1.0, 1.0, 0.25, 1.0);
-	windLeanAngle = easeIn(windLeanAngle, 2.0) * 1.25;
-	windLeanAngle *= heightPercent;
-	windLeanAngle *= (windStrength+0.5);
-	
-	float windMixValue = 1.0;
-	if(adjustedGrassTotalHeight < 1.0)
-	{
-		windMixValue = adjustedGrassTotalHeight / 5.0;
-	}
-	float windDirectionCombined = mix(randomAngle, windDirection, windMixValue);
-	vec3 windAxis = vec3(cos(windDirectionCombined), 0.0, sin(windDirectionCombined));
-
-
-
-	// Multiply the rotation matrixes together
-
-
-    // Apply the rotation to the vertex position
-    VERTEX.xyz = rotateY(randomAngle) * VERTEX.xyz;
-
-	mat3 grassMat = rotateAxis(windAxis, windLeanAngle) * rotateX(randomLean);
-
-	VERTEX.xyz = grassMat * VERTEX.xyz;
-
+	//CHECK IF FAR AWAY INTERLUDE\\
 	//heightmap sampling
 	vec2 uv = vec2(grassBladeWorldPos.x / heightParams.x, grassBladeWorldPos.z / heightParams.y);
 
@@ -186,6 +156,47 @@ void vertex() {
 	// Interpolate between the samples
 	float heightMapSample = mix(mix(h00, h10, f.x), mix(h01, h11, f.x), f.y);
 
+
+	vec3 cameraPosition = INV_VIEW_MATRIX[3].xyz;
+	vec3 grassBladeWorldPosToCamera = vec3(grassBladeWorldPos.x, grassBladeWorldPos.y+heightMapSample*400.0, grassBladeWorldPos.z);
+    float distanceToCamera = length(cameraPosition - grassBladeWorldPosToCamera);
+	if(distanceToCamera > 50.0)
+	{
+		float blendFactor = clamp((distanceToCamera - 50.0) / 50.0, 0.0, 1.0);
+		myTime = mix(time, round(time), blendFactor);
+	}
+
+	//Noise Sampling for Wind\\
+	float noiseSample = noise12(vec2(myTime * 0.35 * 0.5) + grassBladeWorldPos.xz);
+	randomLean += noiseSample * windStrength;
+	
+	
+
+	float windNoiseSample = noise12(grassBladeWorldPos.xz * 0.5 + myTime*(windStrength+0.5));
+	float windLeanAngle = remap(windNoiseSample, -1.0, 1.0, 0.25, 1.0);
+	windLeanAngle = easeIn(windLeanAngle, 2.0) * 1.25;
+	windLeanAngle *= heightPercent;
+	windLeanAngle *= (windStrength+0.5);
+	
+	float windMixValue = 1.0;
+	if(adjustedGrassTotalHeight < 1.0)
+	{
+		windMixValue = adjustedGrassTotalHeight / 5.0;
+	}
+	float windDirectionCombined = mix(randomAngle, windDirection, windMixValue);
+	vec3 windAxis = vec3(cos(windDirectionCombined), 0.0, sin(windDirectionCombined));
+
+
+
+    // Apply the rotation to the vertex position
+
+	VERTEX.xyz = rotateY(randomAngle) * VERTEX.xyz;
+
+	mat3 grassMat = rotateAxis(windAxis, windLeanAngle) * rotateX(randomLean);
+
+	VERTEX.xyz = grassMat * VERTEX.xyz; 
+
+
 	VERTEX.y += heightMapSample * 400.0;
 
 	vec2 gradient = vec2(h10 - hm1, h01 - h0m1) * 200.0;
@@ -193,7 +204,6 @@ void vertex() {
 	//color = vec3(grassBladeWorldPos.x / heightParams.x, grassBladeWorldPos.z / heightParams.y, 0.0);
 
 	//get camera and view direction info for later
-	vec3 cameraPosition = INV_VIEW_MATRIX[3].xyz;
 	vec3 viewDir = normalize(cameraPosition - grassBladeWorldPos);
 	vec3 viewDirXZ = normalize(vec3(viewDir.x, 0.0, viewDir.z));
 	
