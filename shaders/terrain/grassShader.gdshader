@@ -104,7 +104,8 @@ float easeIn(float x, float t) {
 
 void vertex() {
 //Variable Prep\\
-	VERTEX.y = VERTEX.y * INSTANCE_CUSTOM.z;
+	vec3 grassBladeWorldPosTemp = (MODEL_MATRIX * vec4(0.0,0.0,0.0, 1.0)).xyz;
+	VERTEX.y = VERTEX.y * INSTANCE_CUSTOM.z * (hash12(vec2(grassBladeWorldPosTemp.x, grassBladeWorldPosTemp.z))* 0.5 + 0.75);
 	float adjustedGrassTotalHeight = grassTotalHeight * INSTANCE_CUSTOM.z;
     // Store the origin point of the grass for math
     vec3 grassBladeWorldPos = (MODEL_MATRIX * vec4(0.0,0.0,0.0, 1.0)).xyz;
@@ -125,11 +126,12 @@ void vertex() {
 
 //Rotating the base and leaning\\
 
-	//Random rotational angle for Y axis TODO this shit is broken
-	vec2 direction = normalize(grassBladeWorldPos.xz - INSTANCE_CUSTOM.xy); //wtf is this getting direction
-	float angleToClump = atan(direction.y, direction.x);
-	float angleAway = angleToClump + PI;
-	//float randomAngle = angleToClump;
+	//dont change angle if wind strength is low, but change it as the wind is stronger
+	//so mix between 0 and windDirection with windStrength
+	//target randomAngle so that randomAngle - INSTANCE_CUSTOM.y = windDirectionMix
+	float windDirectionMix = mix(0.0, windDirection, windStrength);
+	//float randomAngle = 0.0;//windDirectionMix - INSTANCE_CUSTOM.y;
+
     float randomAngle = hashVal1.x * 2.0 * PI; //small jitter on the rotation away from the clump
 
 	//random lean

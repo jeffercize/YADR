@@ -43,6 +43,9 @@ public partial class MainMenu : Control
     {
         Global.LevelManager.loadScene("res://components/TerrainPlayer.tscn");
         Global.LevelManager.loadScene("res://scenes/TerrainGeneration.tscn");
+        TerrainGeneration terrainGenerated = (TerrainGeneration)Global.LevelManager.currentScene;
+        Image mapImage = Image.LoadFromFile("res://scripts/terrain/blur_test_gausbox.webp");
+        terrainGenerated.AddTerrain("Terrain3D");
         Global.UIManager.clearUI();
     }
 

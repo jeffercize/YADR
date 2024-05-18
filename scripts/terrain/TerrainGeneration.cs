@@ -7,13 +7,13 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Godot.Collections;
 
-public partial class CodeGenerated : Node3D
+public partial class TerrainGeneration : Node3D
 {
     public override void _Ready()
     {
         // Called every time the node is added to the scene.
         // Initialization here.
-        AddTerrain("Terrain3D");
+        //AddTerrain("Terrain3D");
         //GenerateTerrain("Terrain3D2", 1000);
     }
 
@@ -29,16 +29,11 @@ public partial class CodeGenerated : Node3D
         return a + (b - a) * t;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct BlurParams
-    {
-        public int radius;
-        public float sigma;
-    }
 
 
 
-    public Image ApplyGassianAndBoxBlur(Image image, RenderingDevice.DataFormat imageFormat, int radius =0, float sigma=0.0f)
+
+    public Image ApplyGassianAndBoxBlur(Image image, RenderingDevice.DataFormat imageFormat)
     {
         // Create a local rendering device.
         var rd = RenderingServer.CreateLocalRenderingDevice();
@@ -134,6 +129,110 @@ public partial class CodeGenerated : Node3D
             imageFormat = RenderingDevice.DataFormat.R32G32Sfloat;
         }
         return pathImg;
+    }
+
+    public Image GPUGeneratePath(Image noiseImage, int x_axis, int y_axis, Vector3[] points)
+    {
+        var rd = RenderingServer.CreateLocalRenderingDevice();
+        RDShaderFile blendShaderFile = GD.Load<RDShaderFile>("res://shaders/terrain/pathbuilder.glsl");
+        RDShaderSpirV blendShaderBytecode = blendShaderFile.GetSpirV();
+        Rid blendShader = rd.ShaderCreateFromSpirV(blendShaderBytecode);
+
+        //Setup Noise Image
+        RDSamplerState noiseSamplerState = new RDSamplerState();
+        Rid noiseSampler = rd.SamplerCreate(noiseSamplerState);
+        RDTextureFormat noiseInputFmt = new RDTextureFormat();
+        noiseInputFmt.Width = (uint)noiseImage.GetWidth();
+        noiseInputFmt.Height = (uint)noiseImage.GetHeight();
+        noiseInputFmt.Format = RenderingDevice.DataFormat.R32G32Sfloat;
+        noiseInputFmt.UsageBits = RenderingDevice.TextureUsageBits.CanCopyFromBit | RenderingDevice.TextureUsageBits.SamplingBit | RenderingDevice.TextureUsageBits.CanUpdateBit;
+        RDTextureView noiseInputView = new RDTextureView();
+        byte[] noiseInputImageData = noiseImage.GetData();
+        Godot.Collections.Array<byte[]> noiseData = new Godot.Collections.Array<byte[]>
+            {
+                noiseInputImageData
+            };
+        Rid noiseTex = rd.TextureCreate(noiseInputFmt, noiseInputView, noiseData);
+        RDUniform noiseSamplerUniform = new RDUniform();
+        noiseSamplerUniform.UniformType = RenderingDevice.UniformType.SamplerWithTexture;
+        noiseSamplerUniform.Binding = 0;
+        noiseSamplerUniform.AddId(noiseSampler);
+        noiseSamplerUniform.AddId(noiseTex);
+
+        //Setup Path Array
+        byte[] pointsBytes = new byte[points.Length * sizeof(float) * 3];
+        for (int i = 0; i < points.Length; i++)
+        {
+            Buffer.BlockCopy(BitConverter.GetBytes(points[i].X), 0, pointsBytes, (i * sizeof(float) * 3), sizeof(float));
+            Buffer.BlockCopy(BitConverter.GetBytes(points[i].Y), 0, pointsBytes, (i * sizeof(float) * 3) + sizeof(float), sizeof(float));
+            Buffer.BlockCopy(BitConverter.GetBytes(points[i].Z), 0, pointsBytes, (i * sizeof(float) * 3) + 2 * sizeof(float), sizeof(float));
+        }
+        Rid pointsBuffer = rd.StorageBufferCreate((uint)pointsBytes.Length, pointsBytes);
+        var pathUniform = new RDUniform
+        {
+            UniformType = RenderingDevice.UniformType.StorageBuffer,
+            Binding = 1
+        };
+        pathUniform.AddId(pointsBuffer);
+
+
+        //Setup Output Image 
+        RDTextureFormat blendfmt = new RDTextureFormat();
+        blendfmt.Width = (uint)x_axis;
+        blendfmt.Height = (uint)y_axis;
+        blendfmt.Format = RenderingDevice.DataFormat.R32G32Sfloat;
+        blendfmt.UsageBits = RenderingDevice.TextureUsageBits.StorageBit | RenderingDevice.TextureUsageBits.CanUpdateBit | RenderingDevice.TextureUsageBits.CanCopyFromBit;
+        RDTextureView blendview = new RDTextureView();
+        Image blend_image = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
+        byte[] blendOutputImageData = blend_image.GetData();
+        Godot.Collections.Array<byte[]> blendTempData = new Godot.Collections.Array<byte[]>
+            {
+                blendOutputImageData
+            };
+        Rid blendOutputTex = rd.TextureCreate(blendfmt, blendview, blendTempData);
+        RDUniform blendOutputTexUniform = new RDUniform();
+        blendOutputTexUniform.UniformType = RenderingDevice.UniformType.Image;
+        blendOutputTexUniform.Binding = 2;
+        blendOutputTexUniform.AddId(blendOutputTex);
+
+        // Setup ImageDimensionsUniform
+        int imageWidth = x_axis;
+        int imageHeight = y_axis;
+        byte[] imageDimensionsBytes = new byte[sizeof(int) * 2];
+        Buffer.BlockCopy(BitConverter.GetBytes(imageWidth), 0, imageDimensionsBytes, 0, sizeof(int));
+        Buffer.BlockCopy(BitConverter.GetBytes(imageHeight), 0, imageDimensionsBytes, sizeof(int), sizeof(int));
+        Rid imageDimensionsBuffer = rd.StorageBufferCreate((uint)imageDimensionsBytes.Length, imageDimensionsBytes);
+
+        RDUniform imageDimensionsUniform = new RDUniform()
+        {
+            UniformType = RenderingDevice.UniformType.StorageBuffer,
+            Binding = 3
+        };
+        imageDimensionsUniform.AddId(imageDimensionsBuffer);
+
+        //create the uniformSet
+        var blenduniformSet = rd.UniformSetCreate(new Array<RDUniform> { noiseSamplerUniform, pathUniform, blendOutputTexUniform, imageDimensionsUniform }, blendShader, 0);
+
+        // Create a compute pipeline
+        var blendpipeline = rd.ComputePipelineCreate(blendShader);
+        var blendcomputeList = rd.ComputeListBegin();
+        rd.ComputeListBindComputePipeline(blendcomputeList, blendpipeline);
+        rd.ComputeListBindUniformSet(blendcomputeList, blenduniformSet, 0);
+        int blendthreadsPerGroup = 32;
+        uint blendxGroups = (uint)(noiseImage.GetWidth() + blendthreadsPerGroup - 1) / (uint)blendthreadsPerGroup;
+        uint blendyGroups = (uint)(noiseImage.GetHeight() + blendthreadsPerGroup - 1) / (uint)blendthreadsPerGroup;
+        rd.ComputeListDispatch(blendcomputeList, blendxGroups, blendyGroups, 1);
+        rd.ComputeListEnd();
+
+        // Submit to GPU and wait for sync
+        rd.Submit();
+        rd.Sync();
+
+        //Get Data
+        var blendbyteData = rd.TextureGetData(blendOutputTex, 0);
+        Image final_img = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
+        final_img = Image.CreateFromData(x_axis, y_axis, false, Image.Format.Rgf, blendbyteData);
+        return final_img;
     }
 
     public void GeneratePath(Image innerPathImg, Image pathImg, System.Collections.Generic.Dictionary<float, List<float>>  pathDict, List<Vector3> path_result, int x_axis, int y_axis, System.Collections.Generic.List<float> myKeys)
@@ -348,244 +447,78 @@ public partial class CodeGenerated : Node3D
 		noise.Seed = 1;
         noise.FractalType = FastNoiseLite.FractalTypeEnum.None;
         noise.DomainWarpEnabled = false;
+
+        Image noiseImage = noise.GetImage(x_axis, y_axis);
+        GD.Print($"Time elapsed: {stopwatch.Elapsed}");
+        GD.Print("get noise");
+
+        noiseImage.Convert(Image.Format.Rgf);
+        noiseImage = ApplyGassianAndBoxBlur(noiseImage, RenderingDevice.DataFormat.R32G32Sfloat);
+        noiseImage.SavePng("C:\\Users\\jeffe\\test_images\\noise_test.png");
+        GD.Print($"Time elapsed: {stopwatch.Elapsed}");
+
+
         Image img = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
 
 		Curve3D path = new Curve3D();
-        /*path.AddPoint(new Vector3(0, 0, 0f));
-        path.AddPoint(new Vector3(2048, 1024, 0.1f), new Vector3(-50.0f, -50.0f, 0.0f), new Vector3(500.0f, 500.0f, 0.0f));
-        path.AddPoint(new Vector3(3048, 3024, 0.5f), new Vector3(-50.0f, -50.0f, 0.0f), new Vector3(500.0f, 1000.0f, 0.0f));
-        path.AddPoint(new Vector3(4096, 2500, 0.3f), new Vector3(-500.0f, -500.0f, 0.0f), new Vector3(50.0f, 50.0f, 0.0f));
-        path.AddPoint(new Vector3(8192, 0, 0.0f));*/
-        path.AddPoint(new Vector3(300, 0, 1.0f));
-        path.AddPoint(new Vector3(300, 750, 0.9f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(400, 500, 0.8f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(500, 750, 0.7f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(600, 500, 0.6f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(700, 750, 0.5f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(800, 500, 0.4f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(900, 750, 0.3f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(1000, 500, 0.2f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(1100, 750, 0.1f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(600, 3000, 0.11f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(2600, 1000, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(2600, 3500, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(4600, 1200, 0.10f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(6600, 3500, 0.33f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(7600, 1500, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(8192, 2048, 0.0f));
-
-        List<Vector3> data = new List<Vector3>(path.Tessellate(10, 1));
-        List<Vector3> path_result = new List<Vector3>();
-        for (int i = 0; i < data.Count - 1; i++)
-        {
-            float diff = MathF.Abs(data[i + 1].X - data[i].X) + MathF.Abs(data[i + 1].Y - data[i].Y);
-            float maxGap = 1.0f;
-            //GD.Print(diff);
-            if (diff > maxGap)
-            {
-                int steps = (int)MathF.Ceiling(diff/maxGap);
-                for (int step = 0; step <= steps; step++)
-                {
-                    float t = (float)step / steps;
-                    float x = Lerp(data[i].X, data[i + 1].X, t);
-                    float y = Lerp(data[i].Y, data[i + 1].Y, t);
-                    float z = Lerp(data[i].Z, data[i + 1].Z, t);
-                    path_result.Add(new Vector3(x, y, z));
-                }
-            }
-            else
-            {
-                path_result.Add(data[i]);
-            }
-        }
-        GD.Print($"Time elapsed: {stopwatch.Elapsed}");
-        GD.Print("path building");
-
+                path.AddPoint(new Vector3(300, 0, 1.0f));
+                path.AddPoint(new Vector3(300, 750, 0.9f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+                path.AddPoint(new Vector3(400, 500, 0.8f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+                path.AddPoint(new Vector3(500, 750, 0.7f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+                path.AddPoint(new Vector3(600, 500, 0.6f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+                path.AddPoint(new Vector3(700, 750, 0.5f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+                path.AddPoint(new Vector3(800, 500, 0.4f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+                path.AddPoint(new Vector3(900, 750, 0.3f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+                path.AddPoint(new Vector3(1000, 500, 0.2f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+                path.AddPoint(new Vector3(1100, 750, 0.1f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+                path.AddPoint(new Vector3(600, 3000, 0.11f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+                path.AddPoint(new Vector3(2600, 1000, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+                path.AddPoint(new Vector3(2600, 3500, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+                path.AddPoint(new Vector3(4600, 1200, 0.10f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+                path.AddPoint(new Vector3(6600, 3500, 0.33f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+                path.AddPoint(new Vector3(7600, 1500, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+                path.AddPoint(new Vector3(8192, 2048, 0.0f));
 
         Image pathImg = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
-        Image innerPathImg = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
-        System.Collections.Generic.Dictionary<float, List<float>> pathDict = path_result.GroupBy(p => p.X).ToDictionary(g => g.Key, g => g.Select(p => p.Y).ToList());
-        
-
-        int numThreads = 4;
-        var keys = pathDict.Keys.OrderBy(x => x).ToList();
-        int keysPerThread = (keys.Count + numThreads - 1) / numThreads; // round up division
-
-        Thread[] threads = new Thread[numThreads];
-
-        for (int i = 0; i < numThreads; i++)
-        {
-            // Get the keys for this thread
-            var threadKeys = keys.Skip(i * keysPerThread).Take(keysPerThread).ToList();
-
-            // Start the thread
-            threads[i] = new Thread(() => GeneratePath(innerPathImg, pathImg, pathDict, path_result, x_axis, y_axis, threadKeys));
-            threads[i].Start();
-        }
-
-        // Wait for all threads to finish
-        foreach (var thread in threads)
-        {
-            thread.Join();
-        }
-
-        pathImg.SavePng("C:\\Users\\jeffe\\test_images\\path_test.png");
+        GD.Print("GPU Path Generate");
+        path.BakeInterval = 0.1f;
+        pathImg = GPUGeneratePath(noiseImage, x_axis, y_axis, path.GetBakedPoints());
         GD.Print($"Time elapsed: {stopwatch.Elapsed}");
+        /*        foreach(var point in path.GetBakedPoints())
+                {
+                    GD.Print(point);
+                }*/
+        //pathImg.SavePng("C:\\Users\\jeffe\\test_images\\gpu_path_test.png");
+
         GD.Print("blur");
-
-
         // Run the blur shader
         pathImg = ApplyGassianAndBoxBlur(pathImg, RenderingDevice.DataFormat.R32G32Sfloat);
         GD.Print($"Time elapsed: {stopwatch.Elapsed}");
-        GD.Print("get noise");
-        Image noiseImage = noise.GetImage(x_axis, y_axis);
-        GD.Print($"Time elapsed: {stopwatch.Elapsed}");
-        GD.Print("blur noise");
-        noiseImage = ApplyGassianAndBoxBlur(noiseImage, RenderingDevice.DataFormat.R8Unorm);
 
-       
-        pathImg.SavePng("C:\\Users\\jeffe\\test_images\\blur_test_gausbox.png");
-        GD.Print($"Time elapsed: {stopwatch.Elapsed}");
-        GD.Print("full combine");
-        var rd = RenderingServer.CreateLocalRenderingDevice();
-        RDShaderFile blendShaderFile = GD.Load<RDShaderFile>("res://shaders/terrain/terrainblend.glsl");
-        RDShaderSpirV blendShaderBytecode = blendShaderFile.GetSpirV();
-        Rid blendShader = rd.ShaderCreateFromSpirV(blendShaderBytecode);
+        pathImg.SaveWebp("C:\\Users\\jeffe\\test_images\\blur_test_gausbox.webp");
+        //ResourceSaver.Save(pathImg, "C:\\Users\\jeffe\\Desktop\\Untitled41\\scripts\\terrain\\map_output.tres");
 
-        //Setup Noise Image
-        RDSamplerState noiseSamplerState = new RDSamplerState();
-        Rid noiseSampler = rd.SamplerCreate(noiseSamplerState);
-        RDTextureFormat noiseInputFmt = new RDTextureFormat();
-        noiseInputFmt.Width = (uint)noiseImage.GetWidth();
-        noiseInputFmt.Height = (uint)noiseImage.GetHeight();
-        noiseInputFmt.Format = RenderingDevice.DataFormat.R32G32Sfloat;
-        noiseInputFmt.UsageBits = RenderingDevice.TextureUsageBits.CanCopyFromBit | RenderingDevice.TextureUsageBits.SamplingBit | RenderingDevice.TextureUsageBits.CanUpdateBit;
-        RDTextureView noiseInputView = new RDTextureView();
-        byte[] noiseInputImageData = noiseImage.GetData();
-        Godot.Collections.Array<byte[]> noiseData = new Godot.Collections.Array<byte[]>
-            {
-                noiseInputImageData
-            };
-        Rid noiseTex = rd.TextureCreate(noiseInputFmt, noiseInputView, noiseData);
-        RDUniform noiseSamplerUniform = new RDUniform();
-        noiseSamplerUniform.UniformType = RenderingDevice.UniformType.SamplerWithTexture;
-        noiseSamplerUniform.Binding = 0;
-        noiseSamplerUniform.AddId(noiseSampler);
-        noiseSamplerUniform.AddId(noiseTex);
-
-        //Setup Path Image
-        RDSamplerState pathSamplerState = new RDSamplerState();
-        Rid pathSampler = rd.SamplerCreate(pathSamplerState);
-        RDTextureFormat pathInputFmt = new RDTextureFormat();
-        pathInputFmt.Width = (uint)pathImg.GetWidth();
-        pathInputFmt.Height = (uint)pathImg.GetHeight();
-        pathInputFmt.Format = RenderingDevice.DataFormat.R32G32Sfloat;
-        pathInputFmt.UsageBits = RenderingDevice.TextureUsageBits.CanCopyFromBit | RenderingDevice.TextureUsageBits.SamplingBit | RenderingDevice.TextureUsageBits.CanUpdateBit;
-        RDTextureView pathInputView = new RDTextureView();
-        
-        byte[] pathImageData = pathImg.GetData();
-        Godot.Collections.Array<byte[]> pathData = new Godot.Collections.Array<byte[]>
-            {
-                pathImageData
-            };
-        Rid pathTex = rd.TextureCreate(pathInputFmt, pathInputView, pathData);
-        RDUniform pathSamplerUniform = new RDUniform();
-        pathSamplerUniform.UniformType = RenderingDevice.UniformType.SamplerWithTexture;
-        pathSamplerUniform.Binding = 1;
-        pathSamplerUniform.AddId(pathSampler);
-        pathSamplerUniform.AddId(pathTex);
-
-        //Setup Output Image 
-        RDTextureFormat blendfmt = new RDTextureFormat();
-        blendfmt.Width = (uint)x_axis;
-        blendfmt.Height = (uint)y_axis;
-        blendfmt.Format = RenderingDevice.DataFormat.R32G32Sfloat;
-        blendfmt.UsageBits = RenderingDevice.TextureUsageBits.StorageBit | RenderingDevice.TextureUsageBits.CanUpdateBit | RenderingDevice.TextureUsageBits.CanCopyFromBit;
-        RDTextureView blendview = new RDTextureView();
-        Image blend_image = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
-        byte[] blendOutputImageData = blend_image.GetData();
-        Godot.Collections.Array<byte[]> blendTempData = new Godot.Collections.Array<byte[]>
-            {
-                blendOutputImageData
-            };
-        Rid blendOutputTex = rd.TextureCreate(blendfmt, blendview, blendTempData);
-        RDUniform blendOutputTexUniform = new RDUniform();
-        blendOutputTexUniform.UniformType = RenderingDevice.UniformType.Image;
-        blendOutputTexUniform.Binding = 2;
-        blendOutputTexUniform.AddId(blendOutputTex);
-
-        // Setup ImageDimensionsUniform
-        int imageWidth = x_axis;
-        int imageHeight = y_axis;
-        byte[] imageDimensionsBytes = new byte[sizeof(int) * 2];
-        Buffer.BlockCopy(BitConverter.GetBytes(imageWidth), 0, imageDimensionsBytes, 0, sizeof(int));
-        Buffer.BlockCopy(BitConverter.GetBytes(imageHeight), 0, imageDimensionsBytes, sizeof(int), sizeof(int));
-        Rid imageDimensionsBuffer = rd.StorageBufferCreate((uint)imageDimensionsBytes.Length, imageDimensionsBytes);
-
-        RDUniform imageDimensionsUniform = new RDUniform()
-        {
-            UniformType = RenderingDevice.UniformType.StorageBuffer,
-            Binding = 3
-        };
-        imageDimensionsUniform.AddId(imageDimensionsBuffer);
-
-        //create the uniformSet
-        var blenduniformSet = rd.UniformSetCreate(new Array<RDUniform> { noiseSamplerUniform, pathSamplerUniform, blendOutputTexUniform, imageDimensionsUniform }, blendShader, 0);
-
-        // Create a compute pipeline
-        var blendpipeline = rd.ComputePipelineCreate(blendShader);
-        var blendcomputeList = rd.ComputeListBegin();
-        rd.ComputeListBindComputePipeline(blendcomputeList, blendpipeline);
-        rd.ComputeListBindUniformSet(blendcomputeList, blenduniformSet, 0);
-        int blendthreadsPerGroup = 32;
-        uint blendxGroups = (uint)(pathImg.GetWidth() + blendthreadsPerGroup - 1) / (uint)blendthreadsPerGroup;
-        uint blendyGroups = (uint)(pathImg.GetHeight() + blendthreadsPerGroup - 1) / (uint)blendthreadsPerGroup;
-        rd.ComputeListDispatch(blendcomputeList, blendxGroups, blendyGroups, 1);
-        rd.ComputeListEnd();
-
-        // Submit to GPU and wait for sync
-        rd.Submit();
-        rd.Sync();
-
-        //Get Data
-        var blendbyteData = rd.TextureGetData(blendOutputTex, 0);
-        Image final_img = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
-        final_img = Image.CreateFromData(x_axis, y_axis, false, Image.Format.Rgf, blendbyteData);
-
-
-        final_img.SavePng("C:\\Users\\jeffe\\test_images\\final_output.png");
-        GD.Print($"Time elapsed: {stopwatch.Elapsed}");
         GD.Print("import");
-        return final_img;
+        return pathImg;
     }
 
-    public void AddTerrain(string terrainName)
+    public void AddTerrain(string terrainName, Image mapImage = null, bool wantGrass=true)
     {
+        Stopwatch stopwatch = Stopwatch.StartNew();
         int x_axis = 8192;//16000; //if you change these a lot of shaders need re-coded
         int y_axis = 4096;//6000; //if you change these a lot of shaders need re-coded
         var terrain = (Variant)GetNode(terrainName);
         terrain.AsGodotObject().Call("set_collision_enabled", false);
         terrain.AsGodotObject().Set("storage", ClassDB.Instantiate("Terrain3DStorage"));
         terrain.AsGodotObject().Set("texture_list", ClassDB.Instantiate("Terrain3DTextureList"));
-
-        //var terrainMaterial = terrain.AsGodotObject().Get("material");
-        //terrainMaterial.AsGodotObject().Set("world_background", 2);
-        //terrainMaterial.AsGodotObject().Set("auto_shader", true);
-        //terrainMaterial.AsGodotObject().Set("dual_scaling", true);
-        //terrain.AsGodotObject().Set("material", terrainMaterial);
-
         terrain.AsGodotObject().Set("texture_list", GD.Load("res://terrainData/texture_list.tres"));
 
-        Image final_img = GenerateTerrain(0, x_axis, y_axis);
-        int chunkWidth = 2048;
-        for (int i = 0; i < x_axis; i += chunkWidth)
+        if(mapImage == null)
         {
-            Rect2I subImageRect = new Rect2I(i, 0, chunkWidth, final_img.GetHeight());
-            Image chunkImage = final_img.GetRegion(subImageRect);
-
-            Vector3 offset = new Vector3(i-0, 0, 0);
-            terrain.AsGodotObject().Get("storage").AsGodotObject().Call("import_images", new Image[] { chunkImage, null, null }, offset, 0.0f, 400.0f);
+            mapImage = GenerateTerrain(0, x_axis, y_axis);
         }
+        Global.debugLog("import");
+        terrain.AsGodotObject().Get("storage").AsGodotObject().Call("import_images", new Image[] { mapImage, null, null }, new Vector3(0, 0, 0), 0.0f, 400.0f);
 
         //hole testing
         /*        var terrainUtil = ClassDB.Instantiate("Terrain3DUtil");
@@ -607,17 +540,19 @@ public partial class CodeGenerated : Node3D
         // Enable collision. Enable the first if you wish to see it with Debug/Visible Collision Shapes
         //terrain.AsGodotObject().Call("set_show_debug_collision", true);
         terrain.AsGodotObject().Call("set_collision_enabled", true);
-        GrassMeshMaker GrassMeshMaker = (GrassMeshMaker)GetNode("GrassMeshMaker");
-        GrassMeshMaker.SetupGrass("/Player", final_img);
+
+        //make some grass
+        if (wantGrass) 
+        {
+            GrassMeshMaker GrassMeshMaker = (GrassMeshMaker)GetNode("GrassMeshMaker");
+            GrassMeshMaker.SetupGrass("/Player", mapImage);
+        }
 
         //Enable runtime navigation baking using the terrain
         Node runtime_nav_baker = GetNode("RuntimeNavigationBaker");
         runtime_nav_baker.Set("terrain", terrain);
         runtime_nav_baker.Set("enabled", true);
+        GD.Print($"Terrrain Full Time elapsed: {stopwatch.Elapsed}");
 
-        //Retreive 512x512 region blur map showing where the regions are
-        //var rbmap_rid: RID = terrain.material.get_region_blend_map()
-
-        //img = RenderingServer.texture_2d_get(rbmap_rid)
     }
 }
