@@ -18,7 +18,7 @@ public class ClientPlayerStateHandler
         
         Identity identity = new Identity();
         identity.SteamID = (long)player.clientID;
-        identity.Name = "";
+        identity.Name = "guh";
         message.PlayerIdentity = identity;
 
         Position position = new Position();
