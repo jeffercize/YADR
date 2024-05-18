@@ -116,8 +116,9 @@ public partial class Client: Node
                 ClientInputHandler.handleInputSyncMessage(message.InputFullCapture);
                 break;
             case MessageType.PlayerStatePosition:
+                Global.NetworkManager.networkDebugLog("Client - remote player pos sync Message Received.");
                 ClientPlayerStateHandler.handlePlayerStatePositionMessage(message.PlayerStatePosition);
-                break;
+                break; 
             case MessageType.ServerAlertNewPlayer:
                 long id = message.ServerAlertNewPlayer.NewPlayer.SteamID;
                 string name = message.ServerAlertNewPlayer.NewPlayer.Name;
