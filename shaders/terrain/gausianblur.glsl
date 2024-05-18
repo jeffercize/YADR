@@ -20,8 +20,8 @@ float gaussian(int x, int y, float sigma) {
 void main() {
     ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
 
-    const int radius = 20;
-    const float sigma = 25.0;
+    const int radius = 10;
+    const float sigma = 5.0;
     vec4 sum = vec4(0.0);
     float weightSum = 0.0;
 
