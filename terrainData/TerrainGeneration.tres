@@ -1,4 +1,4 @@
-[gd_resource type="Terrain3DMaterial" load_steps=4 format=3 uid="uid://c7yygu7xtcpun"]
+[gd_resource type="Terrain3DMaterial" load_steps=4 format=3 uid="uid://dpd54oijhh4vb"]
 
 [sub_resource type="Gradient" id="Gradient_tawjs"]
 offsets = PackedFloat32Array(0.2, 1)

@@ -3,7 +3,7 @@ using System;
 
 public partial class LevelManager : Node3D
 {
-    Node3D currentScene;
+    public Node3D currentScene;
 
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
