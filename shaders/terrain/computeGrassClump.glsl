@@ -1,17 +1,20 @@
 #[compute]
 #version 450
 
-layout(local_size_x = 1, local_size_y = 1) in;
+layout(local_size_x = 32, local_size_y = 1) in;
 
 layout(set = 0, binding = 0) restrict buffer FieldDimensions {
     float fieldWidth;
     float fieldHeight;
     float chunkHeight;
+    float globalPosX;
+    float globalPosZ;
 };
 
 layout(set = 0, binding = 1) restrict buffer IntData {
     int randSeed;
     int arraySize;
+    int instanceCount;
 };
 
 struct ClumpPoint {
@@ -30,13 +33,30 @@ layout(set = 0, binding = 3, std430) restrict buffer InstanceDataBuffer {
 
 float rand(float n){return fract(sin(n) * 43758.5453123);}
 
+uint murmurHash12(uvec2 src) {
+  const uint M = 0x5bd1e995u;
+  uint h = 1190494759u;
+  src *= M; src ^= src>>24u; src *= M;
+  h *= M; h ^= src.x; h *= M; h ^= src.y;
+  h ^= h>>13u; h *= M; h ^= h>>15u;
+  return h;
+}
+
+float hash12(vec2 src) {
+  uint h = murmurHash12(floatBitsToUint(src));
+  return uintBitsToFloat(h & 0x007fffffu | 0x3f800000u) - 1.0;
+}
+
 void main() {
-
-
-    float x_jitter = rand(randSeed + 1.0) * 0.9 - 0.45;
-    float y_jitter = rand(randSeed + 2.0) * 0.9 - 0.45;
-    float x_loc = (rand(randSeed + 3.0) * fieldWidth - fieldWidth / 2.0) + x_jitter;
-    float y_loc = (rand(randSeed + 4.0) * fieldHeight - fieldHeight / 2.0) + y_jitter;
+    int randSeedLocal = randSeed;
+    if (gl_GlobalInvocationID.x >= instanceCount) {
+        return;
+    }
+    //add all these random numbers to give us a real random number that is deterministic
+    float x_jitter = hash12(vec2(randSeedLocal, gl_GlobalInvocationID.x + globalPosX + globalPosZ)) * 0.9 - 0.45;
+    float y_jitter = hash12(vec2(randSeedLocal, 1 + gl_GlobalInvocationID.x + globalPosX + globalPosZ)) * 0.9 - 0.45;
+    float x_loc = (hash12(vec2(randSeedLocal, 2 + gl_GlobalInvocationID.x + globalPosX + globalPosZ)) * fieldWidth - fieldWidth / 2.0) + x_jitter;
+    float y_loc = (hash12(vec2(randSeedLocal, 3 + gl_GlobalInvocationID.x + globalPosX + globalPosZ)) * fieldHeight - fieldHeight / 2.0) + y_jitter;
 
     float closestClumpX = 0.0;
     float closestClumpY = 0.0;
@@ -66,9 +86,9 @@ void main() {
     // Calculate the direction from the grass blade to the clump point
     vec2 directionToClump = (vec2(closestClumpX, closestClumpY) - vec2(x_loc, y_loc));
 
-    // Move the grass blade towards the clump point (CLUMPING VALUE OF 0.4)
-    x_loc += directionToClump.x * 0.4;
-    y_loc += directionToClump.y * 0.4;
+    // Move the grass blade towards the clump point (CLUMPING VALUE OF 0.2)
+    x_loc += directionToClump.x * 0.1;
+    y_loc += directionToClump.y * 0.1;
 
     //this code uses mat4 to create a transform matrix for the grass blade
     //i believe this will work correctly based on my rough understanding
@@ -99,23 +119,22 @@ void main() {
     }
 
     // Add the transform data to the array
-    uint instanceDataIndex = gl_GlobalInvocationID.x;
-    instanceData[instanceDataIndex * 16 + 0] = transform[0][0]; // Basis.X.X
-    instanceData[instanceDataIndex * 16 + 1] = transform[0][1]; // Basis.X.Y
-    instanceData[instanceDataIndex * 16 + 2] = transform[0][2]; // Basis.X.Z
-    instanceData[instanceDataIndex * 16 + 3] = transform[3][0]; // Origin.X
-    instanceData[instanceDataIndex * 16 + 4] = transform[1][0]; // Basis.Y.X
-    instanceData[instanceDataIndex * 16 + 5] = transform[1][1]; // Basis.Y.Y
-    instanceData[instanceDataIndex * 16 + 6] = transform[1][2]; // Basis.Y.Z
-    instanceData[instanceDataIndex * 16 + 7] = transform[3][1]; // Origin.Y
-    instanceData[instanceDataIndex * 16 + 8] = transform[2][0]; // Basis.Z.X
-    instanceData[instanceDataIndex * 16 + 9] = transform[2][1]; // Basis.Z.Y
-    instanceData[instanceDataIndex * 16 + 10] = transform[2][2]; // Basis.Z.Z
-    instanceData[instanceDataIndex * 16 + 11] = transform[3][2]; // Origin.Z
+    instanceData[gl_GlobalInvocationID.x * 16 + 0] = transform[0][0]; // Basis.X.X
+    instanceData[gl_GlobalInvocationID.x * 16 + 1] = transform[0][1]; // Basis.X.Y
+    instanceData[gl_GlobalInvocationID.x * 16 + 2] = transform[0][2]; // Basis.X.Z
+    instanceData[gl_GlobalInvocationID.x * 16 + 3] = transform[3][0]; // Origin.X
+    instanceData[gl_GlobalInvocationID.x * 16 + 4] = transform[1][0]; // Basis.Y.X
+    instanceData[gl_GlobalInvocationID.x * 16 + 5] = transform[1][1]; // Basis.Y.Y
+    instanceData[gl_GlobalInvocationID.x * 16 + 6] = transform[1][2]; // Basis.Y.Z
+    instanceData[gl_GlobalInvocationID.x * 16 + 7] = transform[3][1]; // Origin.Y
+    instanceData[gl_GlobalInvocationID.x * 16 + 8] = transform[2][0]; // Basis.Z.X
+    instanceData[gl_GlobalInvocationID.x * 16 + 9] = transform[2][1]; // Basis.Z.Y
+    instanceData[gl_GlobalInvocationID.x * 16 + 10] = transform[2][2]; // Basis.Z.Z
+    instanceData[gl_GlobalInvocationID.x * 16 + 11] = transform[3][2]; // Origin.Z
 
     // Add custom data at the end
-    instanceData[instanceDataIndex * 16 + 12] = closestClumpX; //
-    instanceData[instanceDataIndex * 16 + 13] = closestClumpY; //
-    instanceData[instanceDataIndex * 16 + 14] = closestClumpHeight; //height
-    instanceData[instanceDataIndex * 16 + 15] = closestClumpType; //grassType
+    instanceData[gl_GlobalInvocationID.x * 16 + 12] = closestClumpX; //
+    instanceData[gl_GlobalInvocationID.x * 16 + 13] = closestClumpY; //
+    instanceData[gl_GlobalInvocationID.x * 16 + 14] = closestClumpHeight; //height
+    instanceData[gl_GlobalInvocationID.x * 16 + 15] = closestClumpType; //grassType
 }

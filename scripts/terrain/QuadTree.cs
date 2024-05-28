@@ -43,42 +43,52 @@ public class QuadTreeLOD
         nodes[3] = new QuadTreeLOD(level + 1, new Rectangle(x + subWidth, y + subHeight, subWidth, subHeight));
     }
 
-    private int GetIndex(Vector3 playerPosition)
+    public Image CreateQuadTreeImage(QuadTreeLOD root, int width, int height)
     {
-        int index = -1;
-        double verticalMidpoint = bounds.X + (bounds.Width / 2);
-        double horizontalMidpoint = bounds.Y + (bounds.Height / 2);
+        Image image = Image.Create(width, height, false, Image.Format.Rgba8);
 
-        // Player is in top quadrants
-        bool topQuadrant = (playerPosition.Y < horizontalMidpoint);
-        // Player is in bottom quadrants
-        bool bottomQuadrant = (playerPosition.Y > horizontalMidpoint);
+        Godot.Color color = new Godot.Color(1, 0, 0); // Red color for the boxes
+        DrawQuadTree(image, color, root);
 
-        // Player is in left quadrants
-        if (playerPosition.X < verticalMidpoint)
-        {
-            if (topQuadrant)
-            {
-                index = 1;
-            }
-            else if (bottomQuadrant)
-            {
-                index = 2;
-            }
-        }
-        // Player is in right quadrants
-        else if (playerPosition.X > verticalMidpoint)
-        {
-            if (topQuadrant)
-            {
-                index = 0;
-            }
-            else if (bottomQuadrant)
-            {
-                index = 3;
-            }
-        }
-
-        return index;
+        return image;
     }
+
+    public Image CreateQuadTreeImageLevel(QuadTreeLOD root, int width, int height)
+    {
+        Image image = Image.Create(width, height, false, Image.Format.Rgba8);
+
+        Godot.Color color = new Godot.Color(1, 0, 0); // Red color for the boxes
+        DrawQuadTreeLevel(image, color, root);
+
+        return image;
+    }
+
+    private void DrawQuadTree(Image image, Godot.Color color, QuadTreeLOD quadtree)
+    {
+        image.FillRect(new Rect2I(quadtree.bounds.X, quadtree.bounds.Y, quadtree.bounds.Width, quadtree.bounds.Height), color);
+        Random random = new Random();
+        color = new Godot.Color(random.NextSingle(), random.NextSingle(), random.NextSingle());
+        foreach (QuadTreeLOD child in quadtree.nodes)
+        {
+            if (child != null)
+            {
+                DrawQuadTree(image, color, child);
+            }
+        }
+    }
+
+    private void DrawQuadTreeLevel(Image image, Godot.Color color, QuadTreeLOD quadtree)
+    {
+        image.FillRect(new Rect2I(quadtree.bounds.X, quadtree.bounds.Y, quadtree.bounds.Width, quadtree.bounds.Height), color);
+        Random random = new Random();
+        color = new Godot.Color(quadtree.level / 9.0f, quadtree.level / 9.0f, quadtree.level / 9.0f);
+        foreach (QuadTreeLOD child in quadtree.nodes)
+        {
+            if (child != null)
+            {
+                DrawQuadTreeLevel(image, color, child);
+            }
+        }
+    }
+
 }

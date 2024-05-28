@@ -160,10 +160,11 @@ void vertex() {
 	vec3 cameraPosition = INV_VIEW_MATRIX[3].xyz;
 	vec3 grassBladeWorldPosToCamera = vec3(grassBladeWorldPos.x, grassBladeWorldPos.y+heightMapSample*400.0, grassBladeWorldPos.z);
     float distanceToCamera = length(cameraPosition - grassBladeWorldPosToCamera);
-	if(distanceToCamera > 50.0)
+	if(distanceToCamera > 60.0)
 	{
-		float blendFactor = clamp((distanceToCamera - 50.0) / 50.0, 0.0, 1.0);
-		myTime = mix(time, round(time), blendFactor);
+		myTime = 1.0;
+		//float blendFactor = clamp((distanceToCamera - 50.0) / 50.0, 0.0, 1.0);
+		//myTime = mix(time, time*0.1, blendFactor);
 	}
 
 	//Noise Sampling for Wind\\

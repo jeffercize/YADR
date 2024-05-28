@@ -32,87 +32,68 @@ public partial class GrassMeshMaker : Node3D
 
     CharacterBody3D player;
 
+    RenderingDevice rd;
 
+    private readonly object _chunkDatalock = new object();
+    private volatile bool _abortRun = true;
+    Queue<(Rid, Rid)> activeChunks = new Queue<(Rid, Rid)>();
+    Queue<(float[], float, int, Vector3, Mesh)> readyDataChunks = new Queue<(float[], float, int, Vector3, Mesh)>();
+
+    Thread processGrassThread;
 
 
     // Called when the node enters the scene tree for the first time.
     public override void _Ready()
     {        //configure a set randomSeed, could share between users to make grass look the same in theory, tie it to the map generation seed TODO
         Random rand = new Random();
-        randomSeed = rand.Next(int.MaxValue - 1000000); //subtract 1 mil because we use it in math and I dont want to overflow
+        randomSeed = rand.Next(20); //subtract 1 mil because we use it in math and I dont want to overflow      
     }
 
-    public (float factor1, float factor2) CalculateFactorsOld(float distance)
-    {
-        float factor1, factor2;
-
-        if (distance >= 0 && distance <= 1) //fade out 1 high lod
-        {
-            factor1 = 1;
-            factor2 = 1 - distance;
-        }
-        else if (distance > 2 && distance <= 3) //fade in medium lod and fade out high lod
-        {
-            factor1 = 1 - (distance - 2);
-            factor2 = distance - 2;
-        }
-        else if (distance > 3 && distance <= 4) //fade out medium lod and fade in low lod
-        {
-            factor1 = distance - 3;
-            factor2 = 1 - (distance - 3);
-        }
-        else //maintain low lod
-        {
-            factor1 = 1;
-            factor2 = 0;
-        }
-
-        return (factor1, factor2);
-    }
-
-    public (float factor1, float factor2) CalculateFactors(float distance)
-    {
-        float factor1 = 0.0f;
-        float factor2 = 0.0f;
-        if(distance < 2)
-        {
-            factor1 = 1.0f;
-            factor2 = 0.0f;
-        }
-        else if (distance <= 12)
-        {
-            distance = (distance / 4) - 0.5f; //we divide by 2 to slow down the cosine wave so now its is 0-2 per flip
-            //start 2 go to 6, instead divide by 4 so its start at .5 go to 1.5 so subtract .5 go from 0 to 1.0 then back again for low lod fade in thus 2-12 or 0->1->2(0), normalized :)
-            factor1 = 0.5f * (1 + (float)Math.Cos(distance * Math.PI));
-            factor2 = 0.5f * (1 + (float)Math.Cos(distance+1 * Math.PI));
-        }
-        else
-        {
-            factor1 = 1.0f;
-            factor2 = 0.0f;
-        }
-        
-
-        return (factor1, factor2);
-    }
-
-
-    int i = 0;
-    int j = 0;
-    int k = 0;
-    int l = 0;
-    int widthIndex;
-    int heightIndex;
-// Called every frame. 'delta' is the elapsed time since the previous frame.
+    // Called every frame. 'delta' is the elapsed time since the previous frame.
+    Transform3D oldPlayerPosition = new Transform3D();
     public override void _Process(double delta)
     {
         totalTime += (float)delta;
         //UpdateGrassChunks();
         if (grassReady)
         {
+            if (readyDataChunks.Count != 0)
+            {
+                (Rid, Rid) chunkRids = activeChunks.Dequeue();
+                (float[], float, int, Vector3, Mesh) readyDataChunk = readyDataChunks.Dequeue();
+                activeChunks.Enqueue(RecycleComputeClumpData(readyDataChunk.Item1, chunkRids.Item1, chunkRids.Item2, readyDataChunk.Item2, readyDataChunk.Item3, readyDataChunk.Item4, readyDataChunk.Item5));
+            }
+
+            Transform3D playerPosition = player.Transform;
+            if(_abortRun == true || oldPlayerPosition.Origin.DistanceTo(playerPosition.Origin) > 10.0f)
+            {
+                if (_abortRun == true && (processGrassThread == null || processGrassThread.ThreadState != System.Threading.ThreadState.Running))
+                {
+                    processGrassThread = new Thread(() => processGrassClumps(6, playerPosition));
+                    processGrassThread.Start();
+                    _abortRun = false;
+                }
+                else
+                {
+                    _abortRun = true;
+                }    
+                oldPlayerPosition = playerPosition;
+            }
+            
+            
             if (Input.IsKeyPressed(Key.J))
             {
-                processGrassClumps(9);
+                //processGrassClumps(6);
+
+                /*Thread shaderParamThread = new Thread(() =>
+                {
+                    while (true) //change to isRunning and shutdown on tree exit
+                    {
+                        SetShaderStuff();
+                        Thread.Sleep(16); // Wait for 16 milliseconds
+                    }
+                });
+                shaderParamThread.Start();*/
                 //return;
             }
             else
@@ -146,116 +127,124 @@ public partial class GrassMeshMaker : Node3D
 
     public override void _PhysicsProcess(double delta)
     {
+
     }
 
     private int GetNumBlades(int lodLevel)
     {
         // Return the number of blades based on the LOD level TODO
-        return 10000 / (lodLevel + 1);
+        if (lodLevel == 6)
+        {
+            return 8000;
+        }
+        else if (lodLevel == 5) 
+        {
+            return 5000;
+        }
+        else if(lodLevel == 4)
+        {
+            return 8000;
+        }
+        else if(lodLevel == 3)
+        {
+            return 10000;
+        }
+        else if(lodLevel == 2)
+        {
+            return 30000;
+        }
+        else
+        {
+            return 60000;
+        }
     }
 
     private Mesh GetMesh(int lodLevel)
     {
         // Return the mesh based on the LOD level
-        return lodLevel >= 5 ? highLODMesh : lowLODMesh;
+        return lodLevel >= 6 ? highLODMesh : lowLODMesh;
     }
 
-    /// <summary>
-    /// Clears the Rids and sets visible to 0 for multi-meshes that are out of range
-    /// DOESNT ACTUALLY DELETE THE MULTIMESH not sure why TODO how do you actually clear something from RenderingServer
-    /// ALSO TODO use visibility ranges to just fade in-out, then we can just say fuck it and generate a bunch of chunks and let them sit for a long time
-    /// after we generate it a ring out from us we can generate beyond that into the fade out distance, the problem is still how to update mesh and distance stuff
-    /// re-examine expert approach
-    /// </summary>
-    public void cleanupGrassClumps()
-    {
-        Stopwatch stopwatch = Stopwatch.StartNew();
-        int chunksCleanedThisFrame = 0;
-        int maxChunksCleanedPerFrame = 100;
-
-        widthIndex = (int)(player.Transform.Origin.X / 30);
-        heightIndex = (int)(player.Transform.Origin.Z / 30);
-        // Cleanup
-        for (; k < grassChunks.GetLength(0); k++)
-        {
-            for (; l < grassChunks.GetLength(1); l++)
-            {
-                if (k < widthIndex - 10 || k > widthIndex + 10 || l < heightIndex - 10 || l > heightIndex + 10)
-                {
-                    if (grassChunks[k, l].Item1.IsValid || grassChunks[k, l].Item2.IsValid)
-                    {
-                        RenderingServer.MultimeshSetVisibleInstances(grassChunkMultimeshs[k, l].Item2, 0);
-                        RenderingServer.MultimeshSetVisibleInstances(grassChunkMultimeshs[k, l].Item4, 0);
-                        RenderingServer.FreeRid(grassChunks[k, l].Item1);
-                        RenderingServer.FreeRid(grassChunks[k, l].Item2);
-                        RenderingServer.FreeRid(grassChunkMultimeshs[k, l].Item2);
-                        RenderingServer.FreeRid(grassChunkMultimeshs[k, l].Item4);
-                        grassChunks[k, l].Item1 = new Rid();
-                        grassChunks[k, l].Item2 = new Rid();
-                        grassChunkMultimeshs[k, l].Item2 = new Rid();
-                        grassChunkMultimeshs[k, l].Item4 = new Rid();
-                    }
-                }
-                chunksCleanedThisFrame += 1;
-                if (chunksCleanedThisFrame > maxChunksCleanedPerFrame)
-                {
-                    //GD.Print($"Cleanup Time elapsed: {k} {l} {stopwatch.Elapsed}");
-                    return;
-                }
-            }
-            l = 0;
-        }
-        k = 0;
-        //GD.Print($"Cleanup Time elapsed: {stopwatch.Elapsed}");
-    }
     /// <summary>
     /// Should be reworked to dispatch the compute shader for each desired cluster (in view + some?), cluster will then manage their own culling
     /// </summary>
-    public void processGrassClumps(int maxLevels)
+    public void processGrassClumps(int maxLevels, Transform3D playerPosition)
     {
         Stopwatch stopwatch = Stopwatch.StartNew();
 
-        // Create a quadtree with bounds that cover your entire game world
-        QuadTreeLOD quadtree = new QuadTreeLOD(0, new Rectangle(0, 0, 8192, 4096));
+        // Assuming player.Transform.Origin is a Vector3 representing the player's position
+        Vector2 playerPos = new Vector2(playerPosition.Origin.X, playerPosition.Origin.Z);
+
+        // Adjust and wrap the quadtree's origin to keep it within the range relative to the player's position
+
+        // Create a new quadtree with the adjusted origin
+        QuadTreeLOD quadtree = new QuadTreeLOD(0, new Rectangle((int)playerPos.X - 1024, (int)playerPos.Y - 1024, 2048, 2048));
 
         // Process each quad in the quadtree as a grass clump
-        ProcessQuads(quadtree, maxLevels);
+        quadtree = ProcessQuads(quadtree, maxLevels, playerPosition);
 
         stopwatch.Stop();
         GD.Print("Processed grass clumps in " + stopwatch.ElapsedMilliseconds + " ms");
+
+        /*Image quadtreeImage = quadtree.CreateQuadTreeImage(quadtree, 8048, 8048);
+        quadtreeImage.SetPixel((int)player.Transform.Origin.X, (int)player.Transform.Origin.Z, new Godot.Color(1.0f,0.0f,0.0f));
+        quadtreeImage.SavePng("C:\\Users\\jeffe\\test_images\\quadtree.png"); // Save the image to a file
+
+        Image quadtreeImage2 = quadtree.CreateQuadTreeImageLevel(quadtree, 8048, 8048);
+        quadtreeImage2.SetPixel((int)player.Transform.Origin.X, (int)player.Transform.Origin.Z, new Godot.Color(1.0f, 0.0f, 0.0f));
+        quadtreeImage2.SavePng("C:\\Users\\jeffe\\test_images\\quadtreeLevels.png"); // Save the image to a file*/
+
     }
 
-    private void ProcessQuads(QuadTreeLOD quadtree, int maxLevel)
+    private QuadTreeLOD ProcessQuads(QuadTreeLOD quadtree, int maxLevel, Transform3D playerPosition)
     {
+        Stopwatch stopwatch = Stopwatch.StartNew();
+
         Vector3 centerPosition = new Vector3(quadtree.bounds.X + (quadtree.bounds.Width / 2), 0, quadtree.bounds.Y + (quadtree.bounds.Height / 2));
-        float distanceToPlayer = centerPosition.DistanceTo(player.Transform.Origin);
+        //GD.Print("center " + centerPosition);
+        float distanceToPlayer = centerPosition.DistanceTo(new Vector3(playerPosition.Origin.X, 0.0f, playerPosition.Origin.Z));
+        //GD.Print("player " + new Vector3(playerPosition.Origin.X, 0.0f, playerPosition.Origin.Z));
 
         //could try quadtree.level * quadtree.bounds.Width instead
-        float[] distanceThresholds = { 5000, 2500, 1250, 625, 300, 150, 75, 37.5f, 18.75f, 9.5f };
+        float[] distanceThresholds = { 5000, 3000, 1000, 600, 400, 200, 100 };
 
         // If the quad is within a certain distance of the player and it's not at the maximum level, split it
         if (quadtree.level < maxLevel && distanceToPlayer < distanceThresholds[quadtree.level])
         {
-            GD.Print(distanceToPlayer + ", " + distanceThresholds[quadtree.level]);
+            //GD.Print(distanceToPlayer + ", " + distanceThresholds[quadtree.level]);
             quadtree.SplitNode();
 
             // Process the children quads recursively
             foreach (QuadTreeLOD child in quadtree.nodes)
             {
-                ProcessQuads(child, maxLevel);
+                if(_abortRun)
+                {
+                    return null;
+                }
+                ProcessQuads(child, maxLevel, playerPosition);
             }
         }
         else
         {
-            GD.Print(quadtree.bounds.Left + ", " + quadtree.bounds.Width);
-            GD.Print(quadtree.bounds.Top + ", " + quadtree.bounds.Height);
+            //GD.Print(quadtree.bounds.Left + ", " + quadtree.bounds.Width);
+            //GD.Print(quadtree.bounds.Top + ", " + quadtree.bounds.Height);
             // Set the properties of the chunk based on the LOD level and quad size
             int numBlades = GetNumBlades(quadtree.level);
             Mesh mesh = GetMesh(quadtree.level);
+            //GD.Print(distanceToPlayer + ", " + distanceThresholds[quadtree.level]);
+            //GD.Print(quadtree.level);
 
             // Process the grass clump with the given properties
-            processGrassClump(quadtree.bounds.Width, numBlades, mesh, quadtree, centerPosition);
+            if (quadtree.level > 3)
+            {
+                //GD.Print("--------------Level 4+ Clump----------");
+                //GD.Print("NUMBLADE " + numBlades);
+                //GD.Print("WIDTH: " + quadtree.bounds.Width);
+                //GD.Print("CENTER POINT" + centerPosition);
+                processGrassClump(quadtree.bounds.Width, numBlades, mesh, quadtree, centerPosition);
+            }
         }
+        return quadtree;
     }
 
     /// <summary>
@@ -266,19 +255,50 @@ public partial class GrassMeshMaker : Node3D
     /// <param name="currentHeightIndex">index in chunks</param>
     public void processGrassClump(int chunkSize, int numBlades, Mesh grassBlade, QuadTreeLOD quadTree, Vector3 centerPosition)
     {
-        //Stopwatch stopwatch = Stopwatch.StartNew();
-        float chunkHeight = heightMap.GetPixel((int)(centerPosition.X), (int)(centerPosition.Z)).R * 400.0f;
-        RenderingDevice rd;
+        Stopwatch stopwatch = Stopwatch.StartNew();
+        float chunkHeight = 0.0f;
+        if (centerPosition.X >= 0 || centerPosition.Z >= 0 || centerPosition.X <= 8192 || centerPosition.Z <= 8192)
+        {
+            chunkHeight = heightMap.GetPixel((int)(centerPosition.X), (int)(centerPosition.Z)).R * 400.0f;
+        }
         int instanceCount;
         Rid instanceDataBuffer;
-        (rd, instanceCount, instanceDataBuffer) = InitializeRenderServerGrassClump(quadTree, centerPosition, numBlades, chunkSize, chunkSize, chunkHeight);
+        //thread terminator
+        if (_abortRun)
+        {
+            return;
+        }
 
-        Rid chunkInstance = processComputeClumpData(grassBlade, rd, chunkSize, chunkSize, chunkHeight, instanceCount, instanceDataBuffer);
-        //GD.Print($"One Clump Time elapsed: {stopwatch.Elapsed}");
+        (instanceCount, instanceDataBuffer) = InitializeRenderServerGrassClump(quadTree, centerPosition, numBlades, chunkSize, chunkSize, chunkHeight);
+        
+        rd.Sync();
+        
+
+        //thread terminator
+        if (_abortRun)
+        {
+            return;
+        }
+
+        //Get Data
+        byte[] byteData = rd.BufferGetData(instanceDataBuffer);
+        float[] instanceData = new float[byteData.Length / sizeof(float)];
+
+        for (int i = 0; i < byteData.Length; i += sizeof(float))
+        {
+            instanceData[i / sizeof(float)] = BitConverter.ToSingle(byteData, i); ;
+        }
+        lock (_chunkDatalock)
+        {
+            readyDataChunks.Enqueue((instanceData, chunkHeight, instanceCount, centerPosition, grassBlade));
+        }
+        GD.Print("Processed a clump in " + stopwatch.ElapsedMilliseconds + " ms");
+
     }
 
     public void SetupGrass(String target, Image givenHeightMap)
     {
+        rd = RenderingServer.CreateLocalRenderingDevice();
         heightMap = givenHeightMap;
         player = GetNode<CharacterBody3D>("../../"+target);
         Stopwatch stopwatch = Stopwatch.StartNew();
@@ -348,6 +368,12 @@ public partial class GrassMeshMaker : Node3D
         RenderingServer.MeshSurfaceSetMaterial(mediumLODMesh.GetRid(), 0, mediumGrassMaterial);
         RenderingServer.MeshSurfaceSetMaterial(lowLODMesh.GetRid(), 0, lowGrassMaterial);
 
+        for(int i = 0; i < 300; i ++)
+        {
+            activeChunks.Enqueue(InitializeRIDClump());
+        }
+
+
         Thread shaderParamThread = new Thread(() =>
         {
             while (true) //change to isRunning and shutdown on tree exit
@@ -358,9 +384,6 @@ public partial class GrassMeshMaker : Node3D
         });
         shaderParamThread.Start();
 
-        widthIndex = (int)(player.Transform.Origin.X / 30);
-        heightIndex = (int)(player.Transform.Origin.Z / 30);
-
         grassReady = true;
         //GD.Print($"Setup Time elapsed: {stopwatch.Elapsed}");
     }
@@ -370,16 +393,16 @@ public partial class GrassMeshMaker : Node3D
         RenderingServer.GlobalShaderParameterSet("time", totalTime);
     }
 
-    public (RenderingDevice, int, Rid) InitializeRenderServerGrassClump(QuadTreeLOD quad, Vector3 centerPosition, int widthIndex, int heightIndex, int instanceCount = 4096, float fieldWidth = 30f, float fieldHeight = 30f, float chunkHeight = 0f)
+    public (int, Rid) InitializeRenderServerGrassClump(QuadTreeLOD quad, Vector3 centerPosition, int instanceCount, float fieldWidth, float fieldHeight, float chunkHeight)
     {
-        int randSeed = randomSeed + CantorPair(widthIndex, heightIndex);
+        int randSeed = randomSeed + CantorPair((int)centerPosition.X, (int)centerPosition.Z);
         //lookup cantor pairing functions, the result will apparently always be unique for all combinations of width and height index
         Random rand = new Random(randSeed);
         //GD.Print($"begin make multimesh: {stopwatch.ElapsedTicks}");
 
         // Create a new array to hold the transform data for all instances
         float[] instanceData = new float[16 * instanceCount];
-
+        //GD.Print("INST count: " + instanceCount);
         //various parameters for clumping information
         int bladesPerClump = 6;
         int desiredClumpCount = instanceCount / bladesPerClump;
@@ -388,36 +411,42 @@ public partial class GrassMeshMaker : Node3D
         Tuple<float, float, float, int>[,] clumpPoints = new Tuple<float, float, float, int>[arraySize + 2, arraySize + 2]; //x,y,height,type, facing
         float spacing = fieldWidth / (MathF.Sqrt(desiredClumpCount) - 1);
 
-
-        // Populate the array of clumps, this is very fast so we do it on CPU to reduce repetition on the GPU, could move it
-        for (int i = -1; i <= arraySize; i++)
+        //thread terminator
+        if (_abortRun)
         {
-            for (int j = -1; j <= arraySize; j++)
+            return (0, new Rid());
+        }
+
+        for (int i = 0; i < arraySize + 2; i++)
+        {
+            for (int j = 0; j < arraySize + 2; j++)
             {
-                float x = i * spacing - fieldWidth / 2;
-                float y = j * spacing - fieldHeight / 2;
-                float jitterFactor = 3.0f;
-                float x_jitter = rand.NextSingle() * spacing * jitterFactor - spacing / 2;
-                float y_jitter = rand.NextSingle() * spacing * jitterFactor - spacing / 2;
-                float rangeMin = 0.5f;
-                float rangeMax = 0.6f;
-                float randomNum = rangeMin + (rand.NextSingle() * (rangeMax - rangeMin));
-                clumpPoints[i + 1, j + 1] = new Tuple<float, float, float, int>(x + x_jitter, y + y_jitter, rand.NextSingle()+0.4f, 1); //random height from 0.4 to 1.4 for now, all grass is type 1
+                float x = (rand.NextSingle() * fieldWidth) - fieldWidth / 2;
+                float y = (rand.NextSingle() * fieldHeight) - fieldHeight / 2;
+                clumpPoints[i, j] = new Tuple<float, float, float, int>(x, y, rand.NextSingle() + 0.4f, 1); //random height from 0.4 to 1.4 for now, all grass is type 1
             }
         }
 
-        //fieldWidth, fieldHeight, chunkHeight, randSeed?, arraySize, clumpPoints, instanceData 
-        //prepare the compute shader for repeated use later
-        RenderingDevice rd = RenderingServer.CreateLocalRenderingDevice();
+        //thread terminator
+        if (_abortRun)
+        {
+            return (0, new Rid());
+        }
+
+        //prepare the compute shader for use
+        //rd = RenderingServer.CreateLocalRenderingDevice();
         RDShaderFile blendShaderFile = GD.Load<RDShaderFile>("res://shaders/terrain/computeGrassClump.glsl");
         RDShaderSpirV blendShaderBytecode = blendShaderFile.GetSpirV();
         Rid computeClumpShader = rd.ShaderCreateFromSpirV(blendShaderBytecode);
 
         //fieldWidth and fieldHeight buffer
-        byte[] fieldDimensionsBytes = new byte[sizeof(float) * 3];
+        byte[] fieldDimensionsBytes = new byte[sizeof(float) * 5];
         Buffer.BlockCopy(BitConverter.GetBytes(fieldWidth), 0, fieldDimensionsBytes, 0, sizeof(float));
         Buffer.BlockCopy(BitConverter.GetBytes(fieldHeight), 0, fieldDimensionsBytes, sizeof(float), sizeof(float));
-        Buffer.BlockCopy(BitConverter.GetBytes(chunkHeight), 0, fieldDimensionsBytes, sizeof(float)*2, sizeof(float));
+        Buffer.BlockCopy(BitConverter.GetBytes(chunkHeight), 0, fieldDimensionsBytes, sizeof(float) * 2, sizeof(float));
+        Buffer.BlockCopy(BitConverter.GetBytes(centerPosition.X), 0, fieldDimensionsBytes, sizeof(float) * 3, sizeof(float));
+        Buffer.BlockCopy(BitConverter.GetBytes(centerPosition.Z), 0, fieldDimensionsBytes, sizeof(float) * 4, sizeof(float));
+
         Rid fieldDimensionsBuffer = rd.StorageBufferCreate((uint)fieldDimensionsBytes.Length, fieldDimensionsBytes);
 
         RDUniform fieldDimensionsUniform = new RDUniform()
@@ -428,9 +457,10 @@ public partial class GrassMeshMaker : Node3D
         fieldDimensionsUniform.AddId(fieldDimensionsBuffer);
 
         //randSeed buffer
-        byte[] randNumBytes = new byte[sizeof(int) * 2];
+        byte[] randNumBytes = new byte[sizeof(int) * 3];
         Buffer.BlockCopy(BitConverter.GetBytes(randSeed), 0, randNumBytes, 0, sizeof(int));
         Buffer.BlockCopy(BitConverter.GetBytes(arraySize), 0, randNumBytes, sizeof(int), sizeof(int));
+        Buffer.BlockCopy(BitConverter.GetBytes(instanceCount), 0, randNumBytes, sizeof(int) * 2, sizeof(int));
         Rid randNumBuffer = rd.StorageBufferCreate((uint)randNumBytes.Length, randNumBytes);
 
         RDUniform randNumUniform = new RDUniform()
@@ -442,15 +472,16 @@ public partial class GrassMeshMaker : Node3D
 
 
         //clumpPoints buffer
-        byte[] clumpPointsBytes = new byte[clumpPoints.Length * (sizeof(float)*3 + sizeof(int))];
+        byte[] clumpPointsBytes = new byte[clumpPoints.Length * (sizeof(float) * 3 + sizeof(int))];
         for (int i = 0; i < arraySize + 2; i++)
         {
             for (int j = 0; j < arraySize + 2; j++)
             {
-                Buffer.BlockCopy(BitConverter.GetBytes(clumpPoints[i, j].Item1), 0, clumpPointsBytes, ((i + j) * (sizeof(float) * 3 + sizeof(int))), sizeof(float));
-                Buffer.BlockCopy(BitConverter.GetBytes(clumpPoints[i, j].Item2), 0, clumpPointsBytes, ((i + j) * (sizeof(float) * 3 + sizeof(int)) + sizeof(float)), sizeof(float));
-                Buffer.BlockCopy(BitConverter.GetBytes(clumpPoints[i, j].Item3), 0, clumpPointsBytes, ((i + j) * (sizeof(float) * 3 + sizeof(int)) + 2 * sizeof(float)), sizeof(float));
-                Buffer.BlockCopy(BitConverter.GetBytes(clumpPoints[i, j].Item4), 0, clumpPointsBytes, ((i + j) * (sizeof(float) * 3 + sizeof(int)) + 3 * sizeof(float)), sizeof(int));
+                int index = (i * (arraySize + 2) + j) * (sizeof(float) * 3 + sizeof(int));
+                Buffer.BlockCopy(BitConverter.GetBytes(clumpPoints[i, j].Item1), 0, clumpPointsBytes, index, sizeof(float));
+                Buffer.BlockCopy(BitConverter.GetBytes(clumpPoints[i, j].Item2), 0, clumpPointsBytes, index + sizeof(float), sizeof(float));
+                Buffer.BlockCopy(BitConverter.GetBytes(clumpPoints[i, j].Item3), 0, clumpPointsBytes, index + 2 * sizeof(float), sizeof(float));
+                Buffer.BlockCopy(BitConverter.GetBytes(clumpPoints[i, j].Item4), 0, clumpPointsBytes, index + 3 * sizeof(float), sizeof(int));
             }
         }
         Rid clumpPointsBuffer = rd.StorageBufferCreate((uint)clumpPointsBytes.Length, clumpPointsBytes);
@@ -462,7 +493,7 @@ public partial class GrassMeshMaker : Node3D
         clumpPointsUniform.AddId(clumpPointsBuffer);
 
         //instanceData buffer
-        byte[] instanceDataBytes = new byte[instanceData.Length * sizeof(float)];
+        byte[] instanceDataBytes = new byte[16 * instanceCount * sizeof(float)];
         for (int i = 0; i < instanceData.Length; i++)
         {
             Buffer.BlockCopy(BitConverter.GetBytes(instanceData[i]), 0, instanceDataBytes, (i * sizeof(float)), sizeof(float));
@@ -483,32 +514,29 @@ public partial class GrassMeshMaker : Node3D
         rd.ComputeListBindComputePipeline(blendcomputeList, blendpipeline);
         rd.ComputeListBindUniformSet(blendcomputeList, computeUniformSet, 0);
         int blendthreadsPerGroup = 32;
+        //the addition of blendthreadsPerGroup before dividing is a common trick used to perform a "ceiling division" or "round-up division" in integer arithmetic.
         uint blendxGroups = (uint)(instanceCount + blendthreadsPerGroup - 1) / (uint)blendthreadsPerGroup;
         rd.ComputeListDispatch(blendcomputeList, blendxGroups, 1, 1);
         rd.ComputeListEnd();
 
+        if (_abortRun)
+        {
+            return (0, new Rid());
+        }
+
         // Submit to GPU and wait for sync
         rd.Submit();
-        return (rd, instanceCount, instanceDataBuffer);
+        return (instanceCount, instanceDataBuffer);
         //we should wait a few frames then Sync
     }
 
-    public Rid processComputeClumpData(Mesh grassBladeMesh, RenderingDevice rd, float fieldWidth, float fieldHeight, float chunkHeight, int instanceCount, Rid instanceDataBuffer)
+    public (Rid,Rid) ProcessRIDClump(float[] instanceData, Mesh grassBladeMesh, float fieldWidth, float fieldHeight, float chunkHeight, int instanceCount, Rid instanceDataBuffer, Vector3 centerPosition)
     {
-        rd.Sync();
-        //Get Data
-        byte[] byteData = rd.BufferGetData(instanceDataBuffer);
-        float[] instanceData = new float[byteData.Length / sizeof(float)];
-        for (int i = 0; i < byteData.Length; i += sizeof(float))
-        {
-            instanceData[i / sizeof(float)] = BitConverter.ToSingle(byteData, i);
-            //GD.Print(BitConverter.ToSingle(byteData, i));
-        }
         Rid grassChunk = RenderingServer.MultimeshCreate();
         // Create a RID for the shader and set its code
         RenderingServer.MultimeshSetMesh(grassChunk, grassBladeMesh.GetRid());
         RenderingServer.MultimeshAllocateData(grassChunk, instanceCount, RenderingServer.MultimeshTransformFormat.Transform3D, false, true);
-        RenderingServer.MultimeshSetBuffer(grassChunk, instanceData);
+        RenderingServer.MultimeshSetBuffer(grassChunk, instanceData); //update this
         RenderingServer.MultimeshSetVisibleInstances(grassChunk, instanceCount);
 
         // Create a new instance for the multimesh
@@ -517,11 +545,34 @@ public partial class GrassMeshMaker : Node3D
         multiMeshAABB = multiMeshAABB.Expand(new Vector3(0, 400, 0));
         RenderingServer.InstanceSetCustomAabb(instance, multiMeshAABB);
         RenderingServer.InstanceGeometrySetCastShadowsSetting(instance, RenderingServer.ShadowCastingSetting.Off);
-        RenderingServer.InstanceSetTransform(instance, new Transform3D(Basis.Identity, new Vector3(0, 0, 0))); //calculate using centerpoint of the chunk TODO
-        RenderingServer.InstanceSetTransform(instance, new Transform3D(Basis.Identity, new Vector3(0, chunkHeight, 0)));
-        GD.Print("hurray chunk added");
+        RenderingServer.InstanceSetTransform(instance, new Transform3D(Basis.Identity, new Vector3(centerPosition.X, chunkHeight, centerPosition.Z)));
         //RenderingServer.InstanceGeometrySetVisibilityRange(instance, 0.0f, 300.0f, 0.0f, 50.0f, RenderingServer.VisibilityRangeFadeMode.Self);
-        return instance;
+        return (instance,grassChunk);
+    }
+
+    public (Rid, Rid) InitializeRIDClump()
+    {
+        Rid grassChunk = RenderingServer.MultimeshCreate();
+        Rid instance = RenderingServer.InstanceCreate2(grassChunk, this.GetWorld3D().Scenario);
+        RenderingServer.InstanceGeometrySetCastShadowsSetting(instance, RenderingServer.ShadowCastingSetting.Off);
+        //RenderingServer.InstanceGeometrySetVisibilityRange(instance, 0.0f, 300.0f, 0.0f, 50.0f, RenderingServer.VisibilityRangeFadeMode.Self);
+        return (instance, grassChunk);
+    }
+
+    public (Rid,Rid) RecycleComputeClumpData(float[] instanceData, Rid instance, Rid multimesh, float chunkHeight, int instanceCount, Vector3 centerPosition, Mesh grassBladeMesh)
+    {
+        // Set the new multimesh settings
+        RenderingServer.MultimeshSetMesh(multimesh, grassBladeMesh.GetRid());
+        RenderingServer.MultimeshAllocateData(multimesh, instanceCount, RenderingServer.MultimeshTransformFormat.Transform3D, false, true); 
+        RenderingServer.MultimeshSetBuffer(multimesh, instanceData); //update this
+        RenderingServer.MultimeshSetVisibleInstances(multimesh, instanceCount);
+
+        //AABB setting, maybe we can trim this out?
+        Aabb multiMeshAABB = RenderingServer.MultimeshGetAabb(multimesh);
+        multiMeshAABB = multiMeshAABB.Expand(new Vector3(0, 400, 0));
+        RenderingServer.InstanceSetCustomAabb(instance, multiMeshAABB);
+        RenderingServer.InstanceSetTransform(instance, new Transform3D(Basis.Identity, new Vector3(centerPosition.X, chunkHeight, centerPosition.Z)));
+        return (instance, multimesh);
     }
 
     int CantorPair(int a, int b)
@@ -669,7 +720,6 @@ public partial class GrassMeshMaker : Node3D
 
         return mediumLODMesh;
     }
-
 
     private Mesh CreateLowLODGrassBlade(float myGrassWidth, float myGrassHeight, ShaderMaterial grassMat)
     {
