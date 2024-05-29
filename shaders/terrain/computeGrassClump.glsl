@@ -53,8 +53,8 @@ void main() {
         return;
     }
     //add all these random numbers to give us a real random number that is deterministic
-    float x_jitter = hash12(vec2(randSeedLocal, gl_GlobalInvocationID.x + globalPosX + globalPosZ)) * 0.9 - 0.45;
-    float y_jitter = hash12(vec2(randSeedLocal, 1 + gl_GlobalInvocationID.x + globalPosX + globalPosZ)) * 0.9 - 0.45;
+    float x_jitter = hash12(vec2(randSeedLocal, gl_GlobalInvocationID.x + globalPosX + globalPosZ));
+    float y_jitter = hash12(vec2(randSeedLocal, 1 + gl_GlobalInvocationID.x + globalPosX + globalPosZ));
     float x_loc = (hash12(vec2(randSeedLocal, 2 + gl_GlobalInvocationID.x + globalPosX + globalPosZ)) * fieldWidth - fieldWidth / 2.0) + x_jitter;
     float y_loc = (hash12(vec2(randSeedLocal, 3 + gl_GlobalInvocationID.x + globalPosX + globalPosZ)) * fieldHeight - fieldHeight / 2.0) + y_jitter;
 
