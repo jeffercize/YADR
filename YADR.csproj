@@ -17,4 +17,7 @@
       <HintPath>bin\x64\Windows\Steamworks.NET.dll</HintPath>
     </Reference>
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="scenes\" />
+  </ItemGroup>
 </Project>

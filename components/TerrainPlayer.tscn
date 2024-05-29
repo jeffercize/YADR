@@ -80,8 +80,3 @@ trail_enabled = true
 trail_lifetime = 0.1
 process_material = SubResource("ParticleProcessMaterial_npmnv")
 draw_pass_1 = SubResource("RibbonTrailMesh_tiaho")
-
-[node name="GPUParticlesCollisionHeightField3D" type="GPUParticlesCollisionHeightField3D" parent="."]
-size = Vector3(50, 2, 50)
-resolution = 3
-follow_camera_enabled = true

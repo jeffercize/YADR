@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://0slfmvhxmou6"
+path="res://.godot/imported/computeGrassClump.glsl-657116e2151c925303bb289d93e2d102.res"
+
+[deps]
+
+source_file="res://shaders/terrain/computeGrassClump.glsl"
+dest_files=["res://.godot/imported/computeGrassClump.glsl-657116e2151c925303bb289d93e2d102.res"]
+
+[params]
+
