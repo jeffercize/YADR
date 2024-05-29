@@ -24,6 +24,7 @@ public partial class Server: Node
     public Server(HSteamNetConnection localClient)
     {
         clients.Add(localClient);
+        SteamNetworkingSockets.ConfigureConnectionLanes(localClient, 3, null, null);
     }
 
     public Server() { }
@@ -50,6 +51,7 @@ public partial class Server: Node
         {
             HSteamNetConnection conn = @event.m_hConn;
             clients.Add(conn);
+            SteamNetworkingSockets.ConfigureConnectionLanes(conn, 3, null, null);
             onPlayerJoin(conn, (ulong)@event.m_info.m_identityRemote.GetSteamID64());
 
             Global.NetworkManager.networkDebugLog("Connection from ID: " + @event.m_info.m_identityRemote.GetSteamID64() + " complete!");
@@ -109,6 +111,7 @@ public partial class Server: Node
             {
                 if (messages[i] == IntPtr.Zero) { continue; }
                 SteamNetworkingMessage_t steamMsg = SteamNetworkingMessage_t.FromIntPtr(messages[i]);
+                Global.NetworkManager.networkDebugLog("SERVER: LANE:" + steamMsg.m_idxLane);
                 YADRNetworkMessageWrapper wrappedMessage = DecodeSteamMessage(steamMsg, out long sender);
                 handleNetworkData(wrappedMessage,sender);
             }

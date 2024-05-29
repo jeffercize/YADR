@@ -305,6 +305,7 @@ public partial class NetworkManager: Node
 
             msg.m_nFlags = NetworkManager.k_nSteamNetworkingSend_ReliableNoNagle;
             msg.m_conn = target;
+            msg.m_idxLane = 1;
             // Copies the bytes of the managed message back into the native structure located at ptr
             Marshal.StructureToPtr(msg, ptr, false);
 

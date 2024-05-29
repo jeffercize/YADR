@@ -47,6 +47,7 @@ public partial class Client: Node
         //Hooks up the connection status change event to a function
         SteamNetConnectionStatusChange = Callback<SteamNetConnectionStatusChangedCallback_t>.Create(onSteamNetConnectionStatusChange);
 
+        SteamNetworkingSockets.ConfigureConnectionLanes(connectionToServer, 3, null, null);
     }
 
 
@@ -74,6 +75,7 @@ public partial class Client: Node
             {
             if (messages[i] == IntPtr.Zero) { continue; } //Sanity check. 
             SteamNetworkingMessage_t steamMsg = SteamNetworkingMessage_t.FromIntPtr(messages[i]);
+            Global.NetworkManager.networkDebugLog("SERVER: LANE:" + steamMsg.m_idxLane);
             YADRNetworkMessageWrapper wrappedMessage = DecodeSteamMessage(steamMsg, out long sender);
             handleNetworkData(wrappedMessage, sender);
         }
