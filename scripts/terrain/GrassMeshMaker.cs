@@ -2,11 +2,10 @@ using Godot;
 using Godot.Collections;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
-using System.Drawing;
+using System.Runtime.InteropServices;
 
 public partial class GrassMeshMaker : Node3D
 {
@@ -37,13 +36,14 @@ public partial class GrassMeshMaker : Node3D
     RenderingDevice rd;
 
     private readonly object _chunkDatalock = new object();
+    private readonly object _computeListLock = new object();
+    private readonly object _renderServerLock = new object();
+
     private volatile bool _abortRun = true;
-    Queue<(Rid, Rid)> freeHighChunks = new Queue<(Rid, Rid)>();
-    Queue<(Rid, Rid)> freeLowChunks = new Queue<(Rid, Rid)>();
+    Queue<(Rid, Rid, Rid, Rid)> freeChunks = new Queue<(Rid, Rid, Rid, Rid)>();
     Queue<(float[], float, int, Vector3, Mesh, int, int, int)> readyDataChunks = new Queue<(float[], float, int, Vector3, Mesh, int, int, int)>();
 
-    System.Collections.Generic.Dictionary<(int, int), (Rid, Rid, float)> activeHighChunkDictionary = new System.Collections.Generic.Dictionary<(int, int), (Rid, Rid, float)>();
-    System.Collections.Generic.Dictionary<(int, int), (Rid, Rid, float)> activeLowChunkDictionary = new System.Collections.Generic.Dictionary<(int, int), (Rid, Rid, float)>();
+    System.Collections.Generic.Dictionary<(int, int), (Rid, Rid, Rid, Rid, float)> activeChunkDictionary = new System.Collections.Generic.Dictionary<(int, int), (Rid, Rid, Rid, Rid, float)>();
 
     Thread processGrassThread;
 
@@ -63,6 +63,10 @@ public partial class GrassMeshMaker : Node3D
         //UpdateGrassChunks();
         if (grassReady)
         {
+/*            if (readyDataChunks.Count > 1)
+            {
+                GD.Print("readyDataChunks " + readyDataChunks.Count);
+            }*/
             if (readyDataChunks.Count != 0)
             {
                 Stopwatch sw = Stopwatch.StartNew();
@@ -70,46 +74,30 @@ public partial class GrassMeshMaker : Node3D
                 while (i < 10 && readyDataChunks.Count != 0)
                 {
                     i++;
-                    (float[], float, int, Vector3, Mesh, int, int, int) readyDataChunk = readyDataChunks.Dequeue();
-/*                    if (activeChunkDictionary.ContainsKey((readyDataChunk.Item6, readyDataChunk.Item7)))
+                    (float[], float, int, Vector3, Mesh, int, int, int) readyDataChunk;
+                    lock (_chunkDatalock)
                     {
-                        //GD.Print("just update clump");
-                        Stopwatch sw2 = Stopwatch.StartNew();
-                        RecycleComputeClumpData(activeChunkDictionary[((readyDataChunk.Item6, readyDataChunk.Item7))].Item1, activeChunkDictionary[((readyDataChunk.Item6, readyDataChunk.Item7))].Item2, readyDataChunk.Item1, readyDataChunk.Item2, readyDataChunk.Item3, readyDataChunk.Item4, readyDataChunk.Item5, readyDataChunk.Item6, readyDataChunk.Item7);
-                    }*/
-/*                    else
-                    {*/
-                        if (readyDataChunk.Item8 == 0)
-                        {
-                            if (freeHighChunks.Count == 0 )
-                            {
-                                freeHighChunks.Enqueue(InitializeRIDClump(0));
-                            }
-                            //GD.Print("recycled clump");
-                            (Rid, Rid) chunkRids = freeHighChunks.Dequeue();
-                            RecycleAndAddComputeClumpData(chunkRids.Item1, chunkRids.Item2, readyDataChunk.Item1, readyDataChunk.Item2, readyDataChunk.Item3, readyDataChunk.Item4, readyDataChunk.Item5, readyDataChunk.Item6, readyDataChunk.Item7, readyDataChunk.Item8);
-                        }
-                        else
-                        {
-                            if (freeLowChunks.Count == 0)
-                            {
-                                freeLowChunks.Enqueue(InitializeRIDClump(0));
-                            }
-                            //GD.Print("recycled clump");
-                            (Rid, Rid) chunkRids = freeLowChunks.Dequeue();
-                            RecycleAndAddComputeClumpData(chunkRids.Item1, chunkRids.Item2, readyDataChunk.Item1, readyDataChunk.Item2, readyDataChunk.Item3, readyDataChunk.Item4, readyDataChunk.Item5, readyDataChunk.Item6, readyDataChunk.Item7, readyDataChunk.Item8);
-                        }
-                    //}
+                        readyDataChunk = readyDataChunks.Dequeue();
+                    }
+                    if(freeChunks.Count == 0)
+                    {
+                        freeChunks.Enqueue(InitializeFullRIDClump());
+                    }
+                    (Rid, Rid, Rid, Rid) chunkRids = freeChunks.Dequeue();
+                    RecycleAndAddComputeClumpData(chunkRids.Item1, chunkRids.Item2, chunkRids.Item3, chunkRids.Item4, readyDataChunk.Item1, readyDataChunk.Item2, readyDataChunk.Item3, readyDataChunk.Item4, readyDataChunk.Item5, readyDataChunk.Item6, readyDataChunk.Item7, readyDataChunk.Item8);
                 }
             }
-            //GD.Print("freeChunks " + freeChunks.Count);
+
 
             Transform3D playerPosition = player.Transform;
             if(_abortRun == true || oldPlayerPosition.Origin.DistanceTo(playerPosition.Origin) > 15.0f)
             {
                 if (_abortRun == true && (processGrassThread == null || processGrassThread.ThreadState != System.Threading.ThreadState.Running))
                 {
-                    readyDataChunks.Clear();
+                    lock (_chunkDatalock)
+                    {
+                        readyDataChunks.Clear();
+                    }
                     processGrassThread = new Thread(() => processGrassClumps(15, playerPosition));
                     processGrassThread.Start();
                     _abortRun = false;
@@ -173,31 +161,16 @@ public partial class GrassMeshMaker : Node3D
 
     private int GetNumBlades(float distanceToPlayer)
     {
+        return 5000;
         // Return the number of blades based distance
-        if (distanceToPlayer < 150.0f)
-        {
-            return 20000;
-        }
-        else
+        if (distanceToPlayer < 275.0f)
         {
             return 10000;
         }
-/*        else if (distanceToPlayer < 60.0f)
-        {
-            return 900;
-        }
-        else if (distanceToPlayer < 90.0f)
-        {
-            return 800;
-        }
-        else if (distanceToPlayer < 120.0f)
-        {
-            return 700;
-        }
         else
         {
-            return 500;
-        }*/
+            return 5000;
+        }
     }
 
     private Mesh GetMesh(float distanceToPlayer)
@@ -211,16 +184,18 @@ public partial class GrassMeshMaker : Node3D
     /// </summary>
     public void processGrassClumps(int gridSize, Transform3D playerPosition)
     {
-        Stopwatch stopwatch = Stopwatch.StartNew();
+        //Stopwatch stopwatch = Stopwatch.StartNew();
 
         // Process each quad in the quadtree as a grass clump
-        ProcessGrid(gridSize, playerPosition);
+        bool success = ProcessGrid(gridSize, playerPosition);
 
-        stopwatch.Stop();
-        GD.Print("Processed grass clumps in " + stopwatch.ElapsedMilliseconds + " ms");
+        //stopwatch.Stop();
+        //GD.Print("Did thread finish: " + success);
+        //GD.Print("OUR freeChunks " + freeChunks.Count);
+        //GD.Print($"Process ALL Grass Clump elapsed: {stopwatch.Elapsed}");
     }
 
-    private void ProcessGrid(int gridSize, Transform3D playerPosition)
+    private bool ProcessGrid(int gridSize, Transform3D playerPosition)
     {
         Stopwatch stopwatch = Stopwatch.StartNew();
         int blockSize = 75;
@@ -234,22 +209,13 @@ public partial class GrassMeshMaker : Node3D
         int startZ = playerGridZ;
 
         //if you werent updated last time around you are culled and added to the freeChunks list to be recycled
-        foreach (var key in activeHighChunkDictionary.Keys.ToList())
+        foreach (var key in activeChunkDictionary.Keys.ToList())
         {
-            var value = activeHighChunkDictionary[key];
-            if(value.Item3 < lastCalculatedTime)
+            var value = activeChunkDictionary[key];
+            if (value.Item5 < lastCalculatedTime)
             {
-                freeHighChunks.Enqueue((value.Item1, value.Item2));
-                activeHighChunkDictionary.Remove(key);
-            }
-        }
-        foreach (var key in activeLowChunkDictionary.Keys.ToList())
-        {
-            var value = activeLowChunkDictionary[key];
-            if (value.Item3 < lastCalculatedTime)
-            {
-                freeLowChunks.Enqueue((value.Item1, value.Item2));
-                activeLowChunkDictionary.Remove(key);
+                freeChunks.Enqueue((value.Item1, value.Item2, value.Item3, value.Item4));
+                activeChunkDictionary.Remove(key);
             }
         }
         //update lastCalculateTime now so any update we do forward from here will be equal to or greater than lastCalculatedTime
@@ -264,13 +230,10 @@ public partial class GrassMeshMaker : Node3D
         {
             while (2 * x * d < m)
             {
-                if (activeHighChunkDictionary.ContainsKey((startX+x, startZ+y)))
+                if (activeChunkDictionary.ContainsKey((startX + x, startZ + y)))
                 {
-                    activeHighChunkDictionary[(startX + x, startZ + y)] = (activeHighChunkDictionary[(startX + x, startZ + y)].Item1, activeHighChunkDictionary[(startX + x, startZ + y)].Item2, totalTime);
-                    if (activeLowChunkDictionary.ContainsKey((startX + x, startZ + y)))
-                    {
-                        activeLowChunkDictionary[(startX + x, startZ + y)] = (activeLowChunkDictionary[(startX + x, startZ + y)].Item1, activeLowChunkDictionary[(startX + x, startZ + y)].Item2, totalTime);
-                    }
+                    //GD.Print("skipped");
+                    activeChunkDictionary[(startX + x, startZ + y)] = (activeChunkDictionary[(startX + x, startZ + y)].Item1, activeChunkDictionary[(startX + x, startZ + y)].Item2, activeChunkDictionary[(startX + x, startZ + y)].Item3, activeChunkDictionary[(startX + x, startZ + y)].Item4, totalTime);
                     x = x + d;
                     continue;
                 }
@@ -284,35 +247,29 @@ public partial class GrassMeshMaker : Node3D
 
                 // Set the properties of the block based on the distance to the player
                 int numBlades = GetNumBlades(distanceToPlayer);
-                Mesh highMesh = highLODMesh;
-                Mesh lowMesh = lowLODMesh;
 
                 // Process the grass clump with the given properties
-                processGrassClump(blockSize, numBlades, highMesh, centerPosition, (startX + x), (startZ + y), 0);
-                processGrassClump(blockSize, numBlades, lowMesh, centerPosition, (startX + x), (startZ + y), 1);
+                processGrassClump(blockSize, numBlades, highLODMesh, centerPosition, (startX + x), (startZ + y), 0);
+                processGrassClump(blockSize, numBlades, lowLODMesh, centerPosition, (startX + x), (startZ + y), 1);
                 //GD.Print($"Process 2 Grass Clump elapsed: {sw.Elapsed}");
                 // Check if we should abort
                 if (_abortRun)
                 {
-                    return;
+                    return false;
                 }
                 //loop code
                 x = x + d;
             }
             while (2 * y * d < m)
             {
-                if (activeHighChunkDictionary.ContainsKey((startX+x, startZ+y)))
+                if (activeChunkDictionary.ContainsKey((startX + x, startZ + y)))
                 {
-                    activeHighChunkDictionary[(startX + x, startZ + y)] = (activeHighChunkDictionary[(startX + x, startZ + y)].Item1, activeHighChunkDictionary[(startX + x, startZ + y)].Item2, totalTime);
-                    if (activeLowChunkDictionary.ContainsKey((startX + x, startZ + y)))
-                    {
-                        activeLowChunkDictionary[(startX + x, startZ + y)] = (activeLowChunkDictionary[(startX + x, startZ + y)].Item1, activeLowChunkDictionary[(startX + x, startZ + y)].Item2, totalTime);
-                    }
+                    //GD.Print("skipped");
+                    activeChunkDictionary[(startX + x, startZ + y)] = (activeChunkDictionary[(startX + x, startZ + y)].Item1, activeChunkDictionary[(startX + x, startZ + y)].Item2, activeChunkDictionary[(startX + x, startZ + y)].Item3, activeChunkDictionary[(startX + x, startZ + y)].Item4, totalTime);
                     y = y + d;
                     continue;
                 }
 
-                Stopwatch sw = Stopwatch.StartNew();
                 // Calculate the center position of the block
                 Vector3 centerPosition = new Vector3((startX + x) * blockSize, 0, (startZ + y) * blockSize);
 
@@ -321,17 +278,15 @@ public partial class GrassMeshMaker : Node3D
 
                 // Set the properties of the block based on the distance to the player
                 int numBlades = GetNumBlades(distanceToPlayer);
-                Mesh highMesh = highLODMesh;
-                Mesh lowMesh = lowLODMesh;
 
                 // Process the grass clump with the given properties
-                processGrassClump(blockSize, numBlades, highMesh, centerPosition, (startX + x), (startZ + y), 0);
-                processGrassClump(blockSize, numBlades, lowMesh, centerPosition, (startX + x), (startZ + y), 1);
+                processGrassClump(blockSize, numBlades, highLODMesh, centerPosition, (startX + x), (startZ + y), 0);
+                processGrassClump(blockSize, numBlades, lowLODMesh, centerPosition, (startX + x), (startZ + y), 1);
                 //GD.Print($"Process 2 Grass Clump elapsed: {sw.Elapsed}");
                 // Check if we should abort
                 if (_abortRun)
                 {
-                    return;
+                    return false;
                 }
                 //loop code
                 y = y + d;
@@ -340,7 +295,11 @@ public partial class GrassMeshMaker : Node3D
             d = -1 * d;
             m = m + 1;
         }
-        GD.Print($"Process ALL Grass Clump elapsed: {stopwatch.Elapsed}");
+        if (_abortRun)
+        {
+            return false;
+        }
+        return true;
     }
 
 
@@ -358,41 +317,26 @@ public partial class GrassMeshMaker : Node3D
         {
             chunkHeight = heightMap.GetPixel((int)(centerPosition.X), (int)(centerPosition.Z)).R * 400.0f;
         }
-        int instanceCount;
-        Rid instanceDataBuffer;
+
         //thread terminator
         if (_abortRun)
         {
             return;
         }
         bool success = true;
-        (instanceCount, instanceDataBuffer, success) = InitializeRenderServerGrassClump(centerPosition, numBlades, chunkSize, chunkSize, chunkHeight);
+
+        float[] instanceData;
+        (instanceData, success) = InitializeRenderServerGrassClump(centerPosition, numBlades, chunkSize, chunkSize, chunkHeight);
+        //GD.Print("RenderingServer Stuff total " + stopwatch2.ElapsedMilliseconds + " ms");
 
         if (!success)
         {
             return;
         }
-
-        rd.Sync();
         
-
-        //thread terminator
-        if (_abortRun)
-        {
-            return;
-        }
-
-        //Get Data
-        byte[] byteData = rd.BufferGetData(instanceDataBuffer);
-        float[] instanceData = new float[byteData.Length / sizeof(float)];
-
-        for (int i = 0; i < byteData.Length; i += sizeof(float))
-        {
-            instanceData[i / sizeof(float)] = BitConverter.ToSingle(byteData, i); ;
-        }
         lock (_chunkDatalock)
         {
-            readyDataChunks.Enqueue((instanceData, chunkHeight, instanceCount, centerPosition, grassBlade, gridX, gridZ, myLOD));
+            readyDataChunks.Enqueue((instanceData, chunkHeight, numBlades, centerPosition, grassBlade, gridX, gridZ, myLOD));
         }
         //GD.Print("Processed a clump in " + stopwatch.ElapsedMilliseconds + " ms");
 
@@ -410,8 +354,6 @@ public partial class GrassMeshMaker : Node3D
         grassMat.Shader = grassShader;
 
         heightMapTexture = ImageTexture.CreateFromImage(heightMap);
-        //GD.Print(heightMapTexture.GetWidth());
-        //GD.Print(heightMapTexture.GetHeight());
         int chunkIndexWidth = heightMapTexture.GetWidth() / 30;
         int chunkIndexHeight = heightMapTexture.GetHeight() / 30;
         grassChunks = new ValueTuple<Rid, Rid>[chunkIndexWidth, chunkIndexHeight];
@@ -470,10 +412,9 @@ public partial class GrassMeshMaker : Node3D
         RenderingServer.MeshSurfaceSetMaterial(mediumLODMesh.GetRid(), 0, mediumGrassMaterial);
         RenderingServer.MeshSurfaceSetMaterial(lowLODMesh.GetRid(), 0, lowGrassMaterial);
 
-        for(int i = 0; i < 1000; i ++)
+        for(int i = 0; i < 225; i ++)
         {
-            freeHighChunks.Enqueue(InitializeRIDClump(0));
-            freeLowChunks.Enqueue(InitializeRIDClump(1));
+            freeChunks.Enqueue(InitializeFullRIDClump());
         }
 
 
@@ -496,28 +437,25 @@ public partial class GrassMeshMaker : Node3D
         RenderingServer.GlobalShaderParameterSet("time", totalTime);
     }
 
-    public (int, Rid, bool) InitializeRenderServerGrassClump(Vector3 centerPosition, int instanceCount, float fieldWidth, float fieldHeight, float chunkHeight)
+    public (float[], bool) InitializeRenderServerGrassClump(Vector3 centerPosition, int instanceCount, float fieldWidth, float fieldHeight, float chunkHeight)
     {
         int randSeed = randomSeed + CantorPair((int)centerPosition.X, (int)centerPosition.Z);
         //lookup cantor pairing functions, the result will apparently always be unique for all combinations of width and height index
         Random rand = new Random(randSeed);
-        //GD.Print($"begin make multimesh: {stopwatch.ElapsedTicks}");
 
         // Create a new array to hold the transform data for all instances
         float[] instanceData = new float[16 * instanceCount];
-        //GD.Print("INST count: " + instanceCount);
         //various parameters for clumping information
         int bladesPerClump = 6;
         int desiredClumpCount = instanceCount / bladesPerClump;
         // Calculate the size of the array
         int arraySize = (int)MathF.Ceiling(MathF.Sqrt(desiredClumpCount)); 
         Tuple<float, float, float, int>[,] clumpPoints = new Tuple<float, float, float, int>[arraySize + 2, arraySize + 2]; //x,y,height,type, facing
-        float spacing = fieldWidth / (MathF.Sqrt(desiredClumpCount) - 1);
 
         //thread terminator
         if (_abortRun)
         {
-            return (0, new Rid(), false);
+            return (null, false);
         }
 
         for (int i = 0; i < arraySize + 2; i++)
@@ -533,7 +471,7 @@ public partial class GrassMeshMaker : Node3D
         //thread terminator
         if (_abortRun)
         {
-            return (0, new Rid(),false);
+            return (null,false);
         }
 
         //prepare the compute shader for use
@@ -612,8 +550,27 @@ public partial class GrassMeshMaker : Node3D
         var computeUniformSet = rd.UniformSetCreate(new Array<RDUniform> { fieldDimensionsUniform, randNumUniform, clumpPointsUniform, instanceDataUniform }, computeClumpShader, 0);
 
         // Create a compute pipeline
-        var blendpipeline = rd.ComputePipelineCreate(computeClumpShader);
-        var blendcomputeList = rd.ComputeListBegin();
+        Rid blendpipeline;
+        long blendcomputeList;
+        
+        
+        lock (_computeListLock)
+        {
+
+        }
+        if (_abortRun)
+        {
+            rd.FreeRid(instanceDataBuffer);
+            rd.FreeRid(clumpPointsBuffer);
+            rd.FreeRid(randNumBuffer);
+            rd.FreeRid(fieldDimensionsBuffer);
+            rd.FreeRid(computeClumpShader);
+            return (null, false);
+        }
+        // Submit to GPU and wait for sync
+
+        blendpipeline = rd.ComputePipelineCreate(computeClumpShader);
+        blendcomputeList = rd.ComputeListBegin(true);
         rd.ComputeListBindComputePipeline(blendcomputeList, blendpipeline);
         rd.ComputeListBindUniformSet(blendcomputeList, computeUniformSet, 0);
         int blendthreadsPerGroup = 32;
@@ -621,15 +578,32 @@ public partial class GrassMeshMaker : Node3D
         uint blendxGroups = (uint)(instanceCount + blendthreadsPerGroup - 1) / (uint)blendthreadsPerGroup;
         rd.ComputeListDispatch(blendcomputeList, blendxGroups, 1, 1);
         rd.ComputeListEnd();
-
+        rd.Submit();
+        rd.Sync();
+        //thread terminator
         if (_abortRun)
         {
-            return (0, new Rid(), false);
+            rd.FreeRid(blendpipeline);
+            rd.FreeRid(instanceDataBuffer);
+            rd.FreeRid(clumpPointsBuffer);
+            rd.FreeRid(randNumBuffer);
+            rd.FreeRid(fieldDimensionsBuffer);
+            rd.FreeRid(computeClumpShader);
+            return (null, false);
         }
 
-        // Submit to GPU and wait for sync
-        rd.Submit();
-        return (instanceCount, instanceDataBuffer, true);
+        //Get Data
+        byte[] byteData = rd.BufferGetData(instanceDataBuffer);
+        ReadOnlySpan<byte> byteSpan = byteData.AsSpan();
+        ReadOnlySpan<float> floatSpan = MemoryMarshal.Cast<byte, float>(byteSpan);
+        instanceData = floatSpan.ToArray();
+        rd.FreeRid(blendpipeline);
+        rd.FreeRid(instanceDataBuffer);
+        rd.FreeRid(clumpPointsBuffer);
+        rd.FreeRid(randNumBuffer);
+        rd.FreeRid(fieldDimensionsBuffer);
+        rd.FreeRid(computeClumpShader);
+        return (instanceData, true);
         //we should wait a few frames then Sync
     }
 
@@ -653,6 +627,12 @@ public partial class GrassMeshMaker : Node3D
         return (instance,grassChunk);
     }
 
+    public (Rid, Rid, Rid, Rid) InitializeFullRIDClump()
+    {
+        (Rid, Rid) temp = InitializeRIDClump(0);
+        (Rid, Rid) temp2 = InitializeRIDClump(1);
+        return (temp.Item1, temp.Item2, temp2.Item1, temp2.Item2);
+    }
     public (Rid, Rid) InitializeRIDClump(int myLOD)
     {
         Rid grassChunk = RenderingServer.MultimeshCreate();
@@ -660,49 +640,39 @@ public partial class GrassMeshMaker : Node3D
         RenderingServer.InstanceGeometrySetCastShadowsSetting(instance, RenderingServer.ShadowCastingSetting.Off);
         if (myLOD == 0)
         {
-            RenderingServer.InstanceGeometrySetVisibilityRange(instance, 0.0f, 320.0f, 0.0f, 0.0f, RenderingServer.VisibilityRangeFadeMode.Self);
+            RenderingServer.InstanceGeometrySetVisibilityRange(instance, 0.0f, 310.0f, 0.0f, 0.0f, RenderingServer.VisibilityRangeFadeMode.Self);
         }
         else
         {
-            RenderingServer.InstanceGeometrySetVisibilityRange(instance, 280.0f, 500.0f, 0.0f, 0.0f, RenderingServer.VisibilityRangeFadeMode.Self);
+            RenderingServer.InstanceGeometrySetVisibilityRange(instance, 290.0f, 600.0f, 0.0f, 0.0f, RenderingServer.VisibilityRangeFadeMode.Self);
         }
         return (instance, grassChunk);
     }
 
-    public (Rid,Rid) RecycleAndAddComputeClumpData(Rid instance, Rid multimesh, float[] instanceData, float chunkHeight, int instanceCount, Vector3 centerPosition, Mesh grassBladeMesh, int gridX, int gridZ, int myLOD)
+    public void RecycleAndAddComputeClumpData(Rid instance1, Rid multimesh1, Rid instance2, Rid multimesh2, float[] instanceData, float chunkHeight, int instanceCount, Vector3 centerPosition, Mesh grassBladeMesh, int gridX, int gridZ, int myLOD)
     {
-        if(myLOD == 0)
+        if(!activeChunkDictionary.ContainsKey((gridX, gridZ)))
         {
-            if(!activeHighChunkDictionary.ContainsKey((gridX, gridZ)))
-            {
-                activeHighChunkDictionary.Add((gridX, gridZ), (instance, multimesh, totalTime));
-            }
+            activeChunkDictionary.Add((gridX, gridZ), (instance1, multimesh1, instance2, multimesh2, totalTime));
         }
-        else
-        {
-            if (!activeLowChunkDictionary.ContainsKey((gridX, gridZ)))
-            {
-                activeLowChunkDictionary.Add((gridX, gridZ), (instance, multimesh, totalTime));
-            }
-        }
-        return RecycleComputeClumpData(instance, multimesh, instanceData, chunkHeight, instanceCount, centerPosition, grassBladeMesh, gridX, gridZ);
-
+        RecycleComputeClumpData(instance1, multimesh1, instanceData, chunkHeight, instanceCount, centerPosition, highLODMesh, gridX, gridZ);
+        RecycleComputeClumpData(instance2, multimesh2, instanceData, chunkHeight, instanceCount, centerPosition, lowLODMesh, gridX, gridZ);
     }
 
-    public (Rid, Rid) RecycleComputeClumpData(Rid instance, Rid multimesh, float[] instanceData, float chunkHeight, int instanceCount, Vector3 centerPosition, Mesh grassBladeMesh, int gridX, int gridZ)
+    public void RecycleComputeClumpData(Rid instance, Rid multimesh, float[] instanceData, float chunkHeight, int instanceCount, Vector3 centerPosition, Mesh grassBladeMesh, int gridX, int gridZ)
     {
         // Set the new multimesh settings
         RenderingServer.MultimeshSetMesh(multimesh, grassBladeMesh.GetRid());
         RenderingServer.MultimeshAllocateData(multimesh, instanceCount, RenderingServer.MultimeshTransformFormat.Transform3D, false, true);
-        RenderingServer.MultimeshSetBuffer(multimesh, instanceData); //update this
+        RenderingServer.MultimeshSetBuffer(multimesh, instanceData);
         RenderingServer.MultimeshSetVisibleInstances(multimesh, instanceCount);
 
         //AABB setting, maybe we can trim this out? we cant
         Aabb multiMeshAABB = RenderingServer.MultimeshGetAabb(multimesh);
-        multiMeshAABB = multiMeshAABB.Expand(new Vector3(0, 400, 0));
+        multiMeshAABB = multiMeshAABB.Expand(new Vector3(0, 800, 0));
+        multiMeshAABB = multiMeshAABB.Expand(new Vector3(0, -800, 0));
         RenderingServer.InstanceSetCustomAabb(instance, multiMeshAABB);
         RenderingServer.InstanceSetTransform(instance, new Transform3D(Basis.Identity, new Vector3(centerPosition.X, chunkHeight, centerPosition.Z)));
-        return (instance, multimesh);
     }
 
     int CantorPair(int a, int b)

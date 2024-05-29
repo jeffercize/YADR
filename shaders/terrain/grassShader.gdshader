@@ -125,20 +125,6 @@ void vertex() {
 	}
 
 
-//Rotating the base and leaning\\
-
-	//dont change angle if wind strength is low, but change it as the wind is stronger
-	//so mix between 0 and windDirection with windStrength
-	//target randomAngle so that randomAngle - INSTANCE_CUSTOM.y = windDirectionMix
-	float windDirectionMix = mix(0.0, windDirection, windStrength);
-	//float randomAngle = 0.0;//windDirectionMix - INSTANCE_CUSTOM.y;
-
-    float randomAngle = hashVal1.x * 2.0 * PI; //small jitter on the rotation away from the clump
-
-	//random lean
-	float randomLean = remap(hashVal1.w, 0.0, 1.0, 0.1, 0.4) * heightPercent; //replace with sin noise
-	
-	//CHECK IF FAR AWAY INTERLUDE\\
 	//heightmap sampling
 	vec2 uv = vec2(grassBladeWorldPos.x / heightParams.x, grassBladeWorldPos.z / heightParams.y);
 
@@ -156,16 +142,28 @@ void vertex() {
 	// Interpolate between the samples
 	float heightMapSample = mix(mix(h00, h10, f.x), mix(h01, h11, f.x), f.y);
 
-
 	vec3 cameraPosition = INV_VIEW_MATRIX[3].xyz;
 	vec3 grassBladeWorldPosToCamera = vec3(grassBladeWorldPos.x, grassBladeWorldPos.y+heightMapSample*400.0, grassBladeWorldPos.z);
     float distanceToCamera = length(cameraPosition - grassBladeWorldPosToCamera);
 	if(distanceToCamera > 60.0)
 	{
 		myTime = 1.0;
-		//float blendFactor = clamp((distanceToCamera - 50.0) / 50.0, 0.0, 1.0);
-		//myTime = mix(time, time*0.1, blendFactor);
 	}
+
+
+
+//Rotating the base and leaning\\
+
+	//dont change angle if wind strength is low, but change it as the wind is stronger
+	//so mix between 0 and windDirection with windStrength
+	//target randomAngle so that randomAngle - INSTANCE_CUSTOM.y = windDirectionMix
+	float windDirectionMix = mix(0.0, windDirection, windStrength);
+	//float randomAngle = 0.0;//windDirectionMix - INSTANCE_CUSTOM.y;
+
+    float randomAngle = hashVal1.x * 2.0 * PI; //small jitter on the rotation away from the clump
+
+	//random lean
+	float randomLean = remap(hashVal1.w, 0.0, 1.0, 0.1, 0.4) * heightPercent; //replace with sin noise
 
 	//Noise Sampling for Wind\\
 	float noiseSample = noise12(vec2(myTime * 0.35 * 0.5) + grassBladeWorldPos.xz);
