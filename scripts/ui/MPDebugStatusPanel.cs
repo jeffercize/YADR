@@ -32,7 +32,7 @@ public partial class MPDebugStatusPanel : Panel
 	{
         if (GetNode<TextEdit>("ChatPanel/chatInput").Text != String.Empty)
         {
-            Global.NetworkManager.client.outgoingFramePacket.ChatMessages.Add(GetNode<TextEdit>("ChatPanel/chatInput").Text);
+            Global.NetworkManager.client.outgoingFramePacket.ChatMessages.Add(Global.NetworkManager.ChatMessageConstructor(GetNode<TextEdit>("ChatPanel/chatInput").Text));
             GetNode<TextEdit>("ChatPanel/chatInput").Text = "";
         }
 

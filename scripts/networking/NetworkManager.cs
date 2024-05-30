@@ -253,5 +253,18 @@ public partial class NetworkManager: Node
         return result == EResult.k_EResultOK;
 
     }
+
+    internal Chat ChatMessageConstructor(string text)
+    {
+        Identity identity = new Identity();
+        identity.Name = Global.instance.clientName;
+        identity.SteamID = (ulong)Global.instance.clientID;
+
+        Chat chat = new Chat();
+        chat.Sender = identity;
+        chat.Message = text;
+
+        return chat;
+    }
 }
 

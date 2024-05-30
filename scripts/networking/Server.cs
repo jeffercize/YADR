@@ -117,9 +117,9 @@ public partial class Server: Node
 
     private void handleFramePacket(FramePacket framePacket)
     {
-        foreach (string chatmessage in framePacket.ChatMessages)
+        foreach (Chat chatMessage in framePacket.ChatMessages)
         {
-            outgoingFramePacket.ChatMessages.Add(chatmessage);
+            outgoingFramePacket.ChatMessages.Add(chatMessage);
         }
     }
 

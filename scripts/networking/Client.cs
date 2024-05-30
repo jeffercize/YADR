@@ -113,9 +113,9 @@ public partial class Client: Node
 
     private void handleFramePacket(FramePacket framePacket)
     {
-        foreach (string chatmessage in framePacket.ChatMessages)
+        foreach (Chat chatMessage in framePacket.ChatMessages)
         {
-            ChatMessageReceived.Invoke(chatmessage, framePacket.Sender);
+            ChatMessageReceived.Invoke(chatMessage.Message, chatMessage.Sender.SteamID);
         }
     }
 
