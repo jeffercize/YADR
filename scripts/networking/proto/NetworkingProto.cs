@@ -24,83 +24,82 @@ namespace NetworkMessages {
     static NetworkingProtoReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "ChVOZXR3b3JraW5nUHJvdG8ucHJvdG8SD05ldHdvcmtNZXNzYWdlcyLeAgoL",
+            "ChVOZXR3b3JraW5nUHJvdG8ucHJvdG8SD05ldHdvcmtNZXNzYWdlcyK0AgoL",
             "RnJhbWVQYWNrZXQSDAoEdGljaxgBIAEoBBIOCgZzZW5kZXIYAiABKAQSFgoJ",
             "dGltZXN0YW1wGAMgASgBSACIAQESKwoMY2hhdE1lc3NhZ2VzGAQgAygLMhUu",
             "TmV0d29ya01lc3NhZ2VzLkNoYXQSGQoMYWRtaW5Db21tYW5kGAUgASgJSAGI",
             "AQESFwoKYWRtaW5QYXJhbRgGIAEoCUgCiAEBEhIKCnBsYXllckxpc3QYWiAD",
-            "KAQSFwoKcGxheWVyTGVmdBhbIAEoBEgDiAEBEhkKDHBsYXllckpvaW5lZBhc",
-            "IAEoBEgEiAEBEhUKCHNlcXVlbmNlGGMgASgESAWIAQFCDAoKX3RpbWVzdGFt",
-            "cEIPCg1fYWRtaW5Db21tYW5kQg0KC19hZG1pblBhcmFtQg0KC19wbGF5ZXJM",
-            "ZWZ0Qg8KDV9wbGF5ZXJKb2luZWRCCwoJX3NlcXVlbmNlIkIKBENoYXQSKQoG",
-            "c2VuZGVyGAEgASgLMhkuTmV0d29ya01lc3NhZ2VzLklkZW50aXR5Eg8KB21l",
-            "c3NhZ2UYAiABKAkiigIKCkdhbWVPYmplY3QSCgoCaWQYASABKAQSJwoIcG9z",
-            "aXRpb24YAiABKAsyFS5OZXR3b3JrTWVzc2FnZXMuVmVjMxInCghyb3RhdGlv",
-            "bhgDIAEoCzIVLk5ldHdvcmtNZXNzYWdlcy5WZWMzEg4KBmF0UmVzdBgEIAEo",
-            "CBIyCg5saW5lYXJWZWxvY2l0eRgFIAEoCzIVLk5ldHdvcmtNZXNzYWdlcy5W",
-            "ZWMzSACIAQESMwoPYW5ndWxhclZlbG9jaXR5GAYgASgLMhUuTmV0d29ya01l",
-            "c3NhZ2VzLlZlYzNIAYgBAUIRCg9fbGluZWFyVmVsb2NpdHlCEgoQX2FuZ3Vs",
-            "YXJWZWxvY2l0eSKbAgoLUGxheWVyU3RhdGUSKwoIaWRlbnRpdHkYBSABKAsy",
-            "GS5OZXR3b3JrTWVzc2FnZXMuSWRlbnRpdHkSLQoJaW52ZW50b3J5GAEgASgL",
-            "MhouTmV0d29ya01lc3NhZ2VzLkludmVudG9yeRItCgllcXVpcG1lbnQYAiAB",
-            "KAsyGi5OZXR3b3JrTWVzc2FnZXMuRXF1aXBtZW50EjMKDHBsYXllcmhlYWx0",
-            "aBgDIAEoCzIdLk5ldHdvcmtNZXNzYWdlcy5QbGF5ZXJIZWFsdGgSOgoNcGh5",
-            "c2ljc09iamVjdBgEIAEoCzIeLk5ldHdvcmtNZXNzYWdlcy5QaHlzaWNzT2Jq",
-            "ZWN0SACIAQFCEAoOX3BoeXNpY3NPYmplY3QiZAoJSW52ZW50b3J5EiQKBWl0",
-            "ZW1zGAEgAygLMhUuTmV0d29ya01lc3NhZ2VzLkl0ZW0SEwoLdG90YWxXZWln",
-            "aHQYAiABKAISDQoFc2l6ZVgYAyABKAQSDQoFc2l6ZVkYBCABKAQijgEKBEl0",
-            "ZW0SCgoCaWQYASABKAQSDgoGd2VpZ2h0GAIgASgCEg4KBmhlaWdodBgDIAEo",
-            "BBINCgV3aWR0aBgEIAEoBBIQCgh0b3BMZWZ0WBgFIAEoBBIQCgh0b3BMZWZ0",
-            "WRgGIAEoBBInCghjb250YWlucxgHIAMoCzIVLk5ldHdvcmtNZXNzYWdlcy5J",
-            "dGVtIs8BCglFcXVpcG1lbnQSJQoGaGVsbWV0GAEgASgLMhUuTmV0d29ya01l",
-            "c3NhZ2VzLkl0ZW0SIwoEYm9keRgCIAEoCzIVLk5ldHdvcmtNZXNzYWdlcy5J",
-            "dGVtEigKCXJpZ2h0SGFuZBgDIAEoCzIVLk5ldHdvcmtNZXNzYWdlcy5JdGVt",
-            "EicKCGxlZnRIYW5kGAQgASgLMhUuTmV0d29ya01lc3NhZ2VzLkl0ZW0SIwoE",
-            "YmFjaxgFIAEoCzIVLk5ldHdvcmtNZXNzYWdlcy5JdGVtItMBCgxQbGF5ZXJI",
-            "ZWFsdGgSDQoFbWF4SFAYASABKAISEQoJY3VycmVudEhQGAIgASgCEg4KBmhl",
-            "YWRIUBgDIAEoAhIOCgZib2R5SFAYBCABKAISEQoJbGVmdEFybUhQGAUgASgC",
-            "EhIKCnJpZ2h0QXJtSFAYBiABKAISEQoJbGVmdExlZ0hQGAcgASgCEhMKC3Jp",
-            "Z2h0TGVmdEhQGAggASgCEjIKDGFmZmxpY2F0aW9ucxgJIAMoCzIcLk5ldHdv",
-            "cmtNZXNzYWdlcy5BZmZsaWNhdGlvbiJNCgtBZmZsaWNhdGlvbhIQCghlZmZl",
-            "Y3RJRBgBIAEoBBIsCglhZmZlY3RpbmcYAiABKA4yGS5OZXR3b3JrTWVzc2Fn",
-            "ZXMuQm9keVBhcnQiHQoKV29ybGRTdGF0ZRIPCgdsZXZlbElEGAEgASgEIsMB",
-            "CgtQbGF5ZXJJbnB1dBIrCghjbGllbnRJRBgEIAEoCzIZLk5ldHdvcmtNZXNz",
-            "YWdlcy5JZGVudGl0eRInCgZhY3Rpb24YASADKAsyFy5OZXR3b3JrTWVzc2Fn",
-            "ZXMuQWN0aW9uEjAKEW1vdmVtZW50RGlyZWN0aW9uGAIgASgLMhUuTmV0d29y",
-            "a01lc3NhZ2VzLlZlYzISLAoNbG9va0RpcmVjdGlvbhgDIAEoCzIVLk5ldHdv",
-            "cmtNZXNzYWdlcy5WZWMzIhwKBFZlYzISCQoBWBgBIAEoAhIJCgFZGAIgASgC",
-            "IicKBFZlYzMSCQoBWBgBIAEoAhIJCgFZGAIgASgCEgkKAVoYAyABKAIibAoG",
-            "QWN0aW9uEi8KCmFjdGlvblR5cGUYASABKA4yGy5OZXR3b3JrTWVzc2FnZXMu",
-            "QWN0aW9uVHlwZRIxCgthY3Rpb25TdGF0ZRgCIAEoDjIcLk5ldHdvcmtNZXNz",
-            "YWdlcy5BY3Rpb25TdGF0ZSJMCghJZGVudGl0eRIMCgRuYW1lGAEgASgJEhEK",
-            "B3N0ZWFtSUQYAiABKARIABITCglpcEFkZHJlc3MYAyABKANIAEIKCghpZGVu",
-            "dGl0eSKyAgoNUGh5c2ljc09iamVjdBIKCgJpZBgGIAEoBBInCghwb3NpdGlv",
-            "bhgBIAEoCzIVLk5ldHdvcmtNZXNzYWdlcy5WZWMzEikKBXNjYWxlGAIgASgL",
-            "MhUuTmV0d29ya01lc3NhZ2VzLlZlYzNIAIgBARInCghyb3RhdGlvbhgDIAEo",
-            "CzIVLk5ldHdvcmtNZXNzYWdlcy5WZWMzEjIKDmxpbmVhclZlbG9jaXR5GAQg",
-            "ASgLMhUuTmV0d29ya01lc3NhZ2VzLlZlYzNIAYgBARIzCg9hbmd1bGFyVmVs",
-            "b2NpdHkYBSABKAsyFS5OZXR3b3JrTWVzc2FnZXMuVmVjM0gCiAEBQggKBl9z",
-            "Y2FsZUIRCg9fbGluZWFyVmVsb2NpdHlCEgoQX2FuZ3VsYXJWZWxvY2l0eSJz",
-            "CgNOUEMSCgoCaWQYASABKAQSEgoKYXR0YWNoZWRUbxgCIAEoBBI6Cg1waHlz",
-            "aWNzT2JqZWN0GAMgASgLMh4uTmV0d29ya01lc3NhZ2VzLlBoeXNpY3NPYmpl",
-            "Y3RIAIgBAUIQCg5fcGh5c2ljc09iamVjdCJ6CgdWZWhpY2xlEgoKAmlkGAEg",
-            "ASgEEhUKDWF0dGFjaGVkQ2hhcnMYAiADKAQSOgoNcGh5c2ljc09iamVjdBgD",
-            "IAEoCzIeLk5ldHdvcmtNZXNzYWdlcy5QaHlzaWNzT2JqZWN0SACIAQFCEAoO",
-            "X3BoeXNpY3NPYmplY3QikQEKClByb2plY3RpbGUSCgoCaWQYASABKAQSDwoH",
-            "b3duZXJJRBgCIAEoBBIYChBwcm9qZWN0aWxlVHlwZUlEGAMgASgEEjoKDXBo",
-            "eXNpY3NPYmplY3QYBCABKAsyHi5OZXR3b3JrTWVzc2FnZXMuUGh5c2ljc09i",
-            "amVjdEgAiAEBQhAKDl9waHlzaWNzT2JqZWN0KmYKCEJvZHlQYXJ0EggKBEhl",
-            "YWQQABIICgRCb2R5EAESCAoETEFybRACEggKBFJBcm0QAxIICgRMTGVnEAQS",
-            "CAoEUkxlZxAFEgcKA0FsbBAGEggKBE5vbmUQBxILCgdHZW5lcmFsEAgqqwEK",
-            "CkFjdGlvblR5cGUSCAoESnVtcBAAEgoKBlNwcmludBABEgoKBkNyb3VjaBAC",
-            "EgkKBVByb25lEAMSCAoEV2FsaxAEEgwKCExlYW5MZWZ0EAUSDQoJTGVhblJp",
-            "Z2h0EAYSEQoNT3BlbkludmVudG9yeRAUEgwKCEludGVyYWN0EBUSCAoERmly",
-            "ZRAeEgcKA0FpbRAfEgkKBVNjb3BlECASCgoGUmVsb2FkECEqKAoLQWN0aW9u",
-            "U3RhdGUSDAoIcmVsZWFzZWQQABILCgdwcmVzc2VkEAFiBnByb3RvMw=="));
+            "KAQSEgoKcGxheWVyTGVmdBhbIAMoBBIUCgxwbGF5ZXJKb2luZWQYXCADKAQS",
+            "FQoIc2VxdWVuY2UYYyABKARIA4gBAUIMCgpfdGltZXN0YW1wQg8KDV9hZG1p",
+            "bkNvbW1hbmRCDQoLX2FkbWluUGFyYW1CCwoJX3NlcXVlbmNlIkIKBENoYXQS",
+            "KQoGc2VuZGVyGAEgASgLMhkuTmV0d29ya01lc3NhZ2VzLklkZW50aXR5Eg8K",
+            "B21lc3NhZ2UYAiABKAkiigIKCkdhbWVPYmplY3QSCgoCaWQYASABKAQSJwoI",
+            "cG9zaXRpb24YAiABKAsyFS5OZXR3b3JrTWVzc2FnZXMuVmVjMxInCghyb3Rh",
+            "dGlvbhgDIAEoCzIVLk5ldHdvcmtNZXNzYWdlcy5WZWMzEg4KBmF0UmVzdBgE",
+            "IAEoCBIyCg5saW5lYXJWZWxvY2l0eRgFIAEoCzIVLk5ldHdvcmtNZXNzYWdl",
+            "cy5WZWMzSACIAQESMwoPYW5ndWxhclZlbG9jaXR5GAYgASgLMhUuTmV0d29y",
+            "a01lc3NhZ2VzLlZlYzNIAYgBAUIRCg9fbGluZWFyVmVsb2NpdHlCEgoQX2Fu",
+            "Z3VsYXJWZWxvY2l0eSKbAgoLUGxheWVyU3RhdGUSKwoIaWRlbnRpdHkYBSAB",
+            "KAsyGS5OZXR3b3JrTWVzc2FnZXMuSWRlbnRpdHkSLQoJaW52ZW50b3J5GAEg",
+            "ASgLMhouTmV0d29ya01lc3NhZ2VzLkludmVudG9yeRItCgllcXVpcG1lbnQY",
+            "AiABKAsyGi5OZXR3b3JrTWVzc2FnZXMuRXF1aXBtZW50EjMKDHBsYXllcmhl",
+            "YWx0aBgDIAEoCzIdLk5ldHdvcmtNZXNzYWdlcy5QbGF5ZXJIZWFsdGgSOgoN",
+            "cGh5c2ljc09iamVjdBgEIAEoCzIeLk5ldHdvcmtNZXNzYWdlcy5QaHlzaWNz",
+            "T2JqZWN0SACIAQFCEAoOX3BoeXNpY3NPYmplY3QiZAoJSW52ZW50b3J5EiQK",
+            "BWl0ZW1zGAEgAygLMhUuTmV0d29ya01lc3NhZ2VzLkl0ZW0SEwoLdG90YWxX",
+            "ZWlnaHQYAiABKAISDQoFc2l6ZVgYAyABKAQSDQoFc2l6ZVkYBCABKAQijgEK",
+            "BEl0ZW0SCgoCaWQYASABKAQSDgoGd2VpZ2h0GAIgASgCEg4KBmhlaWdodBgD",
+            "IAEoBBINCgV3aWR0aBgEIAEoBBIQCgh0b3BMZWZ0WBgFIAEoBBIQCgh0b3BM",
+            "ZWZ0WRgGIAEoBBInCghjb250YWlucxgHIAMoCzIVLk5ldHdvcmtNZXNzYWdl",
+            "cy5JdGVtIs8BCglFcXVpcG1lbnQSJQoGaGVsbWV0GAEgASgLMhUuTmV0d29y",
+            "a01lc3NhZ2VzLkl0ZW0SIwoEYm9keRgCIAEoCzIVLk5ldHdvcmtNZXNzYWdl",
+            "cy5JdGVtEigKCXJpZ2h0SGFuZBgDIAEoCzIVLk5ldHdvcmtNZXNzYWdlcy5J",
+            "dGVtEicKCGxlZnRIYW5kGAQgASgLMhUuTmV0d29ya01lc3NhZ2VzLkl0ZW0S",
+            "IwoEYmFjaxgFIAEoCzIVLk5ldHdvcmtNZXNzYWdlcy5JdGVtItMBCgxQbGF5",
+            "ZXJIZWFsdGgSDQoFbWF4SFAYASABKAISEQoJY3VycmVudEhQGAIgASgCEg4K",
+            "BmhlYWRIUBgDIAEoAhIOCgZib2R5SFAYBCABKAISEQoJbGVmdEFybUhQGAUg",
+            "ASgCEhIKCnJpZ2h0QXJtSFAYBiABKAISEQoJbGVmdExlZ0hQGAcgASgCEhMK",
+            "C3JpZ2h0TGVmdEhQGAggASgCEjIKDGFmZmxpY2F0aW9ucxgJIAMoCzIcLk5l",
+            "dHdvcmtNZXNzYWdlcy5BZmZsaWNhdGlvbiJNCgtBZmZsaWNhdGlvbhIQCghl",
+            "ZmZlY3RJRBgBIAEoBBIsCglhZmZlY3RpbmcYAiABKA4yGS5OZXR3b3JrTWVz",
+            "c2FnZXMuQm9keVBhcnQiHQoKV29ybGRTdGF0ZRIPCgdsZXZlbElEGAEgASgE",
+            "IsMBCgtQbGF5ZXJJbnB1dBIrCghjbGllbnRJRBgEIAEoCzIZLk5ldHdvcmtN",
+            "ZXNzYWdlcy5JZGVudGl0eRInCgZhY3Rpb24YASADKAsyFy5OZXR3b3JrTWVz",
+            "c2FnZXMuQWN0aW9uEjAKEW1vdmVtZW50RGlyZWN0aW9uGAIgASgLMhUuTmV0",
+            "d29ya01lc3NhZ2VzLlZlYzISLAoNbG9va0RpcmVjdGlvbhgDIAEoCzIVLk5l",
+            "dHdvcmtNZXNzYWdlcy5WZWMzIhwKBFZlYzISCQoBWBgBIAEoAhIJCgFZGAIg",
+            "ASgCIicKBFZlYzMSCQoBWBgBIAEoAhIJCgFZGAIgASgCEgkKAVoYAyABKAIi",
+            "bAoGQWN0aW9uEi8KCmFjdGlvblR5cGUYASABKA4yGy5OZXR3b3JrTWVzc2Fn",
+            "ZXMuQWN0aW9uVHlwZRIxCgthY3Rpb25TdGF0ZRgCIAEoDjIcLk5ldHdvcmtN",
+            "ZXNzYWdlcy5BY3Rpb25TdGF0ZSJMCghJZGVudGl0eRIMCgRuYW1lGAEgASgJ",
+            "EhEKB3N0ZWFtSUQYAiABKARIABITCglpcEFkZHJlc3MYAyABKANIAEIKCghp",
+            "ZGVudGl0eSKyAgoNUGh5c2ljc09iamVjdBIKCgJpZBgGIAEoBBInCghwb3Np",
+            "dGlvbhgBIAEoCzIVLk5ldHdvcmtNZXNzYWdlcy5WZWMzEikKBXNjYWxlGAIg",
+            "ASgLMhUuTmV0d29ya01lc3NhZ2VzLlZlYzNIAIgBARInCghyb3RhdGlvbhgD",
+            "IAEoCzIVLk5ldHdvcmtNZXNzYWdlcy5WZWMzEjIKDmxpbmVhclZlbG9jaXR5",
+            "GAQgASgLMhUuTmV0d29ya01lc3NhZ2VzLlZlYzNIAYgBARIzCg9hbmd1bGFy",
+            "VmVsb2NpdHkYBSABKAsyFS5OZXR3b3JrTWVzc2FnZXMuVmVjM0gCiAEBQggK",
+            "Bl9zY2FsZUIRCg9fbGluZWFyVmVsb2NpdHlCEgoQX2FuZ3VsYXJWZWxvY2l0",
+            "eSJzCgNOUEMSCgoCaWQYASABKAQSEgoKYXR0YWNoZWRUbxgCIAEoBBI6Cg1w",
+            "aHlzaWNzT2JqZWN0GAMgASgLMh4uTmV0d29ya01lc3NhZ2VzLlBoeXNpY3NP",
+            "YmplY3RIAIgBAUIQCg5fcGh5c2ljc09iamVjdCJ6CgdWZWhpY2xlEgoKAmlk",
+            "GAEgASgEEhUKDWF0dGFjaGVkQ2hhcnMYAiADKAQSOgoNcGh5c2ljc09iamVj",
+            "dBgDIAEoCzIeLk5ldHdvcmtNZXNzYWdlcy5QaHlzaWNzT2JqZWN0SACIAQFC",
+            "EAoOX3BoeXNpY3NPYmplY3QikQEKClByb2plY3RpbGUSCgoCaWQYASABKAQS",
+            "DwoHb3duZXJJRBgCIAEoBBIYChBwcm9qZWN0aWxlVHlwZUlEGAMgASgEEjoK",
+            "DXBoeXNpY3NPYmplY3QYBCABKAsyHi5OZXR3b3JrTWVzc2FnZXMuUGh5c2lj",
+            "c09iamVjdEgAiAEBQhAKDl9waHlzaWNzT2JqZWN0KmYKCEJvZHlQYXJ0EggK",
+            "BEhlYWQQABIICgRCb2R5EAESCAoETEFybRACEggKBFJBcm0QAxIICgRMTGVn",
+            "EAQSCAoEUkxlZxAFEgcKA0FsbBAGEggKBE5vbmUQBxILCgdHZW5lcmFsEAgq",
+            "qwEKCkFjdGlvblR5cGUSCAoESnVtcBAAEgoKBlNwcmludBABEgoKBkNyb3Vj",
+            "aBACEgkKBVByb25lEAMSCAoEV2FsaxAEEgwKCExlYW5MZWZ0EAUSDQoJTGVh",
+            "blJpZ2h0EAYSEQoNT3BlbkludmVudG9yeRAUEgwKCEludGVyYWN0EBUSCAoE",
+            "RmlyZRAeEgcKA0FpbRAfEgkKBVNjb3BlECASCgoGUmVsb2FkECEqKAoLQWN0",
+            "aW9uU3RhdGUSDAoIcmVsZWFzZWQQABILCgdwcmVzc2VkEAFiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::NetworkMessages.BodyPart), typeof(global::NetworkMessages.ActionType), typeof(global::NetworkMessages.ActionState), }, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.FramePacket), global::NetworkMessages.FramePacket.Parser, new[]{ "Tick", "Sender", "Timestamp", "ChatMessages", "AdminCommand", "AdminParam", "PlayerList", "PlayerLeft", "PlayerJoined", "Sequence" }, new[]{ "Timestamp", "AdminCommand", "AdminParam", "PlayerLeft", "PlayerJoined", "Sequence" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.FramePacket), global::NetworkMessages.FramePacket.Parser, new[]{ "Tick", "Sender", "Timestamp", "ChatMessages", "AdminCommand", "AdminParam", "PlayerList", "PlayerLeft", "PlayerJoined", "Sequence" }, new[]{ "Timestamp", "AdminCommand", "AdminParam", "Sequence" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.Chat), global::NetworkMessages.Chat.Parser, new[]{ "Sender", "Message" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.GameObject), global::NetworkMessages.GameObject.Parser, new[]{ "Id", "Position", "Rotation", "AtRest", "LinearVelocity", "AngularVelocity" }, new[]{ "LinearVelocity", "AngularVelocity" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.PlayerState), global::NetworkMessages.PlayerState.Parser, new[]{ "Identity", "Inventory", "Equipment", "Playerhealth", "PhysicsObject" }, new[]{ "PhysicsObject" }, null, null, null),
@@ -206,8 +205,8 @@ namespace NetworkMessages {
       adminCommand_ = other.adminCommand_;
       adminParam_ = other.adminParam_;
       playerList_ = other.playerList_.Clone();
-      playerLeft_ = other.playerLeft_;
-      playerJoined_ = other.playerJoined_;
+      playerLeft_ = other.playerLeft_.Clone();
+      playerJoined_ = other.playerJoined_.Clone();
       sequence_ = other.sequence_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
@@ -345,56 +344,24 @@ namespace NetworkMessages {
 
     /// <summary>Field number for the "playerLeft" field.</summary>
     public const int PlayerLeftFieldNumber = 91;
-    private readonly static ulong PlayerLeftDefaultValue = 0UL;
-
-    private ulong playerLeft_;
+    private static readonly pb::FieldCodec<ulong> _repeated_playerLeft_codec
+        = pb::FieldCodec.ForUInt64(730);
+    private readonly pbc::RepeatedField<ulong> playerLeft_ = new pbc::RepeatedField<ulong>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public ulong PlayerLeft {
-      get { if ((_hasBits0 & 2) != 0) { return playerLeft_; } else { return PlayerLeftDefaultValue; } }
-      set {
-        _hasBits0 |= 2;
-        playerLeft_ = value;
-      }
-    }
-    /// <summary>Gets whether the "playerLeft" field is set</summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public bool HasPlayerLeft {
-      get { return (_hasBits0 & 2) != 0; }
-    }
-    /// <summary>Clears the value of the "playerLeft" field</summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void ClearPlayerLeft() {
-      _hasBits0 &= ~2;
+    public pbc::RepeatedField<ulong> PlayerLeft {
+      get { return playerLeft_; }
     }
 
     /// <summary>Field number for the "playerJoined" field.</summary>
     public const int PlayerJoinedFieldNumber = 92;
-    private readonly static ulong PlayerJoinedDefaultValue = 0UL;
-
-    private ulong playerJoined_;
+    private static readonly pb::FieldCodec<ulong> _repeated_playerJoined_codec
+        = pb::FieldCodec.ForUInt64(738);
+    private readonly pbc::RepeatedField<ulong> playerJoined_ = new pbc::RepeatedField<ulong>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public ulong PlayerJoined {
-      get { if ((_hasBits0 & 4) != 0) { return playerJoined_; } else { return PlayerJoinedDefaultValue; } }
-      set {
-        _hasBits0 |= 4;
-        playerJoined_ = value;
-      }
-    }
-    /// <summary>Gets whether the "playerJoined" field is set</summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public bool HasPlayerJoined {
-      get { return (_hasBits0 & 4) != 0; }
-    }
-    /// <summary>Clears the value of the "playerJoined" field</summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void ClearPlayerJoined() {
-      _hasBits0 &= ~4;
+    public pbc::RepeatedField<ulong> PlayerJoined {
+      get { return playerJoined_; }
     }
 
     /// <summary>Field number for the "sequence" field.</summary>
@@ -405,9 +372,9 @@ namespace NetworkMessages {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public ulong Sequence {
-      get { if ((_hasBits0 & 8) != 0) { return sequence_; } else { return SequenceDefaultValue; } }
+      get { if ((_hasBits0 & 2) != 0) { return sequence_; } else { return SequenceDefaultValue; } }
       set {
-        _hasBits0 |= 8;
+        _hasBits0 |= 2;
         sequence_ = value;
       }
     }
@@ -415,13 +382,13 @@ namespace NetworkMessages {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public bool HasSequence {
-      get { return (_hasBits0 & 8) != 0; }
+      get { return (_hasBits0 & 2) != 0; }
     }
     /// <summary>Clears the value of the "sequence" field</summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public void ClearSequence() {
-      _hasBits0 &= ~8;
+      _hasBits0 &= ~2;
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -446,8 +413,8 @@ namespace NetworkMessages {
       if (AdminCommand != other.AdminCommand) return false;
       if (AdminParam != other.AdminParam) return false;
       if(!playerList_.Equals(other.playerList_)) return false;
-      if (PlayerLeft != other.PlayerLeft) return false;
-      if (PlayerJoined != other.PlayerJoined) return false;
+      if(!playerLeft_.Equals(other.playerLeft_)) return false;
+      if(!playerJoined_.Equals(other.playerJoined_)) return false;
       if (Sequence != other.Sequence) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
@@ -463,8 +430,8 @@ namespace NetworkMessages {
       if (HasAdminCommand) hash ^= AdminCommand.GetHashCode();
       if (HasAdminParam) hash ^= AdminParam.GetHashCode();
       hash ^= playerList_.GetHashCode();
-      if (HasPlayerLeft) hash ^= PlayerLeft.GetHashCode();
-      if (HasPlayerJoined) hash ^= PlayerJoined.GetHashCode();
+      hash ^= playerLeft_.GetHashCode();
+      hash ^= playerJoined_.GetHashCode();
       if (HasSequence) hash ^= Sequence.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
@@ -506,14 +473,8 @@ namespace NetworkMessages {
         output.WriteString(AdminParam);
       }
       playerList_.WriteTo(output, _repeated_playerList_codec);
-      if (HasPlayerLeft) {
-        output.WriteRawTag(216, 5);
-        output.WriteUInt64(PlayerLeft);
-      }
-      if (HasPlayerJoined) {
-        output.WriteRawTag(224, 5);
-        output.WriteUInt64(PlayerJoined);
-      }
+      playerLeft_.WriteTo(output, _repeated_playerLeft_codec);
+      playerJoined_.WriteTo(output, _repeated_playerJoined_codec);
       if (HasSequence) {
         output.WriteRawTag(152, 6);
         output.WriteUInt64(Sequence);
@@ -550,14 +511,8 @@ namespace NetworkMessages {
         output.WriteString(AdminParam);
       }
       playerList_.WriteTo(ref output, _repeated_playerList_codec);
-      if (HasPlayerLeft) {
-        output.WriteRawTag(216, 5);
-        output.WriteUInt64(PlayerLeft);
-      }
-      if (HasPlayerJoined) {
-        output.WriteRawTag(224, 5);
-        output.WriteUInt64(PlayerJoined);
-      }
+      playerLeft_.WriteTo(ref output, _repeated_playerLeft_codec);
+      playerJoined_.WriteTo(ref output, _repeated_playerJoined_codec);
       if (HasSequence) {
         output.WriteRawTag(152, 6);
         output.WriteUInt64(Sequence);
@@ -589,12 +544,8 @@ namespace NetworkMessages {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(AdminParam);
       }
       size += playerList_.CalculateSize(_repeated_playerList_codec);
-      if (HasPlayerLeft) {
-        size += 2 + pb::CodedOutputStream.ComputeUInt64Size(PlayerLeft);
-      }
-      if (HasPlayerJoined) {
-        size += 2 + pb::CodedOutputStream.ComputeUInt64Size(PlayerJoined);
-      }
+      size += playerLeft_.CalculateSize(_repeated_playerLeft_codec);
+      size += playerJoined_.CalculateSize(_repeated_playerJoined_codec);
       if (HasSequence) {
         size += 2 + pb::CodedOutputStream.ComputeUInt64Size(Sequence);
       }
@@ -627,12 +578,8 @@ namespace NetworkMessages {
         AdminParam = other.AdminParam;
       }
       playerList_.Add(other.playerList_);
-      if (other.HasPlayerLeft) {
-        PlayerLeft = other.PlayerLeft;
-      }
-      if (other.HasPlayerJoined) {
-        PlayerJoined = other.PlayerJoined;
-      }
+      playerLeft_.Add(other.playerLeft_);
+      playerJoined_.Add(other.playerJoined_);
       if (other.HasSequence) {
         Sequence = other.Sequence;
       }
@@ -680,12 +627,14 @@ namespace NetworkMessages {
             playerList_.AddEntriesFrom(input, _repeated_playerList_codec);
             break;
           }
+          case 730:
           case 728: {
-            PlayerLeft = input.ReadUInt64();
+            playerLeft_.AddEntriesFrom(input, _repeated_playerLeft_codec);
             break;
           }
+          case 738:
           case 736: {
-            PlayerJoined = input.ReadUInt64();
+            playerJoined_.AddEntriesFrom(input, _repeated_playerJoined_codec);
             break;
           }
           case 792: {
@@ -736,12 +685,14 @@ namespace NetworkMessages {
             playerList_.AddEntriesFrom(ref input, _repeated_playerList_codec);
             break;
           }
+          case 730:
           case 728: {
-            PlayerLeft = input.ReadUInt64();
+            playerLeft_.AddEntriesFrom(ref input, _repeated_playerLeft_codec);
             break;
           }
+          case 738:
           case 736: {
-            PlayerJoined = input.ReadUInt64();
+            playerJoined_.AddEntriesFrom(ref input, _repeated_playerJoined_codec);
             break;
           }
           case 792: {

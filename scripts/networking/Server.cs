@@ -9,17 +9,11 @@ public partial class Server: Node
     {
 
     public List<HSteamNetConnection> clients = new();
-
-
-
     public HSteamListenSocket listenSocket = new();
 
 
     protected Callback<SteamNetConnectionStatusChangedCallback_t> SteamNetConnectionStatusChange;
     public FramePacket outgoingFramePacket = new();
-
-    public delegate void NewPlayerJoinEventHandler(ulong clientID);
-    public static event NewPlayerJoinEventHandler NewPlayerJoinEvent = delegate { };
 
 
     public Server(HSteamNetConnection localClient)
@@ -33,50 +27,38 @@ public partial class Server: Node
     public override void _Ready()
     {
         SteamNetConnectionStatusChange = Callback<SteamNetConnectionStatusChangedCallback_t>.Create(onSteamNetConnectionStatusChange);
-        
     }
 
     private void onSteamNetConnectionStatusChange(SteamNetConnectionStatusChangedCallback_t @event)
     {
         bool acceptAllConnections = true;
-        if (@event.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_Connecting)
+        HSteamNetConnection conn = @event.m_hConn;
+        switch (@event.m_info.m_eState)
         {
-            HSteamNetConnection conn = @event.m_hConn;
-            if (acceptAllConnections)
-            {
-                SteamNetworkingSockets.AcceptConnection(conn);
-                Global.NetworkManager.networkDebugLog("Accepting external connection from ID: " + @event.m_info.m_identityRemote.GetSteamID64());
-            }
-        }
-        if (@event.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_Connected)
-        {
-            HSteamNetConnection conn = @event.m_hConn;
-            clients.Add(conn);
-            SteamNetworkingSockets.ConfigureConnectionLanes(conn, 3, null, null);
-            onPlayerJoin(conn, (ulong)@event.m_info.m_identityRemote.GetSteamID64());
-
-            Global.NetworkManager.networkDebugLog("Connection from ID: " + @event.m_info.m_identityRemote.GetSteamID64() + " complete!");
-
+            case ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_Connecting:
+                if (acceptAllConnections)
+                {
+                    SteamNetworkingSockets.AcceptConnection(conn);
+                    Global.NetworkManager.networkDebugLog("Accepting external connection from ID: " + @event.m_info.m_identityRemote.GetSteamID64());
+                }
+                break;
+            case ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_Connected:
+                clients.Add(conn);
+                SteamNetworkingSockets.ConfigureConnectionLanes(conn, 3, null, null);
+                Global.NetworkManager.networkDebugLog("Connection from ID: " + @event.m_info.m_identityRemote.GetSteamID64() + " complete!");
+                outgoingFramePacket.PlayerJoined.Add(NetworkManager.getConnectionRemoteID(conn));
+                break;
+            case ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_ClosedByPeer:
+                clients.Remove(conn);
+                outgoingFramePacket.PlayerLeft.Add(NetworkManager.getConnectionRemoteID(conn));
+                SteamNetworkingSockets.CloseConnection(conn, 0, "Connection closed by peer.",true);
+                Global.NetworkManager.networkDebugLog("Connection from ID: " + @event.m_info.m_identityRemote.GetSteamID64() + " closed by peer.");
+                break;
+            default:
+                Global.NetworkManager.networkDebugLog("Connection from ID: " + @event.m_info.m_identityRemote.GetSteamID64() + " in unknown state: " + @event.m_info.m_eState);
+                break;
         }
     }
-
-    public void onPlayerJoin(HSteamNetConnection conn ,ulong clientID)
-    {
-        foreach (HSteamNetConnection c in clients)
-        {
-            if (NetworkManager.getConnectionRemoteID(c) == clientID) { continue; }
-
-            Global.NetworkManager.networkDebugLog("sending out new player notice ID: ");
-
-        }
-
-
-        Global.NetworkManager.networkDebugLog("sending out new player notice2 ID: ");
-        //BroadcastMessage(WrapMessage(MessageType.ServerAlertNewPlayer,message));
-    }
-
-
-
 
     public void SendServerCommandLaunchGame()
     {
@@ -101,7 +83,7 @@ public partial class Server: Node
                         handleFramePacket(framePacket);
                         break;
                     default:
-                        Global.NetworkManager.networkDebugLog("Client - Received a message on an unexpected lane. Lane: " + steamMsg.m_idxLane);
+                        Global.NetworkManager.networkDebugLog("Server - Received a message on an unexpected lane. Lane: " + steamMsg.m_idxLane);
                         break;
                 }
                 //Free the memory for the message

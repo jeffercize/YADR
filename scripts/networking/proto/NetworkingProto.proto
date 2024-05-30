@@ -13,8 +13,8 @@ message FramePacket
 	optional string adminParam = 6;
 	
 	repeated uint64 playerList = 90;
-	optional uint64 playerLeft = 91;
-	optional uint64 playerJoined = 92;
+	repeated uint64 playerLeft = 91;
+	repeated uint64 playerJoined = 92;
 
 	optional uint64 sequence = 99;
 

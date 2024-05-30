@@ -9,12 +9,17 @@ using static NetworkManager;
 /// <summary>
 /// Object representing the client-side processing of networking data. Only one of these should exist per machine.
 /// </summary>
-public partial class Client: Node
-    {
+public partial class Client : Node
+{
 
     public delegate void ChatMessageEventHandler(string message, ulong sender);
     public static event ChatMessageEventHandler ChatMessageReceived;
 
+    public delegate void PlayerJoinedEventHandler(ulong playerID);
+    public static event PlayerJoinedEventHandler PlayerJoined;
+
+    public delegate void PlayerLeftEventHandler(ulong playerID);
+    public static event PlayerLeftEventHandler PlayerLeft;
 
     public FramePacket outgoingFramePacket = new();
 
@@ -48,19 +53,13 @@ public partial class Client: Node
     /// </summary>
     public Client() { }
 
-
-
-
     public override void _Ready()
     {
         //Hooks up the connection status change event to a function
         SteamNetConnectionStatusChange = Callback<SteamNetConnectionStatusChangedCallback_t>.Create(onSteamNetConnectionStatusChange);
 
         SteamNetworkingSockets.ConfigureConnectionLanes(connectionToServer, 3, null, null);
-
-        
     }
-
 
     /// <summary>
     /// Called by the underlying Steam API in response to any underlying connection status change
@@ -71,7 +70,6 @@ public partial class Client: Node
     {
         Global.NetworkManager.networkDebugLog("Client - connection status change. New status: " + param.m_info.m_eState);
     }
-
 
     /// <summary>
     /// This method is called once per frame and is responsible for processing network messages.
@@ -108,7 +106,6 @@ public partial class Client: Node
         outgoingFramePacket.Sender = Global.instance.clientID;
         SendSteamMessage(connectionToServer, outgoingFramePacket);
         outgoingFramePacket = new FramePacket();
-
     }
 
     private void handleFramePacket(FramePacket framePacket)
@@ -117,8 +114,14 @@ public partial class Client: Node
         {
             ChatMessageReceived.Invoke(chatMessage.Message, chatMessage.Sender.SteamID);
         }
+        foreach (ulong playerID in framePacket.PlayerJoined)
+        {
+            PlayerJoined.Invoke(playerID);
+        }
+        foreach (ulong playerID in framePacket.PlayerLeft)
+        {
+            PlayerLeft.Invoke(playerID);
+        }
     }
-
-
 }
 
