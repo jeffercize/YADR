@@ -1,11 +1,5 @@
 using Godot;
-using GodotPlugins.Game;
-using NetworkMessages;
-using Steamworks;
 using System;
-using System.Collections.Generic;
-using System.Runtime;
-using System.Transactions;
 
 [GlobalClass]
 public partial class DEPRECPLAUER : Character
@@ -118,7 +112,7 @@ public partial class DEPRECPLAUER : Character
 
     public void init()
     {
-        
+
 
         Position = new Vector3(0, 0, 0);
     }
@@ -141,10 +135,10 @@ public partial class DEPRECPLAUER : Character
         camera.Current = true;
 
 
-            
+
 
         Input.MouseMode = Input.MouseModeEnum.Captured;
-        
+
 
         pointing = GetNode<RayCast3D>("pov/pointing");
 
@@ -153,7 +147,7 @@ public partial class DEPRECPLAUER : Character
         Equipment.equipMessage += onEquip;
         Equipment.unequipMessage += onUnequip;
 
-      
+
 
     }
 
@@ -247,27 +241,27 @@ public partial class DEPRECPLAUER : Character
 
         //Rotates the camera on X (Up/Down) and clamps so it doesnt go too far.
         camera.Rotation = new Vector3((float)Mathf.Clamp(camera.Rotation.X - input.lookDelta.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
-        
+
 
         //Rotates the entire player (camera is child, so it comes along) on Y (left/right)
         Rotation = new Vector3(0, Rotation.Y - input.lookDelta.X * (float)delta, 0);
         input.lookDelta = Vector2.Zero;
-       // debugPointer();
+        // debugPointer();
 
         if (leftHeldItem != Item.NONE)
         {
             RayCast3D ray = leftHeldItem.GetNode<RayCast3D>("barrelRay");
-            if (ray!= null && ray.IsColliding())
+            if (ray != null && ray.IsColliding())
             {
                 float distance = ray.GetCollisionPoint().DistanceTo(ray.GlobalPosition);
                 float target = MathF.Abs(ray.TargetPosition.Y);
                 float diff = target - distance;
-                Vector3 targetVec = new Vector3(leftHoldPointOriginPos.X, leftHoldPointOriginPos.Y,leftHoldPointOriginPos.Z+diff);
+                Vector3 targetVec = new Vector3(leftHoldPointOriginPos.X, leftHoldPointOriginPos.Y, leftHoldPointOriginPos.Z + diff);
                 float targetZ = Mathf.Lerp(leftHoldPoint.Position.Z, targetVec.Z, .3f);
                 Vector3 newVec = new Vector3(leftHoldPointOriginPos.X, leftHoldPointOriginPos.Y, targetZ);
                 leftHoldPoint.Position = newVec;
             }
-            else if (ray!=null && !ray.IsColliding())
+            else if (ray != null && !ray.IsColliding())
             {
                 float targetZ = Mathf.Lerp(leftHoldPoint.Position.Z, leftHoldPointOriginPos.Z, .05f);
                 Vector3 newVec = new Vector3(leftHoldPointOriginPos.X, leftHoldPointOriginPos.Y, targetZ);
@@ -373,7 +367,7 @@ public partial class DEPRECPLAUER : Character
 
     private void onFire()
     {
-       
+
     }
 
     private void onInteract()
@@ -421,11 +415,11 @@ public partial class DEPRECPLAUER : Character
                 leftHeldItem = Item.NONE;
                 foreach (Node child in leftHoldPoint.GetChildren())
                 {
-                    if (!child.Name.Equals("leftArm") )
+                    if (!child.Name.Equals("leftArm"))
                     {
                         leftHoldPoint.RemoveChild(child);
                     }
-                    
+
                 }
 
             }
@@ -442,7 +436,7 @@ public partial class DEPRECPLAUER : Character
                     {
                         rightHoldPoint.RemoveChild(child);
                     }
-                   
+
                 }
 
             }
@@ -472,7 +466,7 @@ public partial class DEPRECPLAUER : Character
                 Global.debugLog("My equipment has a change - EQUIP RIGHT HAND");
 
                 rightHoldPoint.AddChild(item);
-                
+
                 item.GlobalTransform = rightHoldPoint.GlobalTransform;
                 item.FreezeMode = RigidBody3D.FreezeModeEnum.Static;
                 item.Freeze = true;

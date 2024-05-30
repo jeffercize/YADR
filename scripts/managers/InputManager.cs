@@ -1,10 +1,6 @@
 using Godot;
-using NetworkMessages;
-using System;
-using System.Collections.Generic;
-using System.Net;
 
-public partial class InputManager: Node
+public partial class InputManager : Node
 {
     /*
     public delegate void InputEventHandler(ulong clientID, ActionMessage actionMessage);

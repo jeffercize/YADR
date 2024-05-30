@@ -2,7 +2,8 @@
 using NetworkMessages;
 using Steamworks;
 using System;
-using System.Runtime.InteropServices;
+using System.Collections.Generic;
+using System.Linq;
 using static NetworkManager;
 
 
@@ -34,6 +35,10 @@ public partial class Client : Node
     /// </summary>
     public HSteamNetConnection connectionToServer;
 
+    public List<ulong> peers = new();
+
+    public ulong serverID = 0;
+
     /// <summary>
     /// An event that fires when the underlying steam network detects a change in connection status.
     /// </summary>
@@ -46,6 +51,7 @@ public partial class Client : Node
     public Client(HSteamNetConnection connectionToServer)
     {
         this.connectionToServer = connectionToServer;
+        serverID = NetworkManager.getConnectionRemoteID(connectionToServer);
     }
 
     /// <summary>
@@ -121,6 +127,10 @@ public partial class Client : Node
         foreach (ulong playerID in framePacket.PlayerLeft)
         {
             PlayerLeft.Invoke(playerID);
+        }
+        if (framePacket.PlayerList.Count > 0)
+        {
+            peers = framePacket.PlayerList.Clone().ToList();
         }
     }
 }

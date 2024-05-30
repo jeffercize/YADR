@@ -1,11 +1,5 @@
-﻿using Godot;
-using NetworkMessages;
-using System.Collections.Generic;
-using Google.Protobuf;
-using System;
-
-public class ClientInputHandler
-    {
+﻿public class ClientInputHandler
+{
     /*
     public delegate void NetworkInputActionEventHandler(InputActionMessage message);
     public static event NetworkInputActionEventHandler NetworkInputActionEvent = delegate { };

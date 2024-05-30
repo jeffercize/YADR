@@ -1,7 +1,4 @@
-﻿using Google.Protobuf;
-using NetworkMessages;
-
-/// <summary>
+﻿/// <summary>
 /// Mostly? static class to handle client-side chat
 /// </summary>
 public class ClientChatHandler

@@ -1,11 +1,6 @@
 ﻿using Godot;
-using NetworkMessages;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-public partial class Player: Character
+public partial class Player : Character
 {
 
     public Player() { }
@@ -132,8 +127,8 @@ public partial class Player: Character
         }
         else
         {
-           // ClientInputHandler.NetworkInputLookDirectionEvent += onNetworkInputLookDirectionEvent;
-           // ClientPlayerStateHandler.NetworkPlayerStatePositionEvent += onNetworkPlayerStatePositionEvent;
+            // ClientInputHandler.NetworkInputLookDirectionEvent += onNetworkInputLookDirectionEvent;
+            // ClientPlayerStateHandler.NetworkPlayerStatePositionEvent += onNetworkPlayerStatePositionEvent;
         }
 
     }

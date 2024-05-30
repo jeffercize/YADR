@@ -1,5 +1,4 @@
 using Godot;
-using System;
 
 /// <summary>
 /// Just does the fun little camera movements in the waiting room.

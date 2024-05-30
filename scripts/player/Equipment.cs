@@ -29,7 +29,7 @@ public partial class Equipment : Node
             slots.Add(s, null);
         }
 
-        slotTypes["head"] = new List<Equipable.EquipType>{ Equipable.EquipType.HELMET };
+        slotTypes["head"] = new List<Equipable.EquipType> { Equipable.EquipType.HELMET };
         slotTypes["leftHand"] = new List<Equipable.EquipType> { Equipable.EquipType.GUNWEAPON };
         slotTypes["rightHand"] = new List<Equipable.EquipType> { Equipable.EquipType.GUNWEAPON };
         slotTypes["chest"] = new List<Equipable.EquipType>();
@@ -38,19 +38,19 @@ public partial class Equipment : Node
 
     // Called every frame. 'delta' is the elapsed time since the previous frame.
     public override void _Process(double delta)
-	{
-	}
+    {
+    }
 
     public bool equip(string slotName, Equipable newEquip)
     {
-        Global.debugLog("attempting to equip " + newEquip.Name +" in slot " + slotName);
+        Global.debugLog("attempting to equip " + newEquip.Name + " in slot " + slotName);
         if (!slots.ContainsKey(slotName))
         {
             Global.debugLog("Equip fail. slot doesnt exist.");
             return false;
         }
         slots.TryGetValue(slotName, out Equipable temp);
-        if (temp == null) 
+        if (temp == null)
         {
             Global.debugLog("Equipping, slot is nulled.");
             slots[slotName] = newEquip;
@@ -89,7 +89,7 @@ public partial class Equipment : Node
 
     internal bool canEquip(String slotName, Equipable equip)
     {
-        if (slotTypes[slotName].Contains(equip.type)) 
+        if (slotTypes[slotName].Contains(equip.type))
         {
             return true;
         }

@@ -1,6 +1,4 @@
 using Godot;
-using NetworkMessages;
-using System;
 
 public partial class UIManager : Control
 {
@@ -61,7 +59,7 @@ public partial class UIManager : Control
 
     public override void _Process(double delta)
     {
-        if (player!=null && playerMenu.IsVisibleInTree())
+        if (player != null && playerMenu.IsVisibleInTree())
         {
             QueueRedraw();
         }
@@ -105,19 +103,19 @@ public partial class UIManager : Control
     {
         return dragItem != null && dragItem != Item.NONE;
     }
-	public void clearUI()
-	{
-		foreach (Node child in GetChildren())
-		{
-			RemoveChild(child);
-			child.QueueFree();
+    public void clearUI()
+    {
+        foreach (Node child in GetChildren())
+        {
+            RemoveChild(child);
+            child.QueueFree();
 
         }
-	}
+    }
 
-	public void LoadUI(string uri)
-	{
-		AddChild(ResourceLoader.Load<PackedScene>(uri).Instantiate());
+    public void LoadUI(string uri)
+    {
+        AddChild(ResourceLoader.Load<PackedScene>(uri).Instantiate());
 
     }
 }

@@ -1,17 +1,15 @@
 ﻿using Godot;
+using Google.Protobuf;
 using NetworkMessages;
 using Steamworks;
 using System;
-using System.Collections.Generic;
-using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
-using Google.Protobuf;
 using static Steamworks.SteamNetworkingSockets;
 
 /// <summary>
 /// Manager class for all things networking. Singleton pattern, created and managed by Global
 /// </summary>
-public partial class NetworkManager: Node
+public partial class NetworkManager : Node
 {
 
     //Bitflags from the SteamAPI for sending messages - replicated here to make things easier.
@@ -72,7 +70,7 @@ public partial class NetworkManager: Node
         AddChild(client);
         server = new Server(localConnection);
         AddChild(server);
-        Global.PlayerManager.CreateAndRegisterNewPlayer(Global.instance.clientID);
+        //Global.PlayerManager.CreateAndRegisterNewPlayer(Global.instance.clientID);
 
 
         if (isOffline)
@@ -100,7 +98,7 @@ public partial class NetworkManager: Node
 
     public void launchGame()
     {
-        if(isActive && isHost)
+        if (isActive && isHost)
         {
             server.SendServerCommandLaunchGame();
         }
@@ -146,7 +144,7 @@ public partial class NetworkManager: Node
         {
             networkDebugLog("Connecting to server at: " + steamID + " failed!");
         }
- 
+
     }
 
     public static ulong getConnectionRemoteID(HSteamNetConnection remote)
@@ -205,7 +203,7 @@ public partial class NetworkManager: Node
         Marshal.Copy(ptr, retval, 0, cbSize);
         return retval;
     }
-    
+
 
 
     /// <summary>
@@ -231,7 +229,7 @@ public partial class NetworkManager: Node
             // but the native message currently can't be edited via ptr, even with unsafe code
             Marshal.Copy(data, 0, msg.m_pData, data.Length);
 
-            msg.m_nFlags = NetworkManager.k_nSteamNetworkingSend_ReliableNoNagle;
+            msg.m_nFlags = sendFlags;
             msg.m_conn = target;
             msg.m_idxLane = lane;
             // Copies the bytes of the managed message back into the native structure located at ptr

@@ -1,12 +1,12 @@
 ﻿using Godot;
+using Google.Protobuf;
 using NetworkMessages;
 using Steamworks;
 using System;
 using System.Collections.Generic;
 using static NetworkManager;
-using Google.Protobuf;
-public partial class Server: Node
-    {
+public partial class Server : Node
+{
 
     public List<HSteamNetConnection> clients = new();
     public HSteamListenSocket listenSocket = new();
@@ -51,7 +51,7 @@ public partial class Server: Node
             case ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_ClosedByPeer:
                 clients.Remove(conn);
                 outgoingFramePacket.PlayerLeft.Add(NetworkManager.getConnectionRemoteID(conn));
-                SteamNetworkingSockets.CloseConnection(conn, 0, "Connection closed by peer.",true);
+                SteamNetworkingSockets.CloseConnection(conn, 0, "Connection closed by peer.", true);
                 Global.NetworkManager.networkDebugLog("Connection from ID: " + @event.m_info.m_identityRemote.GetSteamID64() + " closed by peer.");
                 break;
             default:
@@ -110,7 +110,7 @@ public partial class Server: Node
         //Global.NetworkManager.networkDebugLog("Server starting broadcast of messagetype: " + message.Type);
         foreach (HSteamNetConnection c in clients)
         {
-            SendSteamMessage(c,message);
+            SendSteamMessage(c, message);
         }
     }
 

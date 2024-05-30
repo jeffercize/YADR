@@ -1,16 +1,14 @@
 using Godot;
-using NetworkMessages;
 using Steamworks;
 using System;
-using System.Runtime.InteropServices;
 
 public partial class MPDebugStatusPanel : Panel
 {
-	// Called when the node enters the scene tree for the first time.
-	public override void _Ready()
-	{
+    // Called when the node enters the scene tree for the first time.
+    public override void _Ready()
+    {
         Client.ChatMessageReceived += onChatMessageReceived;
-	}
+    }
 
     private void onChatMessageReceived(string message, ulong sender)
     {
@@ -25,11 +23,11 @@ public partial class MPDebugStatusPanel : Panel
 
     // Called every frame. 'delta' is the elapsed time since the previous frame.
     public override void _Process(double delta)
-	{
-	}
+    {
+    }
 
-	 public void onSendPressed()
-	{
+    public void onSendPressed()
+    {
         if (GetNode<TextEdit>("ChatPanel/chatInput").Text != String.Empty)
         {
             Global.NetworkManager.client.outgoingFramePacket.ChatMessages.Add(Global.NetworkManager.ChatMessageConstructor(GetNode<TextEdit>("ChatPanel/chatInput").Text));

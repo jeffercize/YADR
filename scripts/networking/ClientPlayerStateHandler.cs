@@ -1,13 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using NetworkMessages;
-using static NetworkManager;
-using Google.Protobuf;
-
-public class ClientPlayerStateHandler
+﻿public class ClientPlayerStateHandler
 {
     /*
     public delegate void NetworkPlayerStatePositionEventHandler(PlayerStatePositionMessage message);

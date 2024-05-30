@@ -1,6 +1,4 @@
 using Godot;
-using Steamworks;
-using System;
 /// <summary>
 /// Controls the UI elements on the Waiting Room Screen
 /// </summary>
