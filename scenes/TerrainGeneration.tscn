@@ -1,14 +1,10 @@
-[gd_scene load_steps=14 format=3 uid="uid://cofnhdcclon1w"]
+[gd_scene load_steps=10 format=3 uid="uid://cofnhdcclon1w"]
 
 [ext_resource type="Script" path="res://scripts/terrain/TerrainGeneration.cs" id="1_btvwy"]
-[ext_resource type="Terrain3DStorage" uid="uid://dkqwrhjieitw7" path="res://terrainData/TerrainGeneration.res" id="4_muabl"]
 [ext_resource type="Script" path="res://scripts/terrain/RuntimeNavigationBaker.gd" id="5_445ur"]
-[ext_resource type="Terrain3DTextureList" uid="uid://dal3jhw6241qg" path="res://terrainData/texture_list.tres" id="6_sj1ir"]
-[ext_resource type="Terrain3DMaterial" uid="uid://dpd54oijhh4vb" path="res://terrainData/TerrainGeneration.tres" id="7_ov2mj"]
 [ext_resource type="Script" path="res://scripts/terrain/GrassMeshMaker.cs" id="8_hyt63"]
 [ext_resource type="Script" path="res://scripts/terrain/WeatherController.cs" id="8_n3tlt"]
 [ext_resource type="Shader" path="res://shaders/terrain/grassShader.gdshader" id="9_07r24"]
-[ext_resource type="Script" path="res://scripts/terrain/AStar.cs" id="9_ntjq2"]
 
 [sub_resource type="NavigationMesh" id="NavigationMesh_vs6am"]
 geometry_parsed_geometry_type = 1
@@ -37,17 +33,6 @@ script = ExtResource("5_445ur")
 enabled = false
 template = SubResource("NavigationMesh_vs6am")
 
-[node name="Terrain3D" type="Terrain3D" parent="."]
-storage = ExtResource("4_muabl")
-material = ExtResource("7_ov2mj")
-texture_list = ExtResource("6_sj1ir")
-
-[node name="CSGBox3D" type="CSGBox3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)
-visibility_range_end = 1.0
-use_collision = true
-size = Vector3(20000, 1.2, 20000)
-
 [node name="GrassMeshMaker" type="Node3D" parent="."]
 script = ExtResource("8_hyt63")
 
@@ -57,6 +42,3 @@ multimesh = SubResource("MultiMesh_3gj5r")
 
 [node name="World" type="Node3D" parent="."]
 script = ExtResource("8_n3tlt")
-
-[node name="PathGeneratorTest" type="Node" parent="."]
-script = ExtResource("9_ntjq2")

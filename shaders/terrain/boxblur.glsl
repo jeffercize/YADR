@@ -22,6 +22,7 @@ void main() {
         for (int dy = -radius; dy <= radius; dy++) {
             ivec2 neighborCoord = coord + ivec2(dx, dy);
             vec2 uv = vec2(neighborCoord) / vec2(imageWidth, imageHeight);
+            uv = clamp(uv, 0.0, 1.0);
             if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) {
                 vec4 neighborColor = texture(inputImage, uv);
                 sum += neighborColor;

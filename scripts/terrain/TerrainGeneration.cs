@@ -230,212 +230,11 @@ public partial class TerrainGeneration : Node3D
 
         //Get Data
         var blendbyteData = rd.TextureGetData(blendOutputTex, 0);
-        Image final_img = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
-        final_img = Image.CreateFromData(x_axis, y_axis, false, Image.Format.Rgf, blendbyteData);
+        Image final_img = Image.CreateFromData(x_axis, y_axis, false, Image.Format.Rgf, blendbyteData);
         return final_img;
     }
 
-    public void GeneratePath(Image innerPathImg, Image pathImg, System.Collections.Generic.Dictionary<float, List<float>>  pathDict, List<Vector3> path_result, int x_axis, int y_axis, System.Collections.Generic.List<float> myKeys)
-    {
-        foreach (var key in myKeys)
-        {
-            var yValues = pathDict[key];
-            foreach (var yVal in yValues.Distinct())
-            {
-                float height = 0.0f;
-                float pathHeight = path_result.FirstOrDefault(p => p.X == key && p.Y == yVal).Z;
-                float midVal = yVal;
-                for (int innerY = (int)MathF.Round(yVal) - 300; innerY < (int)MathF.Round(yVal) + 300; innerY++)
-                {
-                    if (!((int)MathF.Round(key) >= (int)x_axis || (int)MathF.Round(innerY) >= (int)y_axis || (int)MathF.Round(key) < 0 || (int)MathF.Round(innerY) < 0))
-                    {
-                        float mainPath = 0.0f;
-                        float diff = MathF.Abs(innerY - midVal);
-                        float weight = 0.0f;
-
-                        if (innerY > yVal - 30.0f && innerY < yVal + 30.0f)
-                        {
-                            height = pathHeight;
-                            mainPath = 1.0f;
-                            weight = 1.0f;
-                            innerPathImg.SetPixel((int)key, (int)innerY, new Color(height, weight, 0, 0));
-                        }
-                        else if (innerY > yVal - 300.0f && innerY < yVal + 300.0f)
-                        {
-                            height = pathHeight;
-                            weight = Lerp(0.9f, 0.0f, (diff - 30.0f) / 270.0f);
-                        }
-                        Color pixel = pathImg.GetPixel((int)key, (int)innerY);
-                        if (pixel.G != 1)
-                        {
-                            float weightedHeight = (pixel.R * pixel.G + height * weight) / (pixel.G + weight);
-                            float newWeight = Math.Max(pixel.G, weight);
-                            pathImg.SetPixel((int)key, (int)innerY, new Color(height, newWeight, 0, 0));
-                        }
-                    }
-                }
-                for (int innerX = (int)MathF.Round(key) - 300; innerX < (int)MathF.Round(key) + 300; innerX++)
-                {
-                    if (!((int)MathF.Round(innerX) >= (int)x_axis || (int)MathF.Round(yVal) >= (int)y_axis || (int)MathF.Round(innerX) < 0 || (int)MathF.Round(yVal) < 0))
-                    {
-                        float mainPath = 0.0f;
-                        float diff = MathF.Abs(innerX - key);
-                        float weight = 0.0f;
-                        if (innerX > key - 30.0f && innerX < key + 30.0f)
-                        {
-                            height = pathHeight;
-                            mainPath = 1.0f;
-                            weight = 1.0f;
-                            innerPathImg.SetPixel(innerX, (int)MathF.Round(yVal), new Color(height, weight, 0, 0));
-
-                        }
-                        else if (innerX > key - 300.0f && innerX < key + 300.0f)
-                        {
-                            height = pathHeight;
-                            weight = Lerp(0.9f, 0.0f, (diff - 30.0f) / 270.0f);
-                        }
-                        Color pixel = pathImg.GetPixel(innerX, (int)MathF.Round(yVal));
-                        if (pixel.G != 1)
-                        {
-                            float weightedHeight = (pixel.R * pixel.G + height * weight) / (pixel.G + weight);
-                            float newWeight = Math.Max(pixel.G, weight);
-                            pathImg.SetPixel(innerX, (int)MathF.Round(yVal), new Color(height, newWeight, 0, 0));
-                        }
-                    }
-                }
-                // Top-left
-                for (int innerX = (int)MathF.Round(key) - 300, innerY = (int)MathF.Round(yVal) + 300;
-                     innerX < (int)MathF.Round(key) && innerY > (int)MathF.Round(yVal);
-                     innerX++, innerY--)
-                {
-                    if (!((int)MathF.Round(innerX) >= (int)x_axis || innerY >= (int)y_axis || (int)MathF.Round(innerX) < 0 || innerY < 0))
-                    {
-                        float mainPath = 0.0f;
-                        float diff = MathF.Abs(innerX - key);
-                        float weight = 0.0f;
-                        if (innerX > key - 30.0f && innerX < key + 30.0f)
-                        {
-                            height = pathHeight;
-                            mainPath = 1.0f;
-                            weight = 1.0f;
-                            innerPathImg.SetPixel((int)innerX, (int)innerY, new Color(height, weight, 0, 0));
-
-                        }
-                        else if (innerX > key - 300.0f && innerX < key + 300.0f)
-                        {
-                            height = pathHeight;
-                            weight = Lerp(0.9f, 0.0f, (diff - 30.0f) / 270.0f);
-                        }
-                        Color pixel = pathImg.GetPixel(innerX, innerY);
-                        if (pixel.G != 1)
-                        {
-                            float weightedHeight = (pixel.R * pixel.G + height * weight) / (pixel.G + weight);
-                            float newWeight = Math.Max(pixel.G, weight);
-                            pathImg.SetPixel(innerX, innerY, new Color(height, newWeight, 0, 0));
-                        }
-                    }
-                }
-
-                // Top-right
-                for (int innerX = (int)MathF.Round(key) + 300, innerY = (int)MathF.Round(yVal) + 300;
-                     innerX > (int)MathF.Round(key) && innerY > (int)MathF.Round(yVal);
-                     innerX--, innerY--)
-                {
-                    if (!((int)MathF.Round(innerX) >= (int)x_axis || innerY >= (int)y_axis || (int)MathF.Round(innerX) < 0 || innerY < 0))
-                    {
-                        float mainPath = 0.0f;
-                        float diff = MathF.Abs(innerX - key);
-                        float weight = 0.0f;
-                        if (innerX > key - 30.0f && innerX < key + 30.0f)
-                        {
-                            height = pathHeight;
-                            mainPath = 1.0f;
-                            weight = 1.0f;
-                            innerPathImg.SetPixel((int)innerX, (int)innerY, new Color(height, weight, 0, 0));
-                        }
-                        else if (innerX > key - 300.0f && innerX < key + 300.0f)
-                        {
-                            height = pathHeight;
-                            weight = Lerp(0.9f, 0.0f, (diff - 30.0f) / 270.0f);
-                        }
-                        Color pixel = pathImg.GetPixel(innerX, innerY);
-                        if (pixel.G != 1)
-                        {
-                            float weightedHeight = (pixel.R * pixel.G + height * weight) / (pixel.G + weight);
-                            float newWeight = Math.Max(pixel.G, weight);
-                            pathImg.SetPixel(innerX, innerY, new Color(height, newWeight, 0, 0));
-                        }
-                    }
-                }
-
-                // Bottom-right
-                for (int innerX = (int)MathF.Round(key) + 300, innerY = (int)MathF.Round(yVal) - 300;
-                     innerX > (int)MathF.Round(key) && innerY < (int)MathF.Round(yVal);
-                     innerX--, innerY++)
-                {
-                    if (!((int)MathF.Round(innerX) >= (int)x_axis || innerY >= (int)y_axis || (int)MathF.Round(innerX) < 0 || innerY < 0))
-                    {
-                        float mainPath = 0.0f;
-                        float diff = MathF.Abs(innerX - key);
-                        float weight = 0.0f;
-                        if (innerX > key - 30.0f && innerX < key + 30.0f)
-                        {
-                            height = pathHeight;
-                            mainPath = 1.0f;
-                            weight = 1.0f;
-                            innerPathImg.SetPixel((int)innerX, (int)innerY, new Color(height, weight, 0, 0));
-                        }
-                        else if (innerX > key - 300.0f && innerX < key + 300.0f)
-                        {
-                            height = pathHeight;
-                            weight = Lerp(0.9f, 0.0f, (diff - 30.0f) / 270.0f);
-                        }
-                        Color pixel = pathImg.GetPixel(innerX, innerY);
-                        if (pixel.G != 1)
-                        {
-                            float weightedHeight = (pixel.R * pixel.G + height * weight) / (pixel.G + weight);
-                            float newWeight = Math.Max(pixel.G, weight);
-                            pathImg.SetPixel(innerX, innerY, new Color(height, newWeight, 0, 0));
-                        }
-                    }
-                }
-
-                // Bottom-left
-                for (int innerX = (int)MathF.Round(key) - 300, innerY = (int)MathF.Round(yVal) - 300;
-                     innerX < (int)MathF.Round(key) && innerY < (int)MathF.Round(yVal);
-                     innerX++, innerY++)
-                {
-                    if (!((int)MathF.Round(innerX) >= (int)x_axis || innerY >= (int)y_axis || (int)MathF.Round(innerX) < 0 || innerY < 0))
-                    {
-                        float mainPath = 0.0f;
-                        float diff = MathF.Abs(innerX - key);
-                        float weight = 0.0f;
-                        if (innerX > key - 30.0f && innerX < key + 30.0f)
-                        {
-                            height = pathHeight;
-                            mainPath = 1.0f;
-                            weight = 1.0f;
-                            innerPathImg.SetPixel((int)innerX, (int)innerY, new Color(height, weight, 0, 0));
-                        }
-                        else if (innerX > key - 300.0f && innerX < key + 300.0f)
-                        {
-                            height = pathHeight;
-                            weight = Lerp(0.9f, 0.0f, (diff - 30.0f) / 270.0f);
-                        }
-                        Color pixel = pathImg.GetPixel(innerX, innerY);
-                        if (pixel.G != 1)
-                        {
-                            float weightedHeight = (pixel.R * pixel.G + height * weight) / (pixel.G + weight);
-                            float newWeight = Math.Max(pixel.G, weight);
-                            pathImg.SetPixel(innerX, innerY, new Color(height, newWeight, 0, 0));
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    public Image GenerateTerrain(int terrainOffset, int x_axis, int y_axis)
+    public Image GenerateTerrain(int offsetX, int offsetY, int x_axis, int y_axis)
 	{
         Stopwatch stopwatch = Stopwatch.StartNew();
 		//AddChild((Node)terrain, true);
@@ -447,18 +246,23 @@ public partial class TerrainGeneration : Node3D
 		noise.Seed = 1;
         noise.FractalType = FastNoiseLite.FractalTypeEnum.None;
         noise.DomainWarpEnabled = false;
+        //noise.Offset = new Vector3(offsetX, offsetY, 0.0f);
 
-        Image noiseImage = noise.GetImage(x_axis, y_axis);
-        GD.Print($"Time elapsed: {stopwatch.Elapsed}");
-        GD.Print("get noise");
+        Image noiseImage = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
+        GD.Print("New Image at: " + offsetX + "," + offsetY);
+        for(int i = 0; i < x_axis; i++)
+        {
+            for(int j = 0; j < y_axis; j++)
+            {
+                // Get the noise value at the world position
+                float noiseValue = noise.GetNoise2D(i+offsetX, j+offsetY); 
+                // Set the pixel in the image
+                noiseImage.SetPixel(i, j, new Color(noiseValue, 0, 0, 0));
+            }
+        }
+        GD.Print($"Noise Time: {stopwatch.Elapsed}");
+        noiseImage.SavePng("C:\\Users\\jeffe\\test_images\\noise_test"+"("+ offsetX + "," + offsetY + ")"+ ".png");
 
-        noiseImage.Convert(Image.Format.Rgf);
-        noiseImage = ApplyGassianAndBoxBlur(noiseImage, RenderingDevice.DataFormat.R32G32Sfloat);
-        noiseImage.SavePng("C:\\Users\\jeffe\\test_images\\noise_test.png");
-        GD.Print($"Time elapsed: {stopwatch.Elapsed}");
-
-
-        Image img = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
 
 		Curve3D path = new Curve3D();
                 path.AddPoint(new Vector3(300, 0, 1.0f));
@@ -480,44 +284,64 @@ public partial class TerrainGeneration : Node3D
                 path.AddPoint(new Vector3(8192, 2048, 0.0f));
 
         Image pathImg = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
-        GD.Print("GPU Path Generate");
+        stopwatch.Restart();
         path.BakeInterval = 0.1f;
-        pathImg = GPUGeneratePath(noiseImage, x_axis, y_axis, path.GetBakedPoints());
-        GD.Print($"Time elapsed: {stopwatch.Elapsed}");
-        /*        foreach(var point in path.GetBakedPoints())
-                {
-                    GD.Print(point);
-                }*/
+        Vector3[] localPath = path.GetBakedPoints();
+        for (int i = 0; i < localPath.Length; i++)
+        {
+            localPath[i] = new Vector3(localPath[i].X - offsetX, localPath[i].Y - offsetY, localPath[i].Z);
+        }
+        pathImg = noiseImage;//GPUGeneratePath(noiseImage, x_axis, y_axis, localPath);
+        GD.Print($"GPUPath Time Elapsed: {stopwatch.Elapsed}");
         //pathImg.SavePng("C:\\Users\\jeffe\\test_images\\gpu_path_test.png");
 
-        GD.Print("blur");
+        stopwatch.Restart();
         // Run the blur shader
         pathImg = ApplyGassianAndBoxBlur(pathImg, RenderingDevice.DataFormat.R32G32Sfloat);
-        GD.Print($"Time elapsed: {stopwatch.Elapsed}");
+        GD.Print($"Blur Time Elapsed: {stopwatch.Elapsed}");
 
-        //pathImg.SaveWebp("C:\\Users\\jeffe\\test_images\\blur_test_gausbox.webp");
+        //pathImg.SavePng("C:\\Users\\jeffe\\test_images\\blur_test_gausbox.png");
         //ResourceSaver.Save(pathImg, "C:\\Users\\jeffe\\Desktop\\Untitled41\\scripts\\terrain\\map_output.tres");
 
         return pathImg;
     }
-
-    public void AddTerrain(string terrainName, Image mapImage = null, bool wantGrass=true)
+    
+    public void AddTerrain(string terrainName, bool wantGrass=true)
     {
         Stopwatch stopwatch = Stopwatch.StartNew();
-        int x_axis = 8192;//16000; //if you change these a lot of shaders need re-coded
-        int y_axis = 4096;//6000; //if you change these a lot of shaders need re-coded
-        var terrain = (Variant)GetNode(terrainName);
-        terrain.AsGodotObject().Call("set_collision_enabled", false);
-        terrain.AsGodotObject().Set("storage", ClassDB.Instantiate("Terrain3DStorage"));
-        terrain.AsGodotObject().Set("texture_list", ClassDB.Instantiate("Terrain3DTextureList"));
-        terrain.AsGodotObject().Set("texture_list", GD.Load("res://terrainData/texture_list.tres"));
+        int x_axis = 1024;//16000; //if you change these a lot of shaders need re-coded
+        int y_axis = 1024;//6000; //if you change these a lot of shaders need re-coded
+        //var terrain = (Variant)GetNode(terrainName);
+        //terrain.AsGodotObject().Call("set_collision_enabled", false);
+        //terrain.AsGodotObject().Set("storage", ClassDB.Instantiate("Terrain3DStorage"));
+        //terrain.AsGodotObject().Set("texture_list", ClassDB.Instantiate("Terrain3DTextureList"));
+        //terrain.AsGodotObject().Set("texture_list", GD.Load("res://terrainData/texture_list.tres"));
 
-        if(mapImage == null)
+        
+        GrassMeshMaker grassMeshMakerNode = (GrassMeshMaker)GetNode("GrassMeshMaker");
+
+        for(int i = 0; i < 3; i++)
         {
-            mapImage = GenerateTerrain(0, x_axis, y_axis);
+            for(int j = 0; j < 3; j++)
+            {
+                int offsetX = j*x_axis;
+                int offsetY = i*y_axis;
+                Image mapImage = GenerateTerrain(offsetX, offsetY, x_axis, y_axis);
+                //Image mapImage = Image.LoadFromFile("C:\\Users\\jeffe\\test_images\\noise_test.png");
+                TerrainChunk terrainChunk = new TerrainChunk();
+                AddChild(terrainChunk);
+                terrainChunk.BuildCollision(mapImage, x_axis, y_axis, new Vector3(offsetX, 0, offsetY));
+                terrainChunk.BuildMesh(mapImage, x_axis, y_axis, new Vector3(offsetX, 0, offsetY));
+                //terrain.AsGodotObject().Get("storage").AsGodotObject().Call("import_images", new Image[] { mapImage, null, null }, new Vector3(offsetX, 0, offsetY), 0.0f, 400.0f);
+                if (wantGrass)
+                {
+                    GrassMeshMaker myGrassManager = (GrassMeshMaker)grassMeshMakerNode.Duplicate();
+                    grassMeshMakerNode.AddSibling(myGrassManager);
+                    myGrassManager.SetupGrass("/Player", mapImage, offsetX, offsetY, x_axis, y_axis, null, null);
+                }
+            }
         }
-        Global.debugLog("import");
-        terrain.AsGodotObject().Get("storage").AsGodotObject().Call("import_images", new Image[] { mapImage, null, null }, new Vector3(0, 0, 0), 0.0f, 400.0f);
+
         GD.Print($"Time elapsed: {stopwatch.Elapsed}");
         //hole testing
         /*        var terrainUtil = ClassDB.Instantiate("Terrain3DUtil");
@@ -535,22 +359,15 @@ public partial class TerrainGeneration : Node3D
                 }
                 terrain.AsGodotObject().Get("storage").AsGodotObject().Call("force_update_maps", 1);*/
 
-        GD.Print("navigation");
+        //GD.Print("navigation");
         // Enable collision. Enable the first if you wish to see it with Debug/Visible Collision Shapes
         //terrain.AsGodotObject().Call("set_show_debug_collision", true);
-        terrain.AsGodotObject().Call("set_collision_enabled", true);
-
-        //make some grass
-        if (wantGrass) 
-        {
-            GrassMeshMaker GrassMeshMaker = (GrassMeshMaker)GetNode("GrassMeshMaker");
-            GrassMeshMaker.SetupGrass("/Player", mapImage);
-        }
+        //terrain.AsGodotObject().Call("set_collision_enabled", true);
 
         //Enable runtime navigation baking using the terrain
-        Node runtime_nav_baker = GetNode("RuntimeNavigationBaker");
-        runtime_nav_baker.Set("terrain", terrain);
-        runtime_nav_baker.Set("enabled", true);
+        //Node runtime_nav_baker = GetNode("RuntimeNavigationBaker");
+        //runtime_nav_baker.Set("terrain", terrain);
+        //runtime_nav_baker.Set("enabled", true);
         GD.Print($"Terrrain Full Time elapsed: {stopwatch.Elapsed}");
 
     }

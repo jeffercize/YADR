@@ -21,6 +21,7 @@ layout(set = 0, binding = 3) restrict buffer ImageDimensions {
 void main() {
     ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
     vec2 uv = vec2(coord) / vec2(imageWidth, imageHeight);
+    uv = clamp(uv, 0.0, 1.0);
     float pathHeight = 0.1;
     float height = texture(noiseTexture, uv).r;
 
@@ -28,6 +29,10 @@ void main() {
     float distanceToClosest = 10000.0;
     for (int i = 0; i < pathData.length(); i += 1) 
     {
+        if(pathData[i].x < 1.0 || pathData[i].y < 1.0)
+        {
+            continue;
+        }
         float distance = distance(pathData[i].xy, vec2(coord));
         if (distance < distanceToClosest)
         {
@@ -50,23 +55,11 @@ void main() {
         height = height * height * height;
     }
 
-    if (uv.y < 0.2) {
-        height *= uv.y / 0.2;
-    } 
-    else if (uv.y > 0.8) 
-    {
-        height *= (1.0 - uv.y) / 0.2;
-    }
-
-    if (uv.x < 0.2) {
-        height *= uv.x / 0.2;
-    }
-
-    if(distanceToClosest < 20.0 && uv.x > 0.02 && uv.y > 0.02)
+    if(distanceToClosest < 20.0)
     {
         height = closestPoint.z;
     }
-    else if (distanceToClosest < 60.0 && uv.x > 0.02 && uv.y > 0.02)
+    else if (distanceToClosest < 60.0)
     {
         float blendFactor = (distanceToClosest - 20.0) / 40.0;
         height = mix(closestPoint.z, height, blendFactor);

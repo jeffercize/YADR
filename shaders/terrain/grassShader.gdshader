@@ -10,6 +10,9 @@ uniform float grassTotalWidth = 0.3;
 uniform float grassTotalHeight = 1.5;
 
 uniform sampler2D heightMap;
+uniform sampler2D flattenMap;
+uniform sampler2D controlMap;
+
 uniform vec2 heightParams;
 
 //uniform vec4 grassParams;
@@ -149,7 +152,15 @@ void vertex() {
 	{
 		myTime = 1.0;
 	}
-
+	if(distanceToCamera > 300.0)
+	{
+		float factor = clamp((distanceToCamera - 200.0) / 20.0, 0.0, 1.0);
+		VERTEX.y = VERTEX.y * smoothstep(1.0, 0.0, factor);
+	}
+	if (VERTEX.y == 0.0)
+	{
+		VERTEX.y = VERTEX.y - 1.0;
+	}
 
 
 //Rotating the base and leaning\\
