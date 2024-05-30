@@ -30,7 +30,7 @@ public partial class PlayerManager : Node3D
             {
                 foreach (Player player in players.Values)
                 {
-                    ClientPlayerStateHandler.CreateAndSendPlayerPositionMessage(player);
+                    //ClientPlayerStateHandler.CreateAndSendPlayerPositionMessage(player);
                     Global.NetworkManager.networkDebugLog("Client/Host - Sending Position Sync for Player: " + player.clientID);
                 }
                 PlayerStateSyncCounter = 0;
@@ -48,12 +48,12 @@ public partial class PlayerManager : Node3D
         {
             Global.debugLog("Registering new local player with ID: " + clientID);
             player.clientID = Global.instance.clientID;
-            player.input = Global.InputManager.localInput;
+            //player.input = Global.InputManager.localInput;
         }
         else
         {
             Global.debugLog("Registering new remote player with ID: " + clientID);
-            Global.InputManager.BindRemoteClientInput(clientID, player);
+            //Global.InputManager.BindRemoteClientInput(clientID, player);
         }
 
         players.Add(clientID, player);

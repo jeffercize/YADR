@@ -114,7 +114,7 @@ public partial class Player: Character
         leftHoldPointOriginPos = leftHoldPoint.Position;
         rightHoldPointOriginPos = rightHoldPoint.Position;
 
-        InputManager.InputEvent += onInputEvent;
+        //InputManager.InputEvent += onInputEvent;
         Equipment.equipMessage += onEquip;
         Equipment.unequipMessage += onUnequip;
 
@@ -132,12 +132,12 @@ public partial class Player: Character
         }
         else
         {
-            ClientInputHandler.NetworkInputLookDirectionEvent += onNetworkInputLookDirectionEvent;
-            ClientPlayerStateHandler.NetworkPlayerStatePositionEvent += onNetworkPlayerStatePositionEvent;
+           // ClientInputHandler.NetworkInputLookDirectionEvent += onNetworkInputLookDirectionEvent;
+           // ClientPlayerStateHandler.NetworkPlayerStatePositionEvent += onNetworkPlayerStatePositionEvent;
         }
 
     }
-
+    /*
     private void onNetworkPlayerStatePositionEvent(PlayerStatePositionMessage message)
     {
         if (isMe) { return; }
@@ -160,8 +160,8 @@ public partial class Player: Character
 
         //Rotates the entire player (camera is child, so it comes along) on Y (left/right)
         Rotation = new Vector3(0, message.Direction.Y, 0);
-
-    }
+    
+    }*/
 
     private void onUnequip(Equipment equipment, string slotName, Item item)
     {
@@ -172,7 +172,7 @@ public partial class Player: Character
     {
         throw new NotImplementedException();
     }
-
+    /*
     private void onInputEvent(ulong clientID, ActionMessage actionMessage)
     {
         if (clientID==this.clientID && actionMessage != null)
@@ -182,7 +182,7 @@ public partial class Player: Character
                 onJump();
             }
         }
-    }
+    }*/
 
     public void ForceSyncState(Player state)
     {
@@ -219,7 +219,7 @@ public partial class Player: Character
             //Rotates the entire player (camera is child, so it comes along) on Y (left/right)
             Rotation = new Vector3(0, Rotation.Y - input.lookDelta.X * (float)delta, 0);
             input.lookDelta = Vector2.Zero;
-            ClientInputHandler.CreateAndSendInputLookDirectionMessage(Global.instance.clientID, new Vector3(pov.Rotation.X, Rotation.Y, 0));
+            //ClientInputHandler.CreateAndSendInputLookDirectionMessage(Global.instance.clientID, new Vector3(pov.Rotation.X, Rotation.Y, 0));
         }
         // debugPointer();
 
@@ -292,7 +292,7 @@ public partial class Player: Character
             PlayerStateSyncCounter += delta;
             if (PlayerStateSyncCounter > PlayerStateSyncTimer)
             {
-                ClientPlayerStateHandler.CreateAndSendPlayerPositionMessage(this);
+                //ClientPlayerStateHandler.CreateAndSendPlayerPositionMessage(this);
                 Global.NetworkManager.networkDebugLog("Client - Sending Position Sync for me: " + clientID);
                 PlayerStateSyncCounter = 0;
             }

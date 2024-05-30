@@ -20,15 +20,12 @@ public partial class UIManager : Control
         //playerInventoryUI.connectedInventory.debugGen();
 
         //Event subscription
-        InputManager.InputEvent += inputHandler;
+        //InputManager.InputEvent += inputHandler;
     }
 
-    private void inputHandler(ulong clientID, ActionMessage actionMessage)
+    private void inputHandler(ulong clientID)
     {
-        if (actionMessage.ActionType == ActionType.OpenInventory && actionMessage.ActionState == ActionState.Pressed)
-        {
-            ToggleInventory();
-        }
+
     }
 
     public void connectToPlayer(Player player)

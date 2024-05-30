@@ -153,20 +153,11 @@ public partial class DEPRECPLAUER : Character
         Equipment.equipMessage += onEquip;
         Equipment.unequipMessage += onUnequip;
 
-        InputManager.InputEvent += onInputEvent;
+      
 
     }
 
-    private void onInputEvent(ulong clientID, ActionMessage actionMessage)
-    {
-        if (Global.instance.isMe(clientID) && actionMessage!=null)
-        {
-            if (actionMessage.ActionType == ActionType.Jump && actionMessage.ActionState == ActionState.Pressed)
-            {
-                onJump();
-            }
-        }
-    }
+
 
 
 

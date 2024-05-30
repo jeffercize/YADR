@@ -6,7 +6,7 @@ using System;
 
 public class ClientInputHandler
     {
-
+    /*
     public delegate void NetworkInputActionEventHandler(InputActionMessage message);
     public static event NetworkInputActionEventHandler NetworkInputActionEvent = delegate { };
 
@@ -164,6 +164,6 @@ public class ClientInputHandler
         NetworkManager.SendSteamMessage(Global.NetworkManager.client.connectionToServer, MessageType.InputLookDirection, msg);
     }
 
-
+    */
 }
 

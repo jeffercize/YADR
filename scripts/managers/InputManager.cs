@@ -6,7 +6,7 @@ using System.Net;
 
 public partial class InputManager: Node
 {
-
+    /*
     public delegate void InputEventHandler(ulong clientID, ActionMessage actionMessage);
     public static event InputEventHandler InputEvent = delegate { };
 
@@ -179,5 +179,5 @@ public partial class InputManager: Node
     }
 
 
-
+    */
 }

@@ -6,7 +6,7 @@ using NetworkMessages;
 /// </summary>
 public class ClientChatHandler
 {
-
+    /*
     public delegate void NetworkChatEventHandler(ChatBasicMessage message);
     /// <summary>
     /// Local (non-networked) event that fires when a chat message is received from the network
@@ -58,6 +58,6 @@ public class ClientChatHandler
         chatMessage.ChatString = chatString;
 
         return chatMessage;
-    }
+    }*/
 }
 

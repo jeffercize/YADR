@@ -207,78 +207,6 @@ public partial class NetworkManager: Node
     }
     
 
-    public static YADRNetworkMessageWrapper DecodeSteamMessage(SteamNetworkingMessage_t message, out long sender)
-    {
-        byte[] data = NetworkManager.IntPtrToBytes(message.m_pData, message.m_cbSize);
-        YADRNetworkMessageWrapper wrapper = YADRNetworkMessageWrapper.Parser.ParseFrom(data);
-        sender = (long)message.m_identityPeer.GetSteamID64();
-        return wrapper;
-    }
-
-    public static YADRNetworkMessageWrapper WrapMessage(MessageType type, IMessage message)
-    {
-        YADRNetworkMessageWrapper wrappedMessage = new YADRNetworkMessageWrapper();
-        wrappedMessage.Type=type;
-
-        switch (type)
-        {
-            case MessageType.ChatDebug:
-                wrappedMessage.ChatDebug = (ChatDebugMessage)message;
-                break;
-            case MessageType.ChatBasic:
-                wrappedMessage.ChatBasic = (ChatBasicMessage)message;
-                break;
-
-            case MessageType.InputDebug:
-                wrappedMessage.InputDebug = (InputDebugMessage)message;
-                break;
-            case MessageType.InputAction:
-                wrappedMessage.InputAction = (InputActionMessage)message;
-                break;
-            case MessageType.InputMovementDirection:
-                wrappedMessage.InputMovementDirection = (InputMovementDirectionMessage)message;
-                break;
-            case MessageType.InputLookDelta:
-                wrappedMessage.InputLookDelta = (InputLookDeltaMessage)message;
-                break;
-            case MessageType.InputLookDirection:
-                wrappedMessage.InputLookDirection = (InputLookDirectionMessage)message;
-                break;
-            case MessageType.InputFullCapture:
-                wrappedMessage.InputFullCapture = (InputFullCaptureMessage)message;
-                break;
-
-            case MessageType.ServerAlertDebug:
-                wrappedMessage.ServerAlertDebug = (ServerAlertDebugMessage)message;
-                break;
-            case MessageType.ServerAlertNewPlayer:
-                wrappedMessage.ServerAlertNewPlayer = (ServerAlertNewPlayerMessage)message;
-                break;
-
-            case MessageType.ServerCommandDebug:
-                wrappedMessage.ServerCommandDebug = (ServerCommandDebugMessage)message;
-                break;
-            case MessageType.ServerCommandSpawnPlayer:
-                wrappedMessage.ServerCommandSpawnPlayer = (ServerCommandSpawnPlayerMessage)message;
-                break;
-            case MessageType.ServerCommandLaunchGame:
-                wrappedMessage.ServerCommandLaunchGame = (ServerCommandLaunchGameMessage)message;
-                break;
-
-            case MessageType.PlayerStatePosition: wrappedMessage.PlayerStatePosition = (PlayerStatePositionMessage)message; break;
-
-            default:
-                break;
-        }
-        return wrappedMessage;
-    }
-
-
-    public static bool SendSteamMessage(HSteamNetConnection target, MessageType type, IMessage message ,int sendFlags = k_nSteamNetworkingSend_ReliableNoNagle)
-    {
-
-        return SendSteamMessage(target, WrapMessage(type, message), sendFlags);
-    }
 
     /// <summary>
     /// Sends a message using the SteamNetworkingSockets library. In theory, this should be agnostic to steam vs non-steam networking.
@@ -288,7 +216,7 @@ public partial class NetworkManager: Node
     /// <param name="data"></param>
     /// <param name="sendFlags"></param>
     /// <returns></returns>
-    public static bool SendSteamMessage(HSteamNetConnection target, YADRNetworkMessageWrapper message, int sendFlags = k_nSteamNetworkingSend_ReliableNoNagle)
+    public static bool SendSteamMessage(HSteamNetConnection target, IMessage message, ushort lane = 0, int sendFlags = k_nSteamNetworkingSend_ReliableNoNagle)
     {
         var msgPtrsToSend = new IntPtr[] { IntPtr.Zero };
         var ptr = IntPtr.Zero;
@@ -305,7 +233,7 @@ public partial class NetworkManager: Node
 
             msg.m_nFlags = NetworkManager.k_nSteamNetworkingSend_ReliableNoNagle;
             msg.m_conn = target;
-            msg.m_idxLane = 1;
+            msg.m_idxLane = lane;
             // Copies the bytes of the managed message back into the native structure located at ptr
             Marshal.StructureToPtr(msg, ptr, false);
 

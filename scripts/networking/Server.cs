@@ -16,6 +16,7 @@ public partial class Server: Node
 
 
     protected Callback<SteamNetConnectionStatusChangedCallback_t> SteamNetConnectionStatusChange;
+    public FramePacket outgoingFramePacket = new();
 
     public delegate void NewPlayerJoinEventHandler(ulong clientID);
     public static event NewPlayerJoinEventHandler NewPlayerJoinEvent = delegate { };
@@ -64,40 +65,22 @@ public partial class Server: Node
         foreach (HSteamNetConnection c in clients)
         {
             if (NetworkManager.getConnectionRemoteID(c) == clientID) { continue; }
-            ServerAlertNewPlayerMessage msg = new();
-            Identity id = new Identity();
-            id.SteamID = (long)NetworkManager.getConnectionRemoteID(c);
-            id.Name = SteamFriends.GetFriendPersonaName((CSteamID)(ulong)id.SteamID);
-            msg.NewPlayer = id;
-            Global.NetworkManager.networkDebugLog("sending out new player notice ID: " + msg.NewPlayer.SteamID);
-            SendSteamMessage(conn, WrapMessage(MessageType.ServerAlertNewPlayer, msg));
+
+            Global.NetworkManager.networkDebugLog("sending out new player notice ID: ");
+
         }
 
-        ServerAlertNewPlayerMessage message = new();
-        Identity identity = new Identity();
-        identity.SteamID = (long)clientID;
-        identity.Name = SteamFriends.GetFriendPersonaName((CSteamID)(ulong)identity.SteamID);
-        message.NewPlayer = identity;
-        Global.NetworkManager.networkDebugLog("sending out new player notice2 ID: " + message.NewPlayer.SteamID);
-        BroadcastMessage(WrapMessage(MessageType.ServerAlertNewPlayer,message));
+
+        Global.NetworkManager.networkDebugLog("sending out new player notice2 ID: ");
+        //BroadcastMessage(WrapMessage(MessageType.ServerAlertNewPlayer,message));
     }
 
 
-    public static ServerAlertNewPlayerMessage ConstructNewPlayerMessage(ulong clientID)
-    {
-        ServerAlertNewPlayerMessage msg = new();
-        Identity id = new Identity();
-        id.SteamID = (long)clientID;
-        id.Name = SteamFriends.GetFriendPersonaName((CSteamID)(ulong)id.SteamID);
-        msg.NewPlayer = id;
-        return msg;
-    }
+
 
     public void SendServerCommandLaunchGame()
     {
-        ServerCommandLaunchGameMessage msg = new();
-        msg.Mode = 1;
-        BroadcastMessage(WrapMessage(MessageType.ServerCommandLaunchGame, msg));
+
         Global.NetworkManager.networkDebugLog("Server - Broadcasting server launch command");
     }
 
@@ -111,84 +94,56 @@ public partial class Server: Node
             {
                 if (messages[i] == IntPtr.Zero) { continue; }
                 SteamNetworkingMessage_t steamMsg = SteamNetworkingMessage_t.FromIntPtr(messages[i]);
-                Global.NetworkManager.networkDebugLog("SERVER: LANE:" + steamMsg.m_idxLane);
-                YADRNetworkMessageWrapper wrappedMessage = DecodeSteamMessage(steamMsg, out long sender);
-                handleNetworkData(wrappedMessage,sender);
+                FramePacket framePacket = FramePacket.Parser.ParseFrom(NetworkManager.IntPtrToBytes(steamMsg.m_pData, steamMsg.m_cbSize));
+                switch (steamMsg.m_idxLane)
+                {
+                    case 0:
+                        handleFramePacket(framePacket);
+                        break;
+                    default:
+                        Global.NetworkManager.networkDebugLog("Client - Received a message on an unexpected lane. Lane: " + steamMsg.m_idxLane);
+                        break;
+                }
+                //Free the memory for the message
+                SteamNetworkingMessage_t.Release(messages[i]);
             }
         }
+        outgoingFramePacket.Tick = 0;
+        outgoingFramePacket.Sender = Global.instance.clientID;
+        BroadcastMessage(outgoingFramePacket);
+        outgoingFramePacket = new FramePacket();
+
     }
 
-    private void handleNetworkData(YADRNetworkMessageWrapper message,long sender)
+    private void handleFramePacket(FramePacket framePacket)
     {
-        switch (message.Type)
+        foreach (string chatmessage in framePacket.ChatMessages)
         {
-
-            case MessageType.ChatBasic:
-                BroadcastMessage(message);
-                break;
-
-
-            case MessageType.InputAction:
-                BroadcastMessageWithExclusion(sender, message);
-                break;
-            case MessageType.InputMovementDirection:
-                BroadcastMessageWithExclusion(sender, message);
-                break;
-            case MessageType.InputLookDelta:
-                BroadcastMessageWithExclusion(sender, message);
-                break;
-            case MessageType.InputLookDirection:
-                BroadcastMessageWithExclusion(sender, message);
-                break;
-            case MessageType.InputFullCapture:
-                BroadcastMessageWithExclusion(sender, message);
-                break;
-
-            case MessageType.PlayerStatePosition:
-                Global.NetworkManager.networkDebugLog("Server - got a pos sync for: " + message.PlayerStatePosition.PlayerIdentity.SteamID);
-                BroadcastMessageWithExclusion(sender, message);
-                break;
-
-            case MessageType.ServerAlertNewPlayer:
-                break;
-
-            case MessageType.ServerCommandSpawnPlayer:
-                break;
-            case MessageType.ServerCommandLaunchGame:
-                BroadcastMessage(message);
-                break;
-
-            default:
-                break;
+            outgoingFramePacket.ChatMessages.Add(chatmessage);
         }
     }
 
-
-    public void BroadcastMessage(YADRNetworkMessageWrapper message)
+    public void BroadcastMessage(IMessage message)
     {
         //Global.NetworkManager.networkDebugLog("Server starting broadcast of messagetype: " + message.Type);
         foreach (HSteamNetConnection c in clients)
         {
-            NetworkManager.SendSteamMessage(c,message);
+            SendSteamMessage(c,message);
         }
     }
 
-    public void BroadcastMessageWithExclusion(long exclude, YADRNetworkMessageWrapper message)
+    public void BroadcastMessageWithExclusion(ulong exclude, IMessage message)
     {
-       // Global.NetworkManager.networkDebugLog("Server starting broadcast of messagetype: " + message.Type + " while excluding ID: " + exclude);
-       if (message.Type == MessageType.PlayerStatePosition)
-        {
-            Global.NetworkManager.networkDebugLog("GUHGUHGUHGU: " + message.PlayerStatePosition.PlayerIdentity.SteamID);
-        }
+
         foreach (HSteamNetConnection c in clients)
         {
             SteamNetConnectionInfo_t info = new();
             SteamNetworkingSockets.GetConnectionInfo(c, out info);
-            if (info.m_identityRemote.GetSteamID64() == (ulong)exclude)
+            if (info.m_identityRemote.GetSteamID64() == exclude)
             {
                 continue;
             }
-            NetworkManager.SendSteamMessage(c, message);
+            SendSteamMessage(c, message);
         }
     }
 
