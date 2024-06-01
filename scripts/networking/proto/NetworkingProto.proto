@@ -9,8 +9,7 @@ message FramePacket
 	optional double timestamp = 3;
 
 	repeated Chat chatMessages = 4;
-	optional string adminCommand = 5;
-	optional string adminParam = 6;
+	repeated Command commands = 5;
 	
 	repeated uint64 playerList = 90;
 	repeated uint64 playerLeft = 91;
@@ -24,6 +23,13 @@ message Chat
 {
 	Identity sender = 1;
 	string message = 2;
+}
+
+message Command
+{
+	string command = 1;
+	string param = 2;
+	repeated string extraParams = 3;
 }
 
 message GameObject

@@ -1,4 +1,5 @@
 ﻿using Godot;
+using Google.Protobuf;
 using NetworkMessages;
 using Steamworks;
 using System;
@@ -12,6 +13,13 @@ using static NetworkManager;
 /// </summary>
 public partial class Client : Node
 {
+    public float incomingBandwidthUsed = 0;
+    public float outgoingBandwidthUsed = 0;
+    public float totalBandwidthUsed = 0;   
+    public float incomingBandwidth = 0;
+    public float outgoingBandwidth = 0;
+    public float totalBandwidth = 0;
+
 
     public delegate void ChatMessageEventHandler(string message, ulong sender);
     public static event ChatMessageEventHandler ChatMessageReceived;
@@ -23,7 +31,7 @@ public partial class Client : Node
     public static event PlayerLeftEventHandler PlayerLeft;
 
     public FramePacket outgoingFramePacket = new();
-
+    public Dictionary<ulong,FramePacket> framePacketBuffer = new();
 
     /// <summary>
     /// The maximum number of messages the Client will attempt to handle per frame. I have no clue what the concequences of this are, in either direction.
@@ -108,7 +116,12 @@ public partial class Client : Node
             SteamNetworkingMessage_t.Release(messages[i]);
         }
 
-        outgoingFramePacket.Tick = 0;
+
+    }
+
+    public override void _PhysicsProcess(double delta)
+    {
+        outgoingFramePacket.Tick = Global.getTick();
         outgoingFramePacket.Sender = Global.instance.clientID;
         SendSteamMessage(connectionToServer, outgoingFramePacket);
         outgoingFramePacket = new FramePacket();
@@ -131,6 +144,24 @@ public partial class Client : Node
         if (framePacket.PlayerList.Count > 0)
         {
             peers = framePacket.PlayerList.Clone().ToList();
+        }
+        foreach (Command command in framePacket.Commands)
+        {
+            Global.NetworkManager.networkDebugLog("Client - Received a command: " + command.Command_);
+            switch (command.Command_)
+            {
+                case "startgame":
+                    Global.NetworkManager.networkDebugLog("Client - Received a command to launch the game");
+                    Global.instance.StartGame();
+                    break;
+                default:
+                    Global.NetworkManager.networkDebugLog("Client - Received a command of an unexpected type: " + command.Command_);
+                    break;
+            }
+        }
+        if (framePacket.Tick!=0)
+        {
+            framePacketBuffer.Add(framePacket.Tick, framePacket);
         }
     }
 }

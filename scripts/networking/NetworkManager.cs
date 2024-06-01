@@ -100,7 +100,7 @@ public partial class NetworkManager : Node
     {
         if (isActive && isHost)
         {
-            server.SendServerCommandLaunchGame();
+           
         }
         else
         {

@@ -1,4 +1,5 @@
 using Godot;
+using NetworkMessages;
 using System;
 
 public partial class MainMenu : Control
@@ -30,7 +31,7 @@ public partial class MainMenu : Control
         GetNode<AudioStreamPlayer>("/root/main/uisfx").Play();
         GetNode<AudioStreamPlayer>("/root/main/music").Stop();
         //Global.NetworkManager.startServer();
-        Global.NetworkManager.launchGame();
+        Global.NetworkManager.client.outgoingFramePacket.Commands.Add(new Command { Command_ = "startgame" });
 
 
 
