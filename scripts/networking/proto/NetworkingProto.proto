@@ -10,6 +10,9 @@ message FramePacket
 
 	repeated Chat chatMessages = 4;
 	repeated Command commands = 5;
+
+	repeated PlayerInput inputs = 6;
+	repeated PlayerState states = 7;
 	
 	repeated uint64 playerList = 90;
 	repeated uint64 playerLeft = 91;
@@ -109,8 +112,9 @@ message WorldState
 message PlayerInput
 {
 	Identity clientID = 4;
-	repeated Action action = 1;
+	repeated Action actions = 1;
 	Vec2 movementDirection = 2;
+	optional Vec2 lookDelta = 5;
 	Vec3 lookDirection = 3;
 }
 message Vec2

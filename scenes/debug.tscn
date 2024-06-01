@@ -1,0 +1,40 @@
+[gd_scene load_steps=7 format=3 uid="uid://dnnkymhffmiau"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_kchqd"]
+size = Vector3(25, 1, 25)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_d7tcr"]
+albedo_color = Color(0.336608, 0.336608, 0.336608, 1)
+
+[sub_resource type="ConcavePolygonShape3D" id="ConcavePolygonShape3D_is38h"]
+data = PackedVector3Array(-12.5, 0.5, 12.5, 12.5, 0.5, 12.5, -12.5, -0.5, 12.5, 12.5, 0.5, 12.5, 12.5, -0.5, 12.5, -12.5, -0.5, 12.5, 12.5, 0.5, -12.5, -12.5, 0.5, -12.5, 12.5, -0.5, -12.5, -12.5, 0.5, -12.5, -12.5, -0.5, -12.5, 12.5, -0.5, -12.5, 12.5, 0.5, 12.5, 12.5, 0.5, -12.5, 12.5, -0.5, 12.5, 12.5, 0.5, -12.5, 12.5, -0.5, -12.5, 12.5, -0.5, 12.5, -12.5, 0.5, -12.5, -12.5, 0.5, 12.5, -12.5, -0.5, -12.5, -12.5, 0.5, 12.5, -12.5, -0.5, 12.5, -12.5, -0.5, -12.5, 12.5, 0.5, 12.5, -12.5, 0.5, 12.5, 12.5, 0.5, -12.5, -12.5, 0.5, 12.5, -12.5, 0.5, -12.5, 12.5, 0.5, -12.5, -12.5, -0.5, 12.5, 12.5, -0.5, 12.5, -12.5, -0.5, -12.5, 12.5, -0.5, 12.5, 12.5, -0.5, -12.5, -12.5, -0.5, -12.5)
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_yj137"]
+sky_top_color = Color(0.372469, 0.520041, 0.780201, 1)
+
+[sub_resource type="Sky" id="Sky_2xin2"]
+sky_material = SubResource("ProceduralSkyMaterial_yj137")
+
+[sub_resource type="Environment" id="Environment_p2gjk"]
+background_mode = 2
+sky = SubResource("Sky_2xin2")
+ambient_light_source = 3
+ambient_light_color = Color(0.260992, 0.476973, 0.987729, 1)
+
+[node name="debug" type="Node3D"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_kchqd")
+skeleton = NodePath("")
+surface_material_override/0 = SubResource("StandardMaterial3D_d7tcr")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="MeshInstance3D"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="MeshInstance3D/StaticBody3D"]
+shape = SubResource("ConcavePolygonShape3D_is38h")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.340199, 0.940353, 2.56333e-08, -0.577179, 0.208811, 0.78947, 0.742381, -0.268577, 0.613789, 0, 7.24439, 10.6856)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_p2gjk")

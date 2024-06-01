@@ -1,4 +1,5 @@
 ﻿using Godot;
+using NetworkMessages;
 using System;
 public partial class Player : Character
 {
@@ -10,7 +11,7 @@ public partial class Player : Character
     //Core properties of Player
     public Equipment equipment;
     public Inventory inventory;
-    public PlayerInputData input;
+    public PlayerInput input;
     public ulong clientID = 0;
     public bool spawned = false;
     public bool isMe = false;
@@ -124,6 +125,7 @@ public partial class Player : Character
             Global.UIManager.connectToPlayer(this);
             Input.MouseMode = Input.MouseModeEnum.Captured;
             Global.InputManager.SetProcessInput(true);
+            input = Global.InputManager.frameInput;
         }
         else
         {
@@ -209,11 +211,11 @@ public partial class Player : Character
         if (isMe)
         {
             //Rotates the camera on X (Up/Down) and clamps so it doesnt go too far.
-            pov.Rotation = new Vector3((float)Mathf.Clamp(pov.Rotation.X - input.lookDelta.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
+            pov.Rotation = new Vector3((float)Mathf.Clamp(pov.Rotation.X - Global.InputManager.frameInput.LookDelta.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
 
             //Rotates the entire player (camera is child, so it comes along) on Y (left/right)
-            Rotation = new Vector3(0, Rotation.Y - input.lookDelta.X * (float)delta, 0);
-            input.lookDelta = Vector2.Zero;
+            Rotation = new Vector3(0, Rotation.Y - Global.InputManager.frameInput.LookDelta.X * (float)delta, 0);
+            Global.InputManager.frameInput.LookDelta = new Vec2() { X = 0, Y = 0 };
             //ClientInputHandler.CreateAndSendInputLookDirectionMessage(Global.instance.clientID, new Vector3(pov.Rotation.X, Rotation.Y, 0));
         }
         // debugPointer();
@@ -273,7 +275,11 @@ public partial class Player : Character
     {
         handleInputDirection(delta);
         handleJumpingAndFalling(delta);
-        handleLookingDirection(delta);
+        if (!isMe)
+        {
+            handleLookingDirection(delta);
+        }
+
 
         //Upate our vector and shoot it off to the physics engine
         Velocity = newVelocity;
@@ -281,25 +287,14 @@ public partial class Player : Character
 
         //Velocity is updated by the physics engine at this point, store it to modify next frame.
         newVelocity = Velocity;
-
-        if (isMe)
-        {
-            PlayerStateSyncCounter += delta;
-            if (PlayerStateSyncCounter > PlayerStateSyncTimer)
-            {
-                //ClientPlayerStateHandler.CreateAndSendPlayerPositionMessage(this);
-                Global.NetworkManager.networkDebugLog("Client - Sending Position Sync for me: " + clientID);
-                PlayerStateSyncCounter = 0;
-            }
-        }
     }
 
     private void handleLookingDirection(double delta)
     {
-        pov.Rotation = new Vector3((float)Mathf.Clamp(pov.Rotation.X - input.lookDelta.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
+        pov.Rotation = new Vector3((float)Mathf.Clamp(pov.Rotation.X - Global.InputManager.frameInput.LookDelta.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
         //Rotates the entire player (camera is child, so it comes along) on Y (left/right)
-        Rotation = new Vector3(0, Rotation.Y - input.lookDelta.X * (float)delta, 0);
-        input.lookDelta = Vector2.Zero;
+        Rotation = new Vector3(0, Rotation.Y - Global.InputManager.frameInput.LookDelta.X * (float)delta, 0);
+        Global.InputManager.frameInput.LookDelta = new Vec2();
     }
 
     private void handleJumpingAndFalling(double delta)
@@ -349,7 +344,7 @@ public partial class Player : Character
     private void handleInputDirection(double delta)
     {
         //Collect our current Input direction (drop the Y piece), and multiply it by our Transform Basis, rotating it so that forward input becomes forward in the direction we are facing
-        Vector3 dir = Transform.Basis * new Vector3(input.direction.Y * maxSpeedX, 0, input.direction.X * maxSpeedZ);
+        Vector3 dir = Transform.Basis * new Vector3(Global.InputManager.frameInput.MovementDirection.Y * maxSpeedX, 0, Global.InputManager.frameInput.MovementDirection.X * maxSpeedZ);
 
         //Create our desired vector, the direction we're going at max speed
         Vector3 targetVec = new Vector3(dir.X, 0, dir.Z);

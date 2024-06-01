@@ -13,10 +13,7 @@ public partial class Global : Node
     /// </summary>
     public static UIManager UIManager;
 
-    /// <summary>
-    /// Stores a reference to the LevelManager node, grabbed from the main scene when Global is autoloaded. The 3D world is handled thru this node, and all 3D objects should appear as a child of this node.
-    /// </summary>
-    public static LevelManager LevelManager;
+
 
     /// <summary>
     /// Stores a reference to the NetworkManager node, grabbed from the main scene when Global is autoloaded. All networking is handled thru this node. NOTE: THIS INCLUDES SINGLEPLAYER (virtual server).
@@ -27,6 +24,7 @@ public partial class Global : Node
     /// Stores a reference to the InputManager node, grabbed from the main scene when Global is autoloaded.
     /// </summary>
     public static InputManager InputManager;
+
 
     /// <summary>
     /// Stores a reference to the AudioManager node, grabbed from the main scene when Global is autoloaded
@@ -81,11 +79,11 @@ public partial class Global : Node
         //Grab instances of our nodes from the main scene tree.
         instance = this;
         UIManager = GetNode<UIManager>("../main/UIManager");
-        LevelManager = GetNode<LevelManager>("../main/LevelManager");
         NetworkManager = GetNode<NetworkManager>("../main/NetworkManager");
         AudioManager = GetNode<AudioManager>("../main/AudioManager");
         InputManager = GetNode<InputManager>("../main/InputManager");
         SteamManager = GetNode<SteamManager>("../SteamManager");
+
     }
 
     /// <summary>
@@ -97,7 +95,9 @@ public partial class Global : Node
         if (enableLogging)
         {
             GD.Print("[DEBUG] " + msg);
-        }
+        }   
+
+
     }
 
     /// <summary>
@@ -106,7 +106,11 @@ public partial class Global : Node
     public void StartGame()
     {
         worldSim = new WorldSim();
-        AddChild(worldSim);
+        GetNode<Main>("../main").AddChild(worldSim);
+        UIManager.clearUI();
+        worldSim.loadScene("res://scenes/debug.tscn");
+        worldSim.RegisterPlayer(worldSim.CreateNewPlayer(clientID));
+        worldSim.SpawnAll();
     }
 
 
