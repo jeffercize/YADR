@@ -156,6 +156,7 @@ public partial class Client : Node
         }
         if (framePacket.Tick!=0)
         {
+            Global.debugLog("Got server info packet for tick: " + framePacket.Tick);
             framePacketBuffer.Add(framePacket.Tick, framePacket);
         }
     }
