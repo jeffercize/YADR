@@ -163,43 +163,6 @@ void vertex() {
 	}
 
 
-	//heightmap sampling
-	vec2 uv = vec2(grassBladeWorldPos.x / heightParams.x, grassBladeWorldPos.z / heightParams.y);
-
-	// Calculate the fractional part of the uv coordinates
-	vec2 f = fract(uv * heightParams.xy);
-
-	// Sample the four closest texels
-	float h00 = texture(heightMap, uv).r;
-	float h10 = texture(heightMap, uv + vec2(1.0, 0.0) / heightParams.xy).r;
-	float h01 = texture(heightMap, uv + vec2(0.0, 1.0) / heightParams.xy).r;
-	float h11 = texture(heightMap, uv + vec2(1.0, 1.0) / heightParams.xy).r;
-	float hm1 = texture(heightMap, uv - vec2(1.0, 0.0) / heightParams.xy).r;
-	float h0m1 = texture(heightMap, uv - vec2(0.0, 1.0) / heightParams.xy).r;
-
-	// Interpolate between the samples
-	float heightMapSample = mix(mix(h00, h10, f.x), mix(h01, h11, f.x), f.y);
-
-	vec3 cameraPosition = INV_VIEW_MATRIX[3].xyz;
-	vec3 grassBladeWorldPosToCamera = vec3(grassBladeWorldPos.x, grassBladeWorldPos.y+heightMapSample*400.0, grassBladeWorldPos.z);
-    float distanceToCamera = length(cameraPosition - grassBladeWorldPosToCamera);
-	if(distanceToCamera > 60.0)
-	{
-		myTime = 1.0;
-	}
-	if(distanceToCamera > 300.0)
-	{
-		float factor = clamp((distanceToCamera - 200.0) / 20.0, 0.0, 1.0);
-		VERTEX.y = VERTEX.y * smoothstep(1.0, 0.0, factor);
-	}
-	if (VERTEX.y == 0.0)
-	{
-		VERTEX.y = VERTEX.y - 1.0;
-	}
-
-
-<<<<<<< HEAD
-=======
 //Rotating the base and leaning\\
 
 	//dont change angle if wind strength is low, but change it as the wind is stronger
@@ -244,63 +207,6 @@ void vertex() {
 	VERTEX.xyz = grassMat * VERTEX.xyz; 
 
 
-<<<<<<< HEAD
-	vec3 cameraPosition = INV_VIEW_MATRIX[3].xyz;
-	vec3 grassBladeWorldPosToCamera = vec3(grassBladeWorldPos.x, grassBladeWorldPos.y+heightMapSample*400.0, grassBladeWorldPos.z);
-    float distanceToCamera = length(cameraPosition - grassBladeWorldPosToCamera);
-	if(distanceToCamera > 60.0)
-	{
-		myTime = 1.0;
-	}
-
-
-
-//Rotating the base and leaning\\
-
-	//dont change angle if wind strength is low, but change it as the wind is stronger
-	//so mix between 0 and windDirection with windStrength
-	//target randomAngle so that randomAngle - INSTANCE_CUSTOM.y = windDirectionMix
-	float windDirectionMix = mix(0.0, windDirection, windStrength);
-	//float randomAngle = 0.0;//windDirectionMix - INSTANCE_CUSTOM.y;
-
-    float randomAngle = hashVal1.x * 2.0 * PI; //small jitter on the rotation away from the clump
-
-	//random lean
-	float randomLean = remap(hashVal1.w, 0.0, 1.0, 0.1, 0.4) * heightPercent; //replace with sin noise
-
-	//Noise Sampling for Wind\\
-	float noiseSample = noise12(vec2(myTime * 0.35 * 0.5) + grassBladeWorldPos.xz);
-	randomLean += noiseSample * windStrength;
-	
-	
-
-	float windNoiseSample = noise12(grassBladeWorldPos.xz * 0.5 + myTime*(windStrength+0.5));
-	float windLeanAngle = remap(windNoiseSample, -1.0, 1.0, 0.25, 1.0);
-	windLeanAngle = easeIn(windLeanAngle, 2.0) * 1.25;
-	windLeanAngle *= heightPercent;
-	windLeanAngle *= (windStrength+0.5);
-	
-	float windMixValue = 1.0;
-	if(adjustedGrassTotalHeight < 1.0)
-	{
-		windMixValue = adjustedGrassTotalHeight / 5.0;
-	}
-	float windDirectionCombined = mix(randomAngle, windDirection, windMixValue);
-	vec3 windAxis = vec3(cos(windDirectionCombined), 0.0, sin(windDirectionCombined));
-
-
-
-    // Apply the rotation to the vertex position
-
-	VERTEX.xyz = rotateY(randomAngle) * VERTEX.xyz;
-
-	mat3 grassMat = rotateAxis(windAxis, windLeanAngle) * rotateX(randomLean);
-
-	VERTEX.xyz = grassMat * VERTEX.xyz; 
-
-
-=======
->>>>>>> refs/remotes/origin/master
 	VERTEX.y += heightMapSample * 400.0;
 
 	vec2 gradient = vec2(h10 - hm1, h01 - h0m1) * 200.0;
@@ -403,4 +309,3 @@ void fragment() {
 	//ROUGHNESS
 	//ROUGHNESS = 0.9;
 }
-

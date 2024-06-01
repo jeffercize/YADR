@@ -11,10 +11,7 @@ public partial class TerrainGeneration : Node3D
 {
     public override void _Ready()
     {
-        // Called every time the node is added to the scene.
-        // Initialization here.
-        //AddTerrain("Terrain3D");
-        //GenerateTerrain("Terrain3D2", 1000);
+        AddTerrain(false);
     }
 
     public override void _Process(double delta)
@@ -315,7 +312,7 @@ public partial class TerrainGeneration : Node3D
         return finalImage;
     }
     
-    public void AddTerrain(string terrainName, bool wantGrass=true)
+    public void AddTerrain(bool wantGrass=true)
     {
         wantGrass = false;
         Stopwatch stopwatch = Stopwatch.StartNew();
@@ -335,7 +332,7 @@ public partial class TerrainGeneration : Node3D
                 //Image mapImage = Image.LoadFromFile("C:\\Users\\jeffe\\test_images\\noise_test.png");
                 TerrainChunk terrainChunk = new TerrainChunk();
                 AddChild(terrainChunk);
-                terrainChunk.BuildCollision(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX, 0.0f, offsetY));
+                terrainChunk.BuildDebugCollision(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX-0.5f, 0.0f, offsetY-0.5f)); //TODO kinda weird?
                 terrainChunk.BuildMesh(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX, 0.0f, offsetY));
                 if (wantGrass)
                 {

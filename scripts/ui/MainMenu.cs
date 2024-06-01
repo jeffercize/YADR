@@ -43,8 +43,7 @@ public partial class MainMenu : Control
         Global.worldSim.loadScene("res://components/TerrainPlayer.tscn");
         Global.worldSim.loadScene("res://scenes/TerrainGeneration.tscn");
         TerrainGeneration terrainGenerated = (TerrainGeneration)Global.worldSim.currentScene;
-        Image mapImage = Image.LoadFromFile("res://scripts/terrain/blur_test_gausbox.webp");
-        terrainGenerated.AddTerrain("Terrain3D");
+        terrainGenerated.AddTerrain(true);
         Global.UIManager.clearUI();
     }
 
