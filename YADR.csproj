@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 ﻿<Project Sdk="Godot.NET.Sdk/4.2.2">
-=======
-<Project Sdk="Godot.NET.Sdk/4.2.2">
->>>>>>> refs/remotes/origin/master
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
@@ -11,11 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-<<<<<<< HEAD
     <None Include="scripts\networking\proto\NetworkingProto.proto" />
-=======
-    <None Include="scripts\networking\proto\protodef.proto" />
->>>>>>> refs/remotes/origin/master
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.26.1" />
@@ -25,11 +17,8 @@
       <HintPath>bin\x64\Windows\Steamworks.NET.dll</HintPath>
     </Reference>
   </ItemGroup>
-<<<<<<< HEAD
   <ItemGroup>
     <Folder Include="scenes\" />
   </ItemGroup>
 
-=======
->>>>>>> refs/remotes/origin/master
 </Project>

@@ -8,7 +8,6 @@ EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
-<<<<<<< HEAD
 		Debug|ARM = Debug|ARM
 		Debug|ARM64 = Debug|ARM64
 		Debug|x64 = Debug|x64
@@ -28,18 +27,10 @@ Global
 		Release|ARM64 = Release|ARM64
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
-=======
-		Debug|x64 = Debug|x64
-		ExportDebug|Any CPU = ExportDebug|Any CPU
-		ExportDebug|x64 = ExportDebug|x64
-		ExportRelease|Any CPU = ExportRelease|Any CPU
-		ExportRelease|x64 = ExportRelease|x64
->>>>>>> refs/remotes/origin/master
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-<<<<<<< HEAD
 		{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}.Debug|ARM.ActiveCfg = Debug|Any CPU
 		{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}.Debug|ARM.Build.0 = Debug|Any CPU
 		{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}.Debug|ARM64.ActiveCfg = Debug|Any CPU
@@ -78,26 +69,11 @@ Global
 		{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}.Release|x64.Build.0 = ExportRelease|x64
 		{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}.Release|x86.ActiveCfg = ExportRelease|Any CPU
 		{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}.Release|x86.Build.0 = ExportRelease|Any CPU
-=======
-		{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}.Debug|x64.ActiveCfg = ExportDebug|x64
-		{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}.Debug|x64.Build.0 = ExportDebug|x64
-		{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}.ExportDebug|Any CPU.ActiveCfg = ExportDebug|Any CPU
-		{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}.ExportDebug|Any CPU.Build.0 = ExportDebug|Any CPU
-		{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}.ExportDebug|x64.ActiveCfg = ExportDebug|x64
-		{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}.ExportDebug|x64.Build.0 = ExportDebug|x64
-		{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}.ExportRelease|Any CPU.ActiveCfg = ExportRelease|Any CPU
-		{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}.ExportRelease|Any CPU.Build.0 = ExportRelease|Any CPU
-		{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}.ExportRelease|x64.ActiveCfg = ExportRelease|x64
-		{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}.ExportRelease|x64.Build.0 = ExportRelease|x64
->>>>>>> refs/remotes/origin/master
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
-<<<<<<< HEAD
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1E7979C6-C9A5-4D11-A1C1-C964DC94946E}
 	EndGlobalSection
-=======
->>>>>>> refs/remotes/origin/master
 EndGlobal
