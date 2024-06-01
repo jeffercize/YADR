@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 [gd_scene load_steps=9 format=3 uid="uid://gpvkhmphgswl"]
+=======
+[gd_scene load_steps=10 format=3 uid="uid://gpvkhmphgswl"]
+>>>>>>> refs/remotes/origin/master
 
 [ext_resource type="Script" path="res://scripts/Main.cs" id="1_wiw4r"]
 [ext_resource type="AudioStream" uid="uid://m1qnnxntnkq" path="res://import/click4.wav" id="2_aicxg"]
@@ -8,6 +12,10 @@
 [ext_resource type="Script" path="res://scripts/managers/LevelManager.cs" id="4_w3l1c"]
 [ext_resource type="Script" path="res://scripts/networking/NetworkManager.cs" id="5_d6dd4"]
 [ext_resource type="Script" path="res://scripts/managers/AudioManager.cs" id="6_5rbi3"]
+<<<<<<< HEAD
+=======
+[ext_resource type="Script" path="res://scripts/managers/PlayerManager.cs" id="7_y76u6"]
+>>>>>>> refs/remotes/origin/master
 
 [node name="main" type="Node"]
 script = ExtResource("1_wiw4r")
@@ -33,6 +41,12 @@ script = ExtResource("5_d6dd4")
 [node name="AudioManager" type="AudioStreamPlayer" parent="."]
 script = ExtResource("6_5rbi3")
 
+<<<<<<< HEAD
+=======
+[node name="PlayerManager" type="Node3D" parent="."]
+script = ExtResource("7_y76u6")
+
+>>>>>>> refs/remotes/origin/master
 [node name="uisfx" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("2_aicxg")
 volume_db = -20.0

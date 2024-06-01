@@ -75,11 +75,6 @@ public partial class Client : Node
         SteamNetworkingSockets.ConfigureConnectionLanes(connectionToServer, 3, null, null);
     }
 
-    /// <summary>
-    /// Called by the underlying Steam API in response to any underlying connection status change
-    /// </summary>
-    /// <param name="param">Info on the event</param>
-    /// <exception cref="NotImplementedException"></exception>
     private void onSteamNetConnectionStatusChange(SteamNetConnectionStatusChangedCallback_t param)
     {
         Global.NetworkManager.networkDebugLog("Client - connection status change. New status: " + param.m_info.m_eState);

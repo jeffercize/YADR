@@ -201,7 +201,6 @@ public partial class Inventory : Node
     }
 
 
-
     public bool isItemAtCoords(int x, int y)
     {
         return items.TryGetValue(new Vector2(x, y), out Item item);
@@ -264,7 +263,6 @@ public partial class Inventory : Node
 
     public void debugGen()
     {
-
         Equipable test = new Equipable(1f, 2, 2, "2x2Helmet", "testd", false, ResourceLoader.Load<Texture2D>("res://assets/items/helmet.png"));
         test.type = Equipable.EquipType.HELMET;
         placeItemAtCoords(5, 5, test);
@@ -279,7 +277,6 @@ public partial class Inventory : Node
         icon4.Texture = ResourceLoader.Load<Texture2D>("res://assets/items/bandage.png");
         Consumable test4 = new Consumable(1, 1, 1, "test4", "test4d", false, icon4);
         placeItemAtCoords(8, 3, test4);*/
-
 
 
         Equipable test5 = new Equipable(1, 5, 2, "test5", "test5d", false, ResourceLoader.Load<Texture2D>("res://assets/items/longgun.png"));

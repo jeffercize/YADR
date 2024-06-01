@@ -73,12 +73,10 @@ public partial class EquipSlot : Control
                 if (!Global.UIManager.hasDragItem() && hasEquip())
                 {
                     Global.debugLog(this.Name + "Click pickup, Item Unequipped!");
-
                     connectedEquipment.unequip(this.Name, out equip);
                     Global.UIManager.dragItem = equip;
                     GetNode<AudioStreamPlayer>("/root/main/uisfx").Stream = ResourceLoader.Load<AudioStreamWav>("res://assets/audio/ui/mouseclick1.wav");
                     GetNode<AudioStreamPlayer>("/root/main/uisfx").Play();
-
                     startMousePos = Vector2.Zero;
 
                     QueueRedraw();

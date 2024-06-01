@@ -90,7 +90,6 @@ public partial class Item : RigidBody3D, IEquatable<Item>
         // TODO: write your implementation of Equals() here
         Item o = obj as Item;
         return o.GetInstanceId() == this.GetInstanceId();
-
     }
 
     // override object.GetHashCode

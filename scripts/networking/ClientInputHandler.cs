@@ -158,6 +158,10 @@
         NetworkManager.SendSteamMessage(Global.NetworkManager.client.connectionToServer, MessageType.InputLookDirection, msg);
     }
 
+<<<<<<< HEAD
     */
+=======
+
+>>>>>>> refs/remotes/origin/master
 }
 

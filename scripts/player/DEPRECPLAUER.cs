@@ -113,7 +113,6 @@ public partial class DEPRECPLAUER : Character
     public void init()
     {
 
-
         Position = new Vector3(0, 0, 0);
     }
 
@@ -242,7 +241,6 @@ public partial class DEPRECPLAUER : Character
         //Rotates the camera on X (Up/Down) and clamps so it doesnt go too far.
         camera.Rotation = new Vector3((float)Mathf.Clamp(camera.Rotation.X - input.lookDelta.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
 
-
         //Rotates the entire player (camera is child, so it comes along) on Y (left/right)
         Rotation = new Vector3(0, Rotation.Y - input.lookDelta.X * (float)delta, 0);
         input.lookDelta = Vector2.Zero;
@@ -367,7 +365,6 @@ public partial class DEPRECPLAUER : Character
 
     private void onFire()
     {
-
     }
 
     private void onInteract()
@@ -436,7 +433,6 @@ public partial class DEPRECPLAUER : Character
                     {
                         rightHoldPoint.RemoveChild(child);
                     }
-
                 }
 
             }
@@ -466,7 +462,6 @@ public partial class DEPRECPLAUER : Character
                 Global.debugLog("My equipment has a change - EQUIP RIGHT HAND");
 
                 rightHoldPoint.AddChild(item);
-
                 item.GlobalTransform = rightHoldPoint.GlobalTransform;
                 item.FreezeMode = RigidBody3D.FreezeModeEnum.Static;
                 item.Freeze = true;

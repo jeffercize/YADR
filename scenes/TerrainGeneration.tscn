@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 [gd_scene load_steps=14 format=3 uid="uid://cofnhdcclon1w"]
+=======
+[gd_scene load_steps=13 format=3 uid="uid://cofnhdcclon1w"]
+>>>>>>> refs/remotes/origin/master
 
 [ext_resource type="Script" path="res://scripts/terrain/TerrainGeneration.cs" id="1_btvwy"]
 [ext_resource type="Terrain3DStorage" uid="uid://dkqwrhjieitw7" path="res://terrainData/TerrainGeneration.res" id="4_muabl"]
@@ -8,7 +12,10 @@
 [ext_resource type="Script" path="res://scripts/terrain/GrassMeshMaker.cs" id="8_hyt63"]
 [ext_resource type="Script" path="res://scripts/terrain/WeatherController.cs" id="8_n3tlt"]
 [ext_resource type="Shader" path="res://shaders/terrain/grassShader.gdshader" id="9_07r24"]
+<<<<<<< HEAD
 [ext_resource type="Script" path="res://scripts/terrain/AStar.cs" id="9_ntjq2"]
+=======
+>>>>>>> refs/remotes/origin/master
 
 [sub_resource type="NavigationMesh" id="NavigationMesh_vs6am"]
 geometry_parsed_geometry_type = 1
@@ -57,6 +64,9 @@ multimesh = SubResource("MultiMesh_3gj5r")
 
 [node name="World" type="Node3D" parent="."]
 script = ExtResource("8_n3tlt")
+<<<<<<< HEAD
 
 [node name="PathGeneratorTest" type="Node" parent="."]
 script = ExtResource("9_ntjq2")
+=======
+>>>>>>> refs/remotes/origin/master

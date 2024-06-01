@@ -43,7 +43,10 @@ enabled=PackedStringArray("res://addons/terrain_3d/plugin.cfg")
 [filesystem]
 
 import/blender/enabled=false
+<<<<<<< HEAD
 import/fbx/enabled=false
+=======
+>>>>>>> refs/remotes/origin/master
 
 [input]
 

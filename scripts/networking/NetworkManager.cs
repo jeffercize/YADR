@@ -144,7 +144,6 @@ public partial class NetworkManager : Node
         {
             networkDebugLog("Connecting to server at: " + steamID + " failed!");
         }
-
     }
 
     public static ulong getConnectionRemoteID(HSteamNetConnection remote)

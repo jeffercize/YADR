@@ -495,9 +495,10 @@ public partial class TerrainGeneration : Node3D
         pathImg = ApplyGassianAndBoxBlur(pathImg, RenderingDevice.DataFormat.R32G32Sfloat);
         GD.Print($"Time elapsed: {stopwatch.Elapsed}");
 
-        //pathImg.SaveWebp("C:\\Users\\jeffe\\test_images\\blur_test_gausbox.webp");
+        pathImg.SaveWebp("C:\\Users\\jeffe\\test_images\\blur_test_gausbox.webp");
         //ResourceSaver.Save(pathImg, "C:\\Users\\jeffe\\Desktop\\Untitled41\\scripts\\terrain\\map_output.tres");
 
+        GD.Print("import");
         return pathImg;
     }
 
@@ -518,7 +519,6 @@ public partial class TerrainGeneration : Node3D
         }
         Global.debugLog("import");
         terrain.AsGodotObject().Get("storage").AsGodotObject().Call("import_images", new Image[] { mapImage, null, null }, new Vector3(0, 0, 0), 0.0f, 400.0f);
-        GD.Print($"Time elapsed: {stopwatch.Elapsed}");
         //hole testing
         /*        var terrainUtil = ClassDB.Instantiate("Terrain3DUtil");
                 int bits = (int)terrainUtil.AsGodotObject().Call("enc_base", (0)) | (int)terrainUtil.AsGodotObject().Call("enc_overlay", (0)) | (int)terrainUtil.AsGodotObject().Call("enc_blend", (0)) |
