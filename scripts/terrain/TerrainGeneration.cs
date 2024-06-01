@@ -39,8 +39,7 @@ public partial class TerrainGeneration : Node3D
         var rd = RenderingServer.CreateLocalRenderingDevice();
         Image pathImg = Image.Create(image.GetWidth(), image.GetHeight(), false, Image.Format.Rgf);
         RDShaderFile[] shaderList = new RDShaderFile[] {
-            GD.Load<RDShaderFile>("res://shaders/terrain/gausianblur.glsl"),
-            GD.Load<RDShaderFile>("res://shaders/terrain/boxblur.glsl")
+            GD.Load<RDShaderFile>("res://shaders/terrain/gausianblur.glsl")
         };
         foreach (var shaderFile in shaderList)
         {
@@ -78,7 +77,7 @@ public partial class TerrainGeneration : Node3D
             fmt.UsageBits = RenderingDevice.TextureUsageBits.StorageBit | RenderingDevice.TextureUsageBits.CanUpdateBit | RenderingDevice.TextureUsageBits.CanCopyFromBit;
             RDTextureView view = new RDTextureView();
             Image output_image = Image.Create(image.GetWidth(), image.GetHeight(), false, Image.Format.Rgf);
-            byte[] outputImageData = output_image.GetData();
+            byte[] outputImageData = image.GetData();
             Godot.Collections.Array<byte[]> tempData = new Godot.Collections.Array<byte[]>
             {
                 outputImageData
@@ -131,7 +130,7 @@ public partial class TerrainGeneration : Node3D
         return pathImg;
     }
 
-    public Image GPUGeneratePath(Image noiseImage, int x_axis, int y_axis, Vector3[] points)
+    public Image GPUGeneratePath(Image noiseImage, int x_axis, int y_axis, int offsetX, int offsetY, Vector3[] points)
     {
         var rd = RenderingServer.CreateLocalRenderingDevice();
         RDShaderFile blendShaderFile = GD.Load<RDShaderFile>("res://shaders/terrain/pathbuilder.glsl");
@@ -198,9 +197,12 @@ public partial class TerrainGeneration : Node3D
         // Setup ImageDimensionsUniform
         int imageWidth = x_axis;
         int imageHeight = y_axis;
-        byte[] imageDimensionsBytes = new byte[sizeof(int) * 2];
+        byte[] imageDimensionsBytes = new byte[sizeof(int) * 4];
         Buffer.BlockCopy(BitConverter.GetBytes(imageWidth), 0, imageDimensionsBytes, 0, sizeof(int));
         Buffer.BlockCopy(BitConverter.GetBytes(imageHeight), 0, imageDimensionsBytes, sizeof(int), sizeof(int));
+        Buffer.BlockCopy(BitConverter.GetBytes(offsetX), 0, imageDimensionsBytes, sizeof(int)*2, sizeof(int));
+        Buffer.BlockCopy(BitConverter.GetBytes(offsetY), 0, imageDimensionsBytes, sizeof(int)*3, sizeof(int));
+
         Rid imageDimensionsBuffer = rd.StorageBufferCreate((uint)imageDimensionsBytes.Length, imageDimensionsBytes);
 
         RDUniform imageDimensionsUniform = new RDUniform()
@@ -236,31 +238,36 @@ public partial class TerrainGeneration : Node3D
 
     public Image GenerateTerrain(int offsetX, int offsetY, int x_axis, int y_axis)
 	{
-        Stopwatch stopwatch = Stopwatch.StartNew();
-		//AddChild((Node)terrain, true);
+        //move offset back by 10 and add 20 extra pixels to discard after blurring
+        //that way we have a ring of extra pixels so we can calculate blur
+        offsetX -= 13;
+        x_axis += 26;
+        offsetY -= 13;
+        y_axis += 26;
 
-		GD.Print("start");
+        Stopwatch stopwatch = Stopwatch.StartNew();
         
 		FastNoiseLite noise = new FastNoiseLite();
 		noise.Frequency = 0.0005f;
 		noise.Seed = 1;
         noise.FractalType = FastNoiseLite.FractalTypeEnum.None;
         noise.DomainWarpEnabled = false;
-        //noise.Offset = new Vector3(offsetX, offsetY, 0.0f);
+        noise.Offset = new Vector3(offsetX, offsetY, 0.0f);
 
         Image noiseImage = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
-        GD.Print("New Image at: " + offsetX + "," + offsetY);
+
         for(int i = 0; i < x_axis; i++)
         {
             for(int j = 0; j < y_axis; j++)
             {
                 // Get the noise value at the world position
-                float noiseValue = noise.GetNoise2D(i+offsetX, j+offsetY); 
+                float noiseValue = noise.GetNoise2D(i, j);
+
                 // Set the pixel in the image
                 noiseImage.SetPixel(i, j, new Color(noiseValue, 0, 0, 0));
             }
         }
-        GD.Print($"Noise Time: {stopwatch.Elapsed}");
+        //GD.Print($"Noise Time: {stopwatch.Elapsed}");
         noiseImage.SavePng("C:\\Users\\jeffe\\test_images\\noise_test"+"("+ offsetX + "," + offsetY + ")"+ ".png");
 
 
@@ -287,36 +294,34 @@ public partial class TerrainGeneration : Node3D
         stopwatch.Restart();
         path.BakeInterval = 0.1f;
         Vector3[] localPath = path.GetBakedPoints();
-        for (int i = 0; i < localPath.Length; i++)
+/*        for (int i = 0; i < localPath.Length; i++)
         {
-            localPath[i] = new Vector3(localPath[i].X - offsetX, localPath[i].Y - offsetY, localPath[i].Z);
-        }
-        pathImg = noiseImage;//GPUGeneratePath(noiseImage, x_axis, y_axis, localPath);
-        GD.Print($"GPUPath Time Elapsed: {stopwatch.Elapsed}");
+            localPath[i] = new Vector3(localPath[i].X, localPath[i].Y, localPath[i].Z);
+        }*/
+        pathImg = GPUGeneratePath(noiseImage, x_axis, y_axis, offsetX, offsetY, localPath);
+        //GD.Print($"GPUPath Time Elapsed: {stopwatch.Elapsed}");
         //pathImg.SavePng("C:\\Users\\jeffe\\test_images\\gpu_path_test.png");
 
-        stopwatch.Restart();
         // Run the blur shader
         pathImg = ApplyGassianAndBoxBlur(pathImg, RenderingDevice.DataFormat.R32G32Sfloat);
-        GD.Print($"Blur Time Elapsed: {stopwatch.Elapsed}");
+        
+        Image finalImage = Image.Create(x_axis-26, y_axis-26, false, Image.Format.Rgf);
+        finalImage.BlitRect(pathImg, new Rect2I(13, 13, x_axis-13, y_axis-13), new Vector2I(0, 0));
+        //GD.Print($"Blur Time Elapsed: {stopwatch.Elapsed}");
 
         //pathImg.SavePng("C:\\Users\\jeffe\\test_images\\blur_test_gausbox.png");
         //ResourceSaver.Save(pathImg, "C:\\Users\\jeffe\\Desktop\\Untitled41\\scripts\\terrain\\map_output.tres");
 
-        return pathImg;
+        return finalImage;
     }
     
     public void AddTerrain(string terrainName, bool wantGrass=true)
     {
+        wantGrass = false;
         Stopwatch stopwatch = Stopwatch.StartNew();
-        int x_axis = 1024;//16000; //if you change these a lot of shaders need re-coded
-        int y_axis = 1024;//6000; //if you change these a lot of shaders need re-coded
-        //var terrain = (Variant)GetNode(terrainName);
-        //terrain.AsGodotObject().Call("set_collision_enabled", false);
-        //terrain.AsGodotObject().Set("storage", ClassDB.Instantiate("Terrain3DStorage"));
-        //terrain.AsGodotObject().Set("texture_list", ClassDB.Instantiate("Terrain3DTextureList"));
-        //terrain.AsGodotObject().Set("texture_list", GD.Load("res://terrainData/texture_list.tres"));
-
+        int x_axis = 512;//16000; //if you change these a lot of shaders need re-coded maybe?
+        int y_axis = 512;//6000; //if you change these a lot of shaders need re-coded maybe?
+        float heightScale = 400.0f;
         
         GrassMeshMaker grassMeshMakerNode = (GrassMeshMaker)GetNode("GrassMeshMaker");
 
@@ -324,15 +329,14 @@ public partial class TerrainGeneration : Node3D
         {
             for(int j = 0; j < 3; j++)
             {
-                int offsetX = j*x_axis;
-                int offsetY = i*y_axis;
+                int offsetX = i*x_axis-i;
+                int offsetY = j*y_axis-j;
                 Image mapImage = GenerateTerrain(offsetX, offsetY, x_axis, y_axis);
                 //Image mapImage = Image.LoadFromFile("C:\\Users\\jeffe\\test_images\\noise_test.png");
                 TerrainChunk terrainChunk = new TerrainChunk();
                 AddChild(terrainChunk);
-                terrainChunk.BuildCollision(mapImage, x_axis, y_axis, new Vector3(offsetX, 0, offsetY));
-                terrainChunk.BuildMesh(mapImage, x_axis, y_axis, new Vector3(offsetX, 0, offsetY));
-                //terrain.AsGodotObject().Get("storage").AsGodotObject().Call("import_images", new Image[] { mapImage, null, null }, new Vector3(offsetX, 0, offsetY), 0.0f, 400.0f);
+                terrainChunk.BuildCollision(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX, 0.0f, offsetY));
+                terrainChunk.BuildMesh(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX, 0.0f, offsetY));
                 if (wantGrass)
                 {
                     GrassMeshMaker myGrassManager = (GrassMeshMaker)grassMeshMakerNode.Duplicate();

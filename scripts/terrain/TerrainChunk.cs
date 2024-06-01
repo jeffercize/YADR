@@ -9,12 +9,15 @@ using System.Diagnostics;
 public partial class TerrainChunk : Node3D
 {
     Rid staticBody = new Rid();
-	public TerrainChunk()
+    StandardMaterial3D temp = GD.Load<StandardMaterial3D>("res://assets/materials/M_rock30.tres");
+    ImageTexture heightMapTexture;
+    CompressedTexture2D grass;
+    CompressedTexture2D rock;
+    public TerrainChunk()
 	{
 	}
-	public bool BuildCollision(Image heightMap, int width, int depth, Vector3 globalPosition)
+	public bool BuildCollision(Image heightMap, float heightScale, int width, int depth, Vector3 globalPosition)
 	{
-        GD.Print("Building collision with physics server");
         staticBody = PhysicsServer3D.BodyCreate();
         PhysicsServer3D.BodySetMode(staticBody, PhysicsServer3D.BodyMode.Static);
         PhysicsServer3D.BodySetSpace(staticBody, GetWorld3D().Space);
@@ -31,7 +34,7 @@ public partial class TerrainChunk : Node3D
             for (int j = depth - 1; j >= 0; j--)
             {
                 int index = i * depth + (depth - 1 - j);
-                mapData[index] = heightMap.GetPixel(i, j).R * 400.0f;
+                mapData[index] = heightMap.GetPixel(i, j).R * heightScale;
                 if (mapData[index] < minHeight)
                 {
                     minHeight = mapData[index];
@@ -62,7 +65,7 @@ public partial class TerrainChunk : Node3D
         return true;
     }
 
-    public bool BuildDebugCollision(Image heightMap, int width, int depth, Vector3 globalPosition)
+    public bool BuildDebugCollision(Image heightMap, float heightScale, int width, int depth, Vector3 globalPosition)
     {
         GD.Print("Building debug collision. Disable this mode for releases");
         StaticBody3D _debugStaticBody = new StaticBody3D();
@@ -80,7 +83,15 @@ public partial class TerrainChunk : Node3D
             for (int j = depth - 1; j >= 0; j--)
             {
                 int index = i * depth + (depth - 1 - j);
-                mapData[index] = heightMap.GetPixel(i, j).R * 400.0f;
+/*                if(i == 511 && j == 511)
+                {
+                    GD.Print("I is 511: "+j+","+heightMap.GetPixel(i, j).R * heightScale);
+                }
+                if (i == 0 && j == 511)
+                {
+                    GD.Print("I is zero: "+j + "," + heightMap.GetPixel(i, j).R * heightScale);
+                }*/
+                mapData[index] = heightMap.GetPixel(i, j).R * heightScale;
                 if (mapData[index] < minHeight)
                 {
                     minHeight = mapData[index];
@@ -124,7 +135,7 @@ public partial class TerrainChunk : Node3D
         return false;
     }
 
-    public bool BuildMesh(Image heightMap, int width, int depth, Vector3 globalPosition)
+    public bool BuildMesh(Image heightMap, float heightScale, int width, int depth, Vector3 globalPosition)
     {
         // Create an array for the vertices
         Vector3[] p_vertices = new Vector3[width * depth];
@@ -135,8 +146,7 @@ public partial class TerrainChunk : Node3D
             for (int j = 0; j < depth; j++)
             {
                 int index = i * width + j;
-                float height = heightMap.GetPixel(i, j).R * 400.0f; // Adjust the multiplier as needed
-                p_vertices[index] = new Vector3(i, height, j);
+                p_vertices[index] = new Vector3(i, 0.0f, j);
             }
         }
 
@@ -169,37 +179,6 @@ public partial class TerrainChunk : Node3D
         arrays[(int)RenderingServer.ArrayType.Vertex] = p_vertices;
         arrays[(int)RenderingServer.ArrayType.Index] = p_indices;
 
-        // Create and set the normals
-        Vector3[] normals = new Vector3[p_vertices.Length];
-        for (int i = 0; i < width - 1; i++)
-        {
-            for (int j = 0; j < depth - 1; j++)
-            {
-                int index = i * width + j;
-                Vector3 right = new Vector3(1, 0, heightMap.GetPixel(i + 1, j).R - heightMap.GetPixel(i, j).R);
-                Vector3 down = new Vector3(0, 1, heightMap.GetPixel(i, j + 1).R - heightMap.GetPixel(i, j).R);
-                Vector3 normal = right.Cross(down).Normalized();
-                normals[index] = normal;
-            }
-        }
-        arrays[(int)RenderingServer.ArrayType.Normal] = normals;
-
-        // Create and set the tangents
-        float[] tangents = new float[p_vertices.Length * 4];
-        for (int i = 0; i < width - 1; i++)
-        {
-            for (int j = 0; j < depth - 1; j++)
-            {
-                int index = i * width + j;
-                Vector3 tangent = new Vector3(1, 0, heightMap.GetPixel(i + 1, j).R - heightMap.GetPixel(i, j).R).Normalized();
-                tangents[index * 4 + 0] = tangent.X;
-                tangents[index * 4 + 1] = tangent.Y;
-                tangents[index * 4 + 2] = tangent.Z;
-                tangents[index * 4 + 3] = 1.0f; // This can be -1 or 1 to flip the bitangent if needed
-            }
-        }
-        arrays[(int)RenderingServer.ArrayType.Tangent] = tangents;
-
         // Create the mesh
         Rid mesh = RenderingServer.MeshCreate();
         RenderingServer.MeshAddSurfaceFromArrays(mesh, RenderingServer.PrimitiveType.Triangles, arrays);
@@ -207,12 +186,39 @@ public partial class TerrainChunk : Node3D
         // Set the custom AABB
         RenderingServer.MeshSetCustomAabb(mesh, p_aabb);
 
-
         Rid instance = RenderingServer.InstanceCreate2(mesh, GetWorld3D().Scenario);
 
         // Set the transform
         Transform3D xform = new Transform3D(Basis.Identity, globalPosition);
         RenderingServer.InstanceSetTransform(instance, xform);
+
+        ShaderMaterial terrainMat = new ShaderMaterial();
+        Shader terrainShader = GD.Load<Shader>("res://shaders/terrain/terrainChunk.gdshader");
+        terrainMat.Shader = terrainShader;
+
+        // Create a RID for the material and set its shader
+        Rid materialShader = RenderingServer.ShaderCreate();
+        RenderingServer.ShaderSetCode(materialShader, terrainMat.Shader.Code);
+
+        Rid terrainMaterial = RenderingServer.MaterialCreate();
+        RenderingServer.MaterialSetParam(terrainMaterial, "texture_repeat", false);//TODO this doesnt work, there has to be a way to change wrapping behavior for texture sampling
+        RenderingServer.MaterialSetShader(terrainMaterial, materialShader);
+
+        // Set the shader parameters
+        rock = ResourceLoader.Load<CompressedTexture2D>("res://.godot/imported/rock030_alb_ht.png-c841db18b37aa5c942943cffad123dc2.bptc.ctex");
+        grass = GD.Load<CompressedTexture2D>("res://.godot/imported/ground037_alb_ht.png-587e922b9c8fcab3f2d4050ac005b844.bptc.ctex");
+
+        heightMapTexture = ImageTexture.CreateFromImage(heightMap);
+        RenderingServer.MaterialSetParam(terrainMaterial, "heightMap", heightMapTexture.GetRid());
+        RenderingServer.MaterialSetParam(terrainMaterial, "rockTexture", rock.GetRid());
+        RenderingServer.MaterialSetParam(terrainMaterial, "grassTexture", grass.GetRid());
+        RenderingServer.MaterialSetParam(terrainMaterial, "heightParams", new Vector2(heightMap.GetWidth(), heightMap.GetHeight()));
+        RenderingServer.MaterialSetParam(terrainMaterial, "heightScale", heightScale);
+
+        RenderingServer.InstanceGeometrySetMaterialOverride(instance, terrainMaterial);
+        //RenderingServer.MeshSurfaceSetMaterial(mesh, 0, terrainMaterial);
+        
+
 
         return true;
     }

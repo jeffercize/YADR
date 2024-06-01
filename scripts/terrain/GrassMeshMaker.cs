@@ -382,7 +382,7 @@ public partial class GrassMeshMaker : Node3D
 
         float grassWidth = 0.3f;
         float grassHeight = 1.5f;
-        highLODMesh = CreateHighLODGrassBlade(grassWidth, grassHeight, grassMat);
+        highLODMesh = CreateHighLODGrassBlade(grassWidth, grassHeight);
         mediumLODMesh = CreateMediumLODGrassBlade(grassWidth, grassHeight, grassMat); //we progressively widen the grass for lower lods to help it fill the screen with less blades/triangles
         lowLODMesh = CreateLowLODGrassBlade(grassWidth, grassHeight, grassMat); //we progressively widen the grass for lower lods to help it fill the screen with less blades/triangles
         
@@ -694,7 +694,7 @@ public partial class GrassMeshMaker : Node3D
         return (a + b) * (a + b + 1) / 2 + b;
     }
 
-    private Mesh CreateHighLODGrassBlade(float myGrassWidth, float myGrassHeight, ShaderMaterial grassMat)
+    private Mesh CreateHighLODGrassBlade(float myGrassWidth, float myGrassHeight)
     {
         SurfaceTool st = new SurfaceTool();
         Vector3[] highLODVertices = new Vector3[]

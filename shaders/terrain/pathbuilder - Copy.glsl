@@ -16,15 +16,12 @@ layout(set = 0, binding = 2, rg32f) uniform image2D outputImage;
 layout(set = 0, binding = 3) restrict buffer ImageDimensions {
     int imageWidth;
     int imageHeight;
-    int offsetX;
-    int offsetY;
 };
 
 void main() {
     ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
-    ivec2 global_coord = ivec2(gl_GlobalInvocationID.x+ offsetX, gl_GlobalInvocationID.y + offsetY);
     vec2 uv = vec2(coord) / vec2(imageWidth, imageHeight);
-    uv = clamp(uv, 0.001, 0.999);
+    uv = clamp(uv, 0.0, 1.0);
     float pathHeight = 0.1;
     float height = texture(noiseTexture, uv).r;
 
@@ -36,7 +33,7 @@ void main() {
         {
             continue;
         }
-        float distance = distance(pathData[i].xy, vec2(global_coord));
+        float distance = distance(pathData[i].xy, vec2(coord));
         if (distance < distanceToClosest)
         {
             distanceToClosest = distance;
