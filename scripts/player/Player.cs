@@ -129,8 +129,7 @@ public partial class Player : Character
         }
         else
         {
-            // ClientInputHandler.NetworkInputLookDirectionEvent += onNetworkInputLookDirectionEvent;
-            // ClientPlayerStateHandler.NetworkPlayerStatePositionEvent += onNetworkPlayerStatePositionEvent;
+            input = new PlayerInput();
         }
 
     }
@@ -211,11 +210,11 @@ public partial class Player : Character
         if (isMe)
         {
             //Rotates the camera on X (Up/Down) and clamps so it doesnt go too far.
-            pov.Rotation = new Vector3((float)Mathf.Clamp(pov.Rotation.X - Global.InputManager.frameInput.LookDelta.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
+            pov.Rotation = new Vector3((float)Mathf.Clamp(pov.Rotation.X - input.LookDelta.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
 
             //Rotates the entire player (camera is child, so it comes along) on Y (left/right)
-            Rotation = new Vector3(0, Rotation.Y - Global.InputManager.frameInput.LookDelta.X * (float)delta, 0);
-            Global.InputManager.frameInput.LookDelta = new Vec2() { X = 0, Y = 0 };
+            Rotation = new Vector3(0, Rotation.Y - input.LookDelta.X * (float)delta, 0);
+            input.LookDelta = new Vec2() { X = 0, Y = 0 };
             //ClientInputHandler.CreateAndSendInputLookDirectionMessage(Global.instance.clientID, new Vector3(pov.Rotation.X, Rotation.Y, 0));
         }
         // debugPointer();
@@ -291,10 +290,10 @@ public partial class Player : Character
 
     private void handleLookingDirection(double delta)
     {
-        pov.Rotation = new Vector3((float)Mathf.Clamp(pov.Rotation.X - Global.InputManager.frameInput.LookDelta.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
+        pov.Rotation = new Vector3((float)Mathf.Clamp(pov.Rotation.X - input.LookDelta.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
         //Rotates the entire player (camera is child, so it comes along) on Y (left/right)
-        Rotation = new Vector3(0, Rotation.Y - Global.InputManager.frameInput.LookDelta.X * (float)delta, 0);
-        Global.InputManager.frameInput.LookDelta = new Vec2();
+        Rotation = new Vector3(0, Rotation.Y - input.LookDelta.X * (float)delta, 0);
+        input.LookDelta = new Vec2();
     }
 
     private void handleJumpingAndFalling(double delta)
@@ -344,7 +343,7 @@ public partial class Player : Character
     private void handleInputDirection(double delta)
     {
         //Collect our current Input direction (drop the Y piece), and multiply it by our Transform Basis, rotating it so that forward input becomes forward in the direction we are facing
-        Vector3 dir = Transform.Basis * new Vector3(Global.InputManager.frameInput.MovementDirection.Y * maxSpeedX, 0, Global.InputManager.frameInput.MovementDirection.X * maxSpeedZ);
+        Vector3 dir = Transform.Basis * new Vector3(input.MovementDirection.Y * maxSpeedX, 0, input.MovementDirection.X * maxSpeedZ);
 
         //Create our desired vector, the direction we're going at max speed
         Vector3 targetVec = new Vector3(dir.X, 0, dir.Z);

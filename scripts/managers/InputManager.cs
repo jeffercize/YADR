@@ -10,7 +10,11 @@ public partial class InputManager : Node
 
     public override void _PhysicsProcess(double delta)
     {
-        Global.NetworkManager.client.outgoingFramePacket.Inputs.Add(frameInput.Clone());
+        if (Global.NetworkManager.client!=null)
+        {
+            Global.NetworkManager.client.outgoingFramePacket.Inputs.Add(frameInput.Clone());
+        }
+        
     }
 
     public override void _Process(double delta)
@@ -53,16 +57,18 @@ public partial class InputManager : Node
     private void checkAction(InputEvent @event, ActionType action)
     {
         string actionName = Enum.GetName(typeof(ActionType), action);
-        Global.debugLog(actionName);
+
         if (@event.IsAction(actionName))
         {
             if (@event.IsActionPressed(actionName))
             {
+                Global.debugLog(actionName + " Pressed.");
                 frameInput.Actions.Add(new Action() { ActionType = action, ActionState = ActionState.Pressed });
 
             }
             else if (@event.IsActionReleased(actionName))
             {
+                Global.debugLog(actionName + " Released.");
                 frameInput.Actions.Add(new Action() { ActionType = action, ActionState = ActionState.Released });
             }
         }

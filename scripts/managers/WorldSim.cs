@@ -44,6 +44,17 @@ public partial class WorldSim : Node3D
         {
             Global.debugLog("Found packet at tick: " + (tick - rollbackTicks));
             Global.NetworkManager.client.framePacketBuffer.Remove(tick - rollbackTicks);
+            foreach (PlayerInput input in packet.Inputs)
+            {
+                if (players.TryGetValue(input.ClientID.SteamID, out Player player))
+                {
+                    if (input.ClientID.SteamID == Global.instance.clientID)
+                    {
+                        continue;
+                    }
+                    player.input =input;
+                }
+            }
         }
         else
         {

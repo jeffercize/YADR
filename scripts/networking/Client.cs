@@ -130,10 +130,13 @@ public partial class Client : Node
         }
         foreach (ulong playerID in framePacket.PlayerJoined)
         {
+            peers.Add(playerID);
             PlayerJoined.Invoke(playerID);
         }
         foreach (ulong playerID in framePacket.PlayerLeft)
         {
+            peers.Remove(playerID);
+            Global.worldSim.RegisterPlayer(Global.worldSim.CreateNewPlayer(playerID));
             PlayerLeft.Invoke(playerID);
         }
         if (framePacket.PlayerList.Count > 0)
