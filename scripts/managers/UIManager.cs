@@ -59,11 +59,7 @@ public partial class UIManager : Control
 
     public override void _Process(double delta)
     {
-<<<<<<< HEAD
         if (player != null && playerMenu.IsVisibleInTree())
-=======
-        if (player!=null && playerMenu.IsVisibleInTree())
->>>>>>> refs/remotes/origin/master
         {
             QueueRedraw();
         }
@@ -107,7 +103,6 @@ public partial class UIManager : Control
     {
         return dragItem != null && dragItem != Item.NONE;
     }
-<<<<<<< HEAD
     public void clearUI()
     {
         foreach (Node child in GetChildren())
@@ -121,21 +116,6 @@ public partial class UIManager : Control
     public void LoadUI(string uri)
     {
         AddChild(ResourceLoader.Load<PackedScene>(uri).Instantiate());
-=======
-	public void clearUI()
-	{
-		foreach (Node child in GetChildren())
-		{
-			RemoveChild(child);
-			child.QueueFree();
-
-        }
-	}
-
-	public void LoadUI(string uri)
-	{
-		AddChild(ResourceLoader.Load<PackedScene>(uri).Instantiate());
->>>>>>> refs/remotes/origin/master
 
     }
 }

@@ -84,11 +84,7 @@ public partial class InventoryUI : Container
                 Rect2 snapBox = new Rect2(topLeft, bottomRight);
                 DrawRect(snapBox, Colors.LightYellow, false, 5);
 
-<<<<<<< HEAD
                 if (overlap != Item.NONE)
-=======
-                if (overlap!=Item.NONE)
->>>>>>> refs/remotes/origin/master
                 {
                     Rect2 itemBox = new Rect2(overlap.invTopLeft * slotSizeX, overlap.width * slotSizeX, overlap.height * slotSizeY);
                     DrawRect(itemBox, Colors.LightGray, false, 5);
@@ -109,7 +105,6 @@ public partial class InventoryUI : Container
 
     private bool mapToLocalCoordsSnappy(Vector2 vec, int width, int height, out Vector2 outVec)
     {
-<<<<<<< HEAD
         int x = Mathf.RoundToInt(((float)vec.X / (float)slotSizeX) - (float)(width / 2f));
         int y = Mathf.RoundToInt(((float)vec.Y / (float)slotSizeY) - (float)(height / 2f));
         if (x == -1) { x = 0; }
@@ -117,15 +112,6 @@ public partial class InventoryUI : Container
         if (y <= connectedInventory.height - height / 2 && y >= connectedInventory.height - height) { y = connectedInventory.height - height; }
         if (x <= connectedInventory.width - width / 2 && x >= connectedInventory.width - width) { x = connectedInventory.width - width; }
         if (x < 0 || y < 0 || x >= connectedInventory.width - width / 2 || y >= connectedInventory.height - height / 2)
-=======
-        int x = Mathf.RoundToInt(((float)vec.X / (float)slotSizeX) - (float)(width/2f));
-        int y = Mathf.RoundToInt(((float)vec.Y / (float)slotSizeY) - (float)(height/2f));
-        if (x == -1) { x = 0; }
-        if (y == -1) { y = 0; }
-        if (y <= connectedInventory.height-height/2 && y>= connectedInventory.height - height) { y = connectedInventory.height - height; }
-        if (x <= connectedInventory.width-width/2 && x>=connectedInventory.width - width) { x = connectedInventory.width - width; }
-        if (x < 0 || y < 0 || x >= connectedInventory.width-width/2 || y >= connectedInventory.height-height/2)
->>>>>>> refs/remotes/origin/master
         {
             outVec = Vector2.Inf;
             return false;
@@ -169,11 +155,7 @@ public partial class InventoryUI : Container
             {
                 return;
             }
-<<<<<<< HEAD
             if (Global.UIManager.dragItem.height == 1)
-=======
-            if (Global.UIManager.dragItem.height == 1 )
->>>>>>> refs/remotes/origin/master
             {
 
             }
@@ -209,11 +191,6 @@ public partial class InventoryUI : Container
                     debugLog("[INV]New Inv Key: " + connectedInventory.printKeys());
                     startMousePos = Vector2.Zero;
                     QueueRedraw();
-<<<<<<< HEAD
-
-=======
-                    
->>>>>>> refs/remotes/origin/master
                 }
                 else
                 {
@@ -224,11 +201,7 @@ public partial class InventoryUI : Container
             {
                 if (connectedInventory.phantomPlaceItemAtCoordsOverlapOne(x, y, Global.UIManager.dragItem, out Item overlap))
                 {
-<<<<<<< HEAD
                     if (overlap != Item.NONE)
-=======
-                    if (overlap!=Item.NONE)
->>>>>>> refs/remotes/origin/master
                     {
                         if (overlap.combineWith(Global.UIManager.dragItem, out Item remain))
                         {
