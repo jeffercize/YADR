@@ -1,14 +1,12 @@
-[gd_scene load_steps=10 format=3 uid="uid://gpvkhmphgswl"]
+[gd_scene load_steps=8 format=3 uid="uid://gpvkhmphgswl"]
 
 [ext_resource type="Script" path="res://scripts/Main.cs" id="1_wiw4r"]
 [ext_resource type="AudioStream" uid="uid://m1qnnxntnkq" path="res://import/click4.wav" id="2_aicxg"]
 [ext_resource type="Script" path="res://scripts/managers/UIManager.cs" id="2_gdcb3"]
 [ext_resource type="AudioStream" uid="uid://dsadnt3yyjesu" path="res://import/Gregoire Lourme - Commando Team (Action) [loop cut].ogg" id="3_lhhe4"]
 [ext_resource type="Script" path="res://scripts/managers/InputManager.cs" id="4_rs1vn"]
-[ext_resource type="Script" path="res://scripts/managers/LevelManager.cs" id="4_w3l1c"]
 [ext_resource type="Script" path="res://scripts/networking/NetworkManager.cs" id="5_d6dd4"]
 [ext_resource type="Script" path="res://scripts/managers/AudioManager.cs" id="6_5rbi3"]
-[ext_resource type="Script" path="res://scripts/managers/PlayerManager.cs" id="7_y76u6"]
 
 [node name="main" type="Node"]
 script = ExtResource("1_wiw4r")
@@ -22,9 +20,6 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("2_gdcb3")
 
-[node name="LevelManager" type="Node3D" parent="."]
-script = ExtResource("4_w3l1c")
-
 [node name="InputManager" type="Node" parent="."]
 script = ExtResource("4_rs1vn")
 
@@ -33,9 +28,6 @@ script = ExtResource("5_d6dd4")
 
 [node name="AudioManager" type="AudioStreamPlayer" parent="."]
 script = ExtResource("6_5rbi3")
-
-[node name="PlayerManager" type="Node3D" parent="."]
-script = ExtResource("7_y76u6")
 
 [node name="uisfx" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("2_aicxg")

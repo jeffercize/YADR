@@ -1,7 +1,5 @@
 ﻿using Godot;
 using Steamworks;
-using System;
-using System.Diagnostics;
 
 public partial class SteamManager : Node
 {
@@ -39,7 +37,7 @@ public partial class SteamManager : Node
             //If steam isn't running, close the game, launch steam, then relaunch the game thru steam.
             //This is the most DRM we're going to do
             //This entire mechanism is disabled if AppID is currently set to 480 (SpaceWar)
-            if (AppID!= (AppId_t)480 && SteamAPI.RestartAppIfNecessary(AppID))
+            if (AppID != (AppId_t)480 && SteamAPI.RestartAppIfNecessary(AppID))
             {
                 GetTree().Quit();
             }
@@ -59,7 +57,7 @@ public partial class SteamManager : Node
         }
 
         //This just preps the underlying system for networking, which saves time later. It doesnt do much on it's own.
-        SteamNetworkingUtils.InitRelayNetworkAccess(); 
+        SteamNetworkingUtils.InitRelayNetworkAccess();
 
         SteamDebugLog("Steamworks connection complete.");
     }

@@ -1,179 +1,193 @@
 ﻿using Godot;
+using Google.Protobuf;
 using NetworkMessages;
 using Steamworks;
 using System;
 using System.Collections.Generic;
 using static NetworkManager;
-using Google.Protobuf;
+/// <summary>
+/// Represents a server that handles network connections and communication.
+/// </summary>
+public partial class Server : Node
+{
 
-public partial class Server: Node
-    {
-
+    /// <summary>
+    /// The list of client connections.
+    /// </summary>
     public List<HSteamNetConnection> clients = new();
 
-
-
+    /// <summary>
+    /// The listen socket for incoming connections.
+    /// </summary>
     public HSteamListenSocket listenSocket = new();
 
 
     protected Callback<SteamNetConnectionStatusChangedCallback_t> SteamNetConnectionStatusChange;
 
-    public delegate void NewPlayerJoinEventHandler(ulong clientID);
-    public static event NewPlayerJoinEventHandler NewPlayerJoinEvent = delegate { };
+    /// <summary>
+    /// The outgoing frame packet.
+    /// </summary>
+    public FramePacket outgoingFramePacket = new();
 
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Server"/> class with a local client connection.
+    /// </summary>
+    /// <param name="localClient">The local client connection.</param>
     public Server(HSteamNetConnection localClient)
     {
         clients.Add(localClient);
-        onPlayerJoin(Global.instance.clientID);
+        SteamNetworkingSockets.ConfigureConnectionLanes(localClient, 3, null, null);
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Server"/> class.
+    /// </summary>
     public Server() { }
 
+    /// <summary>
+    /// Called when the node is ready.
+    /// </summary>
     public override void _Ready()
     {
         SteamNetConnectionStatusChange = Callback<SteamNetConnectionStatusChangedCallback_t>.Create(onSteamNetConnectionStatusChange);
-        
     }
 
+    /// <summary>
+    /// Handles the SteamNetConnectionStatusChangedCallback event.
+    /// </summary>
+    /// <param name="event">The SteamNetConnectionStatusChangedCallback event.</param>
     private void onSteamNetConnectionStatusChange(SteamNetConnectionStatusChangedCallback_t @event)
     {
         bool acceptAllConnections = true;
-        if (@event.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_Connecting)
+        HSteamNetConnection conn = @event.m_hConn;
+        switch (@event.m_info.m_eState)
         {
-            HSteamNetConnection conn = @event.m_hConn;
-            if (acceptAllConnections)
-            {
-                SteamNetworkingSockets.AcceptConnection(conn);
+            case ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_Connecting:
+                if (acceptAllConnections)
+                {
+                    SteamNetworkingSockets.AcceptConnection(conn);
+                    Global.NetworkManager.networkDebugLog("Accepting external connection from ID: " + @event.m_info.m_identityRemote.GetSteamID64());
+                }
+                break;
+            case ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_Connected:
                 clients.Add(conn);
-                Global.NetworkManager.networkDebugLog("Accepting external connection.");
-
-                onPlayerJoin((ulong)@event.m_info.m_identityRemote.GetSteamID());
-                
-            }
+                SteamNetworkingSockets.ConfigureConnectionLanes(conn, 3, null, null);
+                Global.NetworkManager.networkDebugLog("Connection from ID: " + @event.m_info.m_identityRemote.GetSteamID64() + " complete!");
+                outgoingFramePacket.PlayerJoined.Add(NetworkManager.getConnectionRemoteID(conn));
+                break;
+            case ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_ClosedByPeer:
+                clients.Remove(conn);
+                outgoingFramePacket.PlayerLeft.Add(NetworkManager.getConnectionRemoteID(conn));
+                SteamNetworkingSockets.CloseConnection(conn, 0, "Connection closed by peer.", true);
+                Global.NetworkManager.networkDebugLog("Connection from ID: " + @event.m_info.m_identityRemote.GetSteamID64() + " closed by peer.");
+                break;
+            default:
+                Global.NetworkManager.networkDebugLog("Connection from ID: " + @event.m_info.m_identityRemote.GetSteamID64() + " in unknown state: " + @event.m_info.m_eState);
+                break;
         }
     }
 
-    public void onPlayerJoin(ulong clientID)
-    {
-        ServerMessagePlayerJoin message = new ServerMessagePlayerJoin();
-        Identity identity = new Identity();
-        identity.SteamID = (long)clientID;
-        identity.Name = SteamFriends.GetFriendPersonaName((CSteamID)(ulong)identity.SteamID);
-        message.NewPlayer = identity;
-
-        //BroadcastMessageWithExclusion(@event.m_info.m_identityRemote, NetworkManager.MessageType.SERVER_NEWPLAYER, message.ToByteArray());
-        BroadcastMessage(NetworkManager.MessageType.SERVER_NEWPLAYER, message.ToByteArray());
-    }
-
-    public void ServerSpawnPlayer(ulong clientID)
-    {
-        Identity identity = new Identity();
-        identity.SteamID = (long)clientID;
-        identity.Name = SteamFriends.GetFriendPersonaName((CSteamID)(ulong)identity.SteamID);
-        ServerMessageSpawnPlayer message2 = new ServerMessageSpawnPlayer();
-        message2.Player = identity;
-        Position pos =  new Position();
-        pos.X = 0;
-        pos.Y = 20;
-        pos.Z = 0;
-        message2.Position = pos;
-
-        BroadcastMessage(MessageType.SERVER_SPAWNPLAYER, message2.ToByteArray());
-
-    }
-
-    public void ServerLaunchGame()
-    {
-        ServerMessageLaunchGame msg = new ServerMessageLaunchGame();
-        msg.Mode = 1;
-        BroadcastMessage(MessageType.SERVER_LAUNCHGAME, msg.ToByteArray());
-        Global.NetworkManager.networkDebugLog("Server - Broadcasting server launch command");
-    }
-
+    /// <summary>
+    /// Called every frame.
+    /// </summary>
+    /// <param name="delta">The time elapsed since the last frame.</param>
     public override void _Process(double delta)
     {
         IntPtr[] messages = new IntPtr[100];
-        foreach (HSteamNetConnection conn in clients)
+        List<FramePacket> receivedPackets = new List<FramePacket>();
+
+        for (int i = 0; i < clients.Count; i++)
         {
+            HSteamNetConnection conn = clients[i];
             int numMessages = SteamNetworkingSockets.ReceiveMessagesOnConnection(conn, messages, 100);
-            for (int i = 0; i < numMessages; i++)
+
+            for (int j = 0; j < numMessages; j++)
             {
-                if (messages[i] == IntPtr.Zero) { continue; }
-                handleNetworkData(SteamNetworkingMessage_t.FromIntPtr(messages[i]));
+                if (messages[j] == IntPtr.Zero) { continue; }
+
+                SteamNetworkingMessage_t steamMsg = SteamNetworkingMessage_t.FromIntPtr(messages[j]);
+                FramePacket framePacket = FramePacket.Parser.ParseFrom(NetworkManager.IntPtrToBytes(steamMsg.m_pData, steamMsg.m_cbSize));
+
+                receivedPackets.Add(framePacket);
+
+                // Free the memory for the message
+                SteamNetworkingMessage_t.Release(messages[j]);
             }
         }
-    }
 
-    private void handleNetworkData(SteamNetworkingMessage_t message)
-    {
-        Global.debugLog("server here: got this stupid ass packet with type: " + (MessageType)message.m_nUserData);
-        handleNetworkData(message.m_identityPeer, (MessageType)message.m_nUserData, NetworkManager.IntPtrToBytes(message.m_pData, message.m_cbSize));
-    }
-
-
-    private void handleNetworkData(SteamNetworkingIdentity identity, MessageType type, byte[] data)
-    {
-       
-        switch (type)
+        // Process the received packets outside the loop
+        foreach (FramePacket framePacket in receivedPackets)
         {
-            case MessageType.CHAT_BASIC:
-                Global.NetworkManager.networkDebugLog("Server - Chat Message Received - Broadcasting!");
-                BroadcastMessage(type, data);   
-                break;
-            case MessageType.INPUT_MOVEMENTDIRECTION:
-                Global.NetworkManager.networkDebugLog("Server - Input Delta Message Recevied!");
-                //Apply this input data to my simulation of the players.
-
-                //forward the inputs to all other players for their sims
-                BroadcastMessageWithExclusion(identity, type, data);
-                //BroadcastMessage(type, data);
-                break;
-            case MessageType.INPUT_ACTION:
-                Global.NetworkManager.networkDebugLog("Server - Action Delta Message Recevied! from: " + identity.GetSteamID());
-                //Apply this input data to my simulation of the players.
-
-                //forward the inputs to all other players for their sims
-                BroadcastMessageWithExclusion(identity, type, data);
-                //BroadcastMessage(type, data);
-                break;
-            case MessageType.INPUT_FULLCAPTURE:
-                Global.NetworkManager.networkDebugLog("Server - Input Sync Message Recevied!");
-                //Apply this input data to my simulation of the players.
-
-                //forward the inputs to all other players for their sims
-                BroadcastMessageWithExclusion(identity, type, data);
-                //BroadcastMessage(type, data);
-                break;
-            default:
-                break;
+            handleFramePacket(framePacket);
         }
     }
 
-
-
-    private void BroadcastMessage(MessageType type, byte[] data)
+    /// <summary>
+    /// Called every physics frame.
+    /// </summary>
+    /// <param name="delta">The time elapsed since the last physics frame.</param>
+    public override void _PhysicsProcess(double delta)
     {
-        Global.NetworkManager.networkDebugLog("Server starting broadcast of messagetype: " + type.ToString());
+        outgoingFramePacket.Tick = Global.getTick();
+        outgoingFramePacket.Sender = Global.instance.clientID;
         foreach (HSteamNetConnection c in clients)
         {
-            NetworkManager.SendSteamMessage(type,c,data);
+            SendSteamMessage(c, outgoingFramePacket);
         }
+        outgoingFramePacket = new FramePacket();
     }
 
-    private void BroadcastMessageWithExclusion(SteamNetworkingIdentity exclude, MessageType type, byte[] data)
+    /// <summary>
+    /// Handles the frame packet received from the client.
+    /// </summary>
+    /// <param name="framePacket">The frame packet received from the client.</param>
+    private void handleFramePacket(FramePacket framePacket)
     {
-        Global.NetworkManager.networkDebugLog("Server starting broadcast of messagetype: " + type.ToString() + " with exclusion.");
-        foreach (HSteamNetConnection c in clients)
+        foreach (Chat chatMessage in framePacket.ChatMessages)
         {
-            SteamNetConnectionInfo_t info = new();
-            SteamNetworkingSockets.GetConnectionInfo(c,out info);
-            if (info.m_identityRemote.Equals(exclude))
+            outgoingFramePacket.ChatMessages.Add(chatMessage);
+        }
+        foreach (Command command in framePacket.Commands)
+        {
+            Global.NetworkManager.networkDebugLog("Server - Received a command: " + command.Command_);
+            if (!HasCommandPermission(framePacket.Sender, command))
             {
+                Global.NetworkManager.networkDebugLog("Server - Sender: " + framePacket.Sender + " does not have permissions for command: " + command.Command_);
                 continue;
             }
-            NetworkManager.SendSteamMessage(type, c, data);
+            switch (command.Command_)
+            {
+                case "startgame":
+                    Global.NetworkManager.networkDebugLog("Server - Received a command to launch the game");
+                    outgoingFramePacket.Commands.Add(new Command { Command_ = "startgame" });
+                    break;
+                default:
+                    Global.NetworkManager.networkDebugLog("Server - Received a command of an unexpected type: " + command.Command_);
+                    break;
+            }
         }
     }
 
+    /// <summary>
+    /// Checks if the sender has permission to execute the command.
+    /// </summary>
+    /// <param name="sender">The sender's ID.</param>
+    /// <param name="command">The command to be executed.</param>
+    /// <returns><c>true</c> if the sender has permission; otherwise, <c>false</c>.</returns>
+    private bool HasCommandPermission(ulong sender, Command command)
+    {
+        // Implement your logic here to check if the sender has permission to execute the command
+        // You can use the 'sender' and 'command' parameters to perform the necessary checks
+        // Return true if the sender has permission, otherwise return false
+        // Example implementation:
+        if (true)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
 }

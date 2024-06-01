@@ -1,15 +1,37 @@
 ﻿using Godot;
+using Google.Protobuf;
 using NetworkMessages;
 using Steamworks;
 using System;
-using System.Runtime.InteropServices;
+using System.Collections.Generic;
+using System.Linq;
 using static NetworkManager;
+
 
 /// <summary>
 /// Object representing the client-side processing of networking data. Only one of these should exist per machine.
 /// </summary>
-public partial class Client: Node
-    {
+public partial class Client : Node
+{
+    public float incomingBandwidthUsed = 0;
+    public float outgoingBandwidthUsed = 0;
+    public float totalBandwidthUsed = 0;   
+    public float incomingBandwidth = 0;
+    public float outgoingBandwidth = 0;
+    public float totalBandwidth = 0;
+
+
+    public delegate void ChatMessageEventHandler(string message, ulong sender);
+    public static event ChatMessageEventHandler ChatMessageReceived;
+
+    public delegate void PlayerJoinedEventHandler(ulong playerID);
+    public static event PlayerJoinedEventHandler PlayerJoined;
+
+    public delegate void PlayerLeftEventHandler(ulong playerID);
+    public static event PlayerLeftEventHandler PlayerLeft;
+
+    public FramePacket outgoingFramePacket = new();
+    public Dictionary<ulong,FramePacket> framePacketBuffer = new();
 
     /// <summary>
     /// The maximum number of messages the Client will attempt to handle per frame. I have no clue what the concequences of this are, in either direction.
@@ -20,6 +42,10 @@ public partial class Client: Node
     /// A handle for the connection to the server. Any messages from the server end up on this, any message sent on this end up at the server.
     /// </summary>
     public HSteamNetConnection connectionToServer;
+
+    public List<ulong> peers = new();
+
+    public ulong serverID = 0;
 
     /// <summary>
     /// An event that fires when the underlying steam network detects a change in connection status.
@@ -33,6 +59,7 @@ public partial class Client: Node
     public Client(HSteamNetConnection connectionToServer)
     {
         this.connectionToServer = connectionToServer;
+        serverID = NetworkManager.getConnectionRemoteID(connectionToServer);
     }
 
     /// <summary>
@@ -40,35 +67,23 @@ public partial class Client: Node
     /// </summary>
     public Client() { }
 
-    public delegate void NewPlayerJoinEventHandler(ulong clientID);
-    public static event NewPlayerJoinEventHandler NewPlayerJoinEvent = delegate { };
-
-
     public override void _Ready()
     {
         //Hooks up the connection status change event to a function
         SteamNetConnectionStatusChange = Callback<SteamNetConnectionStatusChangedCallback_t>.Create(onSteamNetConnectionStatusChange);
-        NewPlayerJoinEvent += onNewPlayerJoinEvent;
+
+        SteamNetworkingSockets.ConfigureConnectionLanes(connectionToServer, 3, null, null);
     }
 
-    private void onNewPlayerJoinEvent(ulong clientID)
-    {
-        Player remotePlayer = Global.PlayerManager.CreateAndRegisterNewPlayer(clientID);
-        Global.PlayerManager.SpawnPlayer(remotePlayer, new Vector3(0,10,0));
-
-    }
-
-    /// <summary>
-    /// Called by the underlying Steam API in response to any underlying connection status change
-    /// </summary>
-    /// <param name="param">Info on the event</param>
-    /// <exception cref="NotImplementedException"></exception>
     private void onSteamNetConnectionStatusChange(SteamNetConnectionStatusChangedCallback_t param)
     {
         Global.NetworkManager.networkDebugLog("Client - connection status change. New status: " + param.m_info.m_eState);
     }
 
-    // Runs once per frame.
+    /// <summary>
+    /// This method is called once per frame and is responsible for processing network messages.
+    /// </summary>
+    /// <param name="delta">The time elapsed since the last frame.</param>
     public override void _Process(double delta)
     {
         //Create and allocate memory for an array of pointers
@@ -78,88 +93,72 @@ public partial class Client: Node
         int numMessages = SteamNetworkingSockets.ReceiveMessagesOnConnection(connectionToServer, messages, nMaxMessages);
 
         //For each message, send it off to further processing
-        for(int i = 0; i<numMessages; i++)
-            {
-            if (messages[i] == IntPtr.Zero) { continue; } //Sanity check. 
-            handleNetworkData(SteamNetworkingMessage_t.FromIntPtr(messages[i]));
-        }
-    }
-
-    /// <summary>
-    /// Overloaded method sig just to make things easier. Takes apart the SteamMessage into its important peices and sends them on.
-    /// </summary>
-    /// <param name="message"></param>
-    private void handleNetworkData(SteamNetworkingMessage_t message)
-    {
-        //Read m_cbSize bytes starting at m_pData (payload size and payload pointer) out to a managed byte array
-        byte[] payload = NetworkManager.IntPtrToBytes(message.m_pData, message.m_cbSize);
-
-        //send those pieces of the message we care about onward.
-
-        handleNetworkData(message.m_identityPeer, (MessageType)message.m_nUserData, payload);
-    }
-
-    /// <summary>
-    /// The primary network processing switch. All network messages entering the Client must pass thru here to be directed to the correct processing location.
-    /// </summary>
-    /// <param name="identity">Will be either a CSteamID (ulong) or an ipaddress. See SteamNetworkingIdentity</param>
-    /// <param name="type">enum message type</param>
-    /// <param name="data">raw bytearray of protobuf payload</param>
-    private void handleNetworkData(SteamNetworkingIdentity identity, MessageType type, byte[] data)
-    {
-
-        switch (type)
+        for (int i = 0; i < numMessages; i++)
         {
-            case MessageType.CHAT_BASIC:
-                Global.NetworkManager.networkDebugLog("Client - Chat Message Received.");
-                ClientChatHandler.handleChatMessage(data);
-                break;
-
-            case MessageType.INPUT_MOVEMENTDIRECTION:
-                Global.NetworkManager.networkDebugLog("Client - Input Delta Message Received.");
-                ClientInputHandler.HandleInputMovementDirectionMessage(data);
-                break;
-            case MessageType.INPUT_ACTION:
-                Global.NetworkManager.networkDebugLog("Client - Action Delta Message Received.");
-                ClientInputHandler.HandleInputActionMessage(data);
-                break;
-            case MessageType.INPUT_FULLCAPTURE:
-                Global.NetworkManager.networkDebugLog("Client - Full Input Sync Message Received.");
-                ClientInputHandler.handleInputSyncMessage(data);
-                break;
-
-            case MessageType.SERVER_NEWPLAYER:
-                Global.NetworkManager.networkDebugLog("Client - Got the new player notice from server.");
-                ServerMessagePlayerJoin joinMessage = ServerMessagePlayerJoin.Parser.ParseFrom(data);
-                Global.PlayerManager.CreateAndRegisterNewPlayer((ulong)joinMessage.NewPlayer.SteamID);
-                break;
-            case MessageType.SERVER_SPAWNPLAYER:
-                Global.NetworkManager.networkDebugLog("Client - Got the spawn player command from server.");
-                ServerMessageSpawnPlayer spawnMessage = ServerMessageSpawnPlayer.Parser.ParseFrom(data);
-                if (Global.PlayerManager.players.TryGetValue((ulong)spawnMessage.Player.SteamID, out Player player))
-                {
-                    Global.PlayerManager.SpawnPlayer(player, new Vector3(spawnMessage.Position.X,spawnMessage.Position.Y,spawnMessage.Position.Z));
-                }
-                break;
-            case MessageType.SERVER_LAUNCHGAME:
-                Global.NetworkManager.networkDebugLog("Client - Got the launch game command from server.");
-                Global.UIManager.clearUI();
-                Global.PlayerManager.SpawnAll();
-                break;
-
-
-            default:
-                break;
+            if (messages[i] == IntPtr.Zero) { continue; } //Sanity check. 
+            SteamNetworkingMessage_t steamMsg = SteamNetworkingMessage_t.FromIntPtr(messages[i]);
+            FramePacket framePacket = FramePacket.Parser.ParseFrom(NetworkManager.IntPtrToBytes(steamMsg.m_pData, steamMsg.m_cbSize));
+            switch (steamMsg.m_idxLane)
+            {
+                case 0:
+                    handleFramePacket(framePacket);
+                    break;
+                default:
+                    Global.NetworkManager.networkDebugLog("Client - Received a message on an unexpected lane. Lane: " + steamMsg.m_idxLane);
+                    break;
+            }
+            //Free the memory for the message
+            SteamNetworkingMessage_t.Release(messages[i]);
         }
+
+
     }
 
+    public override void _PhysicsProcess(double delta)
+    {
+        outgoingFramePacket.Tick = Global.getTick();
+        outgoingFramePacket.Sender = Global.instance.clientID;
+        SendSteamMessage(connectionToServer, outgoingFramePacket);
+        outgoingFramePacket = new FramePacket();
+    }
 
-
-
-
-
-
-
-
+    private void handleFramePacket(FramePacket framePacket)
+    {
+        foreach (Chat chatMessage in framePacket.ChatMessages)
+        {
+            ChatMessageReceived.Invoke(chatMessage.Message, chatMessage.Sender.SteamID);
+        }
+        foreach (ulong playerID in framePacket.PlayerJoined)
+        {
+            PlayerJoined.Invoke(playerID);
+        }
+        foreach (ulong playerID in framePacket.PlayerLeft)
+        {
+            PlayerLeft.Invoke(playerID);
+        }
+        if (framePacket.PlayerList.Count > 0)
+        {
+            peers = framePacket.PlayerList.Clone().ToList();
+        }
+        foreach (Command command in framePacket.Commands)
+        {
+            Global.NetworkManager.networkDebugLog("Client - Received a command: " + command.Command_);
+            switch (command.Command_)
+            {
+                case "startgame":
+                    Global.NetworkManager.networkDebugLog("Client - Received a command to launch the game");
+                    Global.instance.StartGame();
+                    break;
+                default:
+                    Global.NetworkManager.networkDebugLog("Client - Received a command of an unexpected type: " + command.Command_);
+                    break;
+            }
+        }
+        if (framePacket.Tick!=0)
+        {
+            Global.debugLog("Got server info packet for tick: " + framePacket.Tick);
+            framePacketBuffer.Add(framePacket.Tick, framePacket);
+        }
+    }
 }
 

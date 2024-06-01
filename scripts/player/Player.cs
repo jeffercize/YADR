@@ -1,13 +1,8 @@
 ﻿using Godot;
 using NetworkMessages;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-    public partial class Player: Character
-    {
+public partial class Player : Character
+{
 
     public Player() { }
     public Player(ulong clientID) { this.clientID = clientID; }
@@ -16,10 +11,10 @@ using System.Threading.Tasks;
     //Core properties of Player
     public Equipment equipment;
     public Inventory inventory;
-    public PlayerInputData input;
+    public PlayerInput input;
     public ulong clientID = 0;
     public bool spawned = false;
-
+    public bool isMe = false;
     //Movement Vars
     public Vector3 newVelocity = Vector3.Zero;
     public float gravity = ProjectSettings.GetSetting("physics/3d/default_gravity").AsSingle();
@@ -115,22 +110,55 @@ using System.Threading.Tasks;
         leftHoldPointOriginPos = leftHoldPoint.Position;
         rightHoldPointOriginPos = rightHoldPoint.Position;
 
-        InputManager.InputEvent += onInputEvent;
+        //InputManager.InputEvent += onInputEvent;
         Equipment.equipMessage += onEquip;
         Equipment.unequipMessage += onUnequip;
 
-
+        Global.debugLog("Testing to see if this player is me. PlayerID: " + clientID + " VS. my globalID: " + Global.instance.clientID);
         if (Global.instance.isMe(clientID))
         {
+            isMe = true;
             Global.debugLog("woah this is me");
             cam = new Camera3D();
             pov.AddChild(cam);
             cam.Current = true;
             Global.UIManager.connectToPlayer(this);
             Input.MouseMode = Input.MouseModeEnum.Captured;
+            Global.InputManager.SetProcessInput(true);
+            input = Global.InputManager.frameInput;
+        }
+        else
+        {
+            // ClientInputHandler.NetworkInputLookDirectionEvent += onNetworkInputLookDirectionEvent;
+            // ClientPlayerStateHandler.NetworkPlayerStatePositionEvent += onNetworkPlayerStatePositionEvent;
         }
 
     }
+    /*
+    private void onNetworkPlayerStatePositionEvent(PlayerStatePositionMessage message)
+    {
+        if (isMe) { return; }
+        if (message.PlayerIdentity.SteamID == (long)clientID)
+        {
+            Vector3 newPos = new();
+            newPos.X = message.Position.X;
+            newPos.Y = message.Position.Y;
+            newPos.Z = message.Position.Z;
+            this.GlobalPosition = newPos;
+        }
+
+    }
+
+    private void onNetworkInputLookDirectionEvent(InputLookDirectionMessage message)
+    {
+        if (isMe) { return; }
+        //Global.debugLog("Player direction set by networking:  X: " + message.Direction.X + " Y: " + message.Direction.Y);
+        pov.Rotation = new Vector3(message.Direction.X, 0, 0);
+
+        //Rotates the entire player (camera is child, so it comes along) on Y (left/right)
+        Rotation = new Vector3(0, message.Direction.Y, 0);
+    
+    }*/
 
     private void onUnequip(Equipment equipment, string slotName, Item item)
     {
@@ -141,7 +169,7 @@ using System.Threading.Tasks;
     {
         throw new NotImplementedException();
     }
-
+    /*
     private void onInputEvent(ulong clientID, ActionMessage actionMessage)
     {
         if (clientID==this.clientID && actionMessage != null)
@@ -151,7 +179,7 @@ using System.Threading.Tasks;
                 onJump();
             }
         }
-    }
+    }*/
 
     public void ForceSyncState(Player state)
     {
@@ -180,13 +208,16 @@ using System.Threading.Tasks;
     public override void _Process(double delta)
     {
 
-        //Rotates the camera on X (Up/Down) and clamps so it doesnt go too far.
-        pov.Rotation = new Vector3((float)Mathf.Clamp(pov.Rotation.X - input.lookDelta.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
+        if (isMe)
+        {
+            //Rotates the camera on X (Up/Down) and clamps so it doesnt go too far.
+            pov.Rotation = new Vector3((float)Mathf.Clamp(pov.Rotation.X - Global.InputManager.frameInput.LookDelta.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
 
-
-        //Rotates the entire player (camera is child, so it comes along) on Y (left/right)
-        Rotation = new Vector3(0, Rotation.Y - input.lookDelta.X * (float)delta, 0);
-        input.lookDelta = Vector2.Zero;
+            //Rotates the entire player (camera is child, so it comes along) on Y (left/right)
+            Rotation = new Vector3(0, Rotation.Y - Global.InputManager.frameInput.LookDelta.X * (float)delta, 0);
+            Global.InputManager.frameInput.LookDelta = new Vec2() { X = 0, Y = 0 };
+            //ClientInputHandler.CreateAndSendInputLookDirectionMessage(Global.instance.clientID, new Vector3(pov.Rotation.X, Rotation.Y, 0));
+        }
         // debugPointer();
 
         if (leftHeldItem != Item.NONE)
@@ -236,14 +267,19 @@ using System.Threading.Tasks;
     }
 
 
-
+    double PlayerStateSyncTimer = 1f;
+    double PlayerStateSyncCounter = 0f;
 
     //MOVEMENT SHIT ///////////////////////////////////////////////
     public override void _PhysicsProcess(double delta)
     {
         handleInputDirection(delta);
         handleJumpingAndFalling(delta);
-        handleLookingDirection(delta);
+        if (!isMe)
+        {
+            handleLookingDirection(delta);
+        }
+
 
         //Upate our vector and shoot it off to the physics engine
         Velocity = newVelocity;
@@ -251,20 +287,14 @@ using System.Threading.Tasks;
 
         //Velocity is updated by the physics engine at this point, store it to modify next frame.
         newVelocity = Velocity;
-
-        //MP Sync 
-        if (Global.NetworkManager.isActive)
-        {
-
-        }
     }
 
     private void handleLookingDirection(double delta)
     {
-        pov.Rotation = new Vector3((float)Mathf.Clamp(pov.Rotation.X - input.lookDelta.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
+        pov.Rotation = new Vector3((float)Mathf.Clamp(pov.Rotation.X - Global.InputManager.frameInput.LookDelta.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
         //Rotates the entire player (camera is child, so it comes along) on Y (left/right)
-        Rotation = new Vector3(0, Rotation.Y - input.lookDelta.X * (float)delta, 0);
-        input.lookDelta = Vector2.Zero;
+        Rotation = new Vector3(0, Rotation.Y - Global.InputManager.frameInput.LookDelta.X * (float)delta, 0);
+        Global.InputManager.frameInput.LookDelta = new Vec2();
     }
 
     private void handleJumpingAndFalling(double delta)
@@ -314,7 +344,7 @@ using System.Threading.Tasks;
     private void handleInputDirection(double delta)
     {
         //Collect our current Input direction (drop the Y piece), and multiply it by our Transform Basis, rotating it so that forward input becomes forward in the direction we are facing
-        Vector3 dir = Transform.Basis * new Vector3(input.direction.Y * maxSpeedX, 0, input.direction.X * maxSpeedZ);
+        Vector3 dir = Transform.Basis * new Vector3(Global.InputManager.frameInput.MovementDirection.Y * maxSpeedX, 0, Global.InputManager.frameInput.MovementDirection.X * maxSpeedZ);
 
         //Create our desired vector, the direction we're going at max speed
         Vector3 targetVec = new Vector3(dir.X, 0, dir.Z);

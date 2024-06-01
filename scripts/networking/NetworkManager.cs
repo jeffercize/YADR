@@ -1,16 +1,15 @@
 ﻿using Godot;
+using Google.Protobuf;
+using NetworkMessages;
 using Steamworks;
 using System;
-using System.Collections.Generic;
-using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
-
 using static Steamworks.SteamNetworkingSockets;
 
 /// <summary>
 /// Manager class for all things networking. Singleton pattern, created and managed by Global
 /// </summary>
-public partial class NetworkManager: Node
+public partial class NetworkManager : Node
 {
 
     //Bitflags from the SteamAPI for sending messages - replicated here to make things easier.
@@ -48,15 +47,6 @@ public partial class NetworkManager: Node
     public enum NETWORK_MODE { STEAM, NONSTEAM, OFFLINE };
     private NETWORK_MODE networkMode;
 
-    public enum MessageType { 
-        CHAT_BASIC,
-        INPUT_MOVEMENTDIRECTION,
-        INPUT_ACTION,
-        INPUT_FULLCAPTURE,
-        SERVER_NEWPLAYER,
-        SERVER_SPAWNPLAYER,
-        SERVER_LAUNCHGAME
-    }
 
     /// <summary>
     /// Starts the game. Despite being in network manager this also starts singleplayer due to the unified internal server approach.
@@ -80,6 +70,7 @@ public partial class NetworkManager: Node
         AddChild(client);
         server = new Server(localConnection);
         AddChild(server);
+        //Global.PlayerManager.CreateAndRegisterNewPlayer(Global.instance.clientID);
 
 
         if (isOffline)
@@ -107,9 +98,9 @@ public partial class NetworkManager: Node
 
     public void launchGame()
     {
-        if(isActive && isHost)
+        if (isActive && isHost)
         {
-            server.ServerLaunchGame();
+           
         }
         else
         {
@@ -153,10 +144,15 @@ public partial class NetworkManager: Node
         {
             networkDebugLog("Connecting to server at: " + steamID + " failed!");
         }
- 
     }
 
-    public ESteamNetworkingConnectionState GetConnectionState(HSteamNetConnection conn)
+    public static ulong getConnectionRemoteID(HSteamNetConnection remote)
+    {
+        SteamNetworkingSockets.GetConnectionInfo(remote, out SteamNetConnectionInfo_t info);
+        return info.m_identityRemote.GetSteamID64();
+    }
+
+    public static ESteamNetworkingConnectionState GetConnectionState(HSteamNetConnection conn)
     {
         SteamNetworkingSockets.GetConnectionInfo(conn, out SteamNetConnectionInfo_t info);
         return info.m_eState;
@@ -207,6 +203,8 @@ public partial class NetworkManager: Node
         return retval;
     }
 
+
+
     /// <summary>
     /// Sends a message using the SteamNetworkingSockets library. In theory, this should be agnostic to steam vs non-steam networking.
     /// </summary>
@@ -215,12 +213,13 @@ public partial class NetworkManager: Node
     /// <param name="data"></param>
     /// <param name="sendFlags"></param>
     /// <returns></returns>
-    public static bool SendSteamMessage(MessageType type, HSteamNetConnection target, byte[] data, int sendFlags = k_nSteamNetworkingSend_ReliableNoNagle)
+    public static bool SendSteamMessage(HSteamNetConnection target, IMessage message, ushort lane = 0, int sendFlags = k_nSteamNetworkingSend_ReliableNoNagle)
     {
         var msgPtrsToSend = new IntPtr[] { IntPtr.Zero };
         var ptr = IntPtr.Zero;
         try
         {
+            byte[] data = message.ToByteArray();
             ptr = SteamNetworkingUtils.AllocateMessage(data.Length);
 
             var msg = SteamNetworkingMessage_t.FromIntPtr(ptr);
@@ -229,10 +228,9 @@ public partial class NetworkManager: Node
             // but the native message currently can't be edited via ptr, even with unsafe code
             Marshal.Copy(data, 0, msg.m_pData, data.Length);
 
-            msg.m_nFlags = NetworkManager.k_nSteamNetworkingSend_ReliableNoNagle;
+            msg.m_nFlags = sendFlags;
             msg.m_conn = target;
-            msg.m_nUserData = (long)type;
-            Global.NetworkManager.networkDebugLog("Sending message with requested type: " + type + " and stored type: " + (MessageType)msg.m_nUserData + " translated to long form: " + msg.m_nUserData);
+            msg.m_idxLane = lane;
             // Copies the bytes of the managed message back into the native structure located at ptr
             Marshal.StructureToPtr(msg, ptr, false);
 
@@ -251,6 +249,19 @@ public partial class NetworkManager: Node
 
         return result == EResult.k_EResultOK;
 
+    }
+
+    internal Chat ChatMessageConstructor(string text)
+    {
+        Identity identity = new Identity();
+        identity.Name = Global.instance.clientName;
+        identity.SteamID = (ulong)Global.instance.clientID;
+
+        Chat chat = new Chat();
+        chat.Sender = identity;
+        chat.Message = text;
+
+        return chat;
     }
 }
 

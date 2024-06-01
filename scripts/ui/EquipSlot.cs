@@ -1,7 +1,4 @@
 using Godot;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 [GlobalClass]
 public partial class EquipSlot : Control
@@ -34,7 +31,7 @@ public partial class EquipSlot : Control
             DrawString(GetThemeDefaultFont(), GetChild<Panel>(0).GetRect().GetCenter(), this.Name);
 
         }
-        if (Global.UIManager.dragItem != null && Global.UIManager.dragItem != Item.NONE && connectedEquipment.canEquip(this.Name,Global.UIManager.dragItem))
+        if (Global.UIManager.dragItem != null && Global.UIManager.dragItem != Item.NONE && connectedEquipment.canEquip(this.Name, Global.UIManager.dragItem))
         {
             DrawRect(GetChild<Panel>(0).GetRect().Grow(10f), Colors.Aqua, false, 4);
         }
@@ -76,19 +73,17 @@ public partial class EquipSlot : Control
                 if (!Global.UIManager.hasDragItem() && hasEquip())
                 {
                     Global.debugLog(this.Name + "Click pickup, Item Unequipped!");
-                   
                     connectedEquipment.unequip(this.Name, out equip);
                     Global.UIManager.dragItem = equip;
                     GetNode<AudioStreamPlayer>("/root/main/uisfx").Stream = ResourceLoader.Load<AudioStreamWav>("res://assets/audio/ui/mouseclick1.wav");
                     GetNode<AudioStreamPlayer>("/root/main/uisfx").Play();
-                    
                     startMousePos = Vector2.Zero;
 
                     QueueRedraw();
                 }
                 else if (Global.UIManager.hasDragItem() && !this.hasEquip())
                 {
-                    if (connectedEquipment.canEquip(this.Name,Global.UIManager.dragItem))
+                    if (connectedEquipment.canEquip(this.Name, Global.UIManager.dragItem))
                     {
                         Global.debugLog(this.Name + "Drag or click Drop! Item Equipped!");
                         GetNode<AudioStreamPlayer>("/root/main/uisfx").Stream = ResourceLoader.Load<AudioStreamWav>("res://assets/audio/ui/mouserelease1.wav");
@@ -133,7 +128,7 @@ public partial class EquipSlot : Control
                 GetNode<AudioStreamPlayer>("/root/main/uisfx").Stream = ResourceLoader.Load<AudioStreamWav>("res://assets/audio/ui/mouseclick1.wav");
                 GetNode<AudioStreamPlayer>("/root/main/uisfx").Play();
                 startMousePos = Vector2.Zero;
-                connectedEquipment.unequip(this.Name,out equip);
+                connectedEquipment.unequip(this.Name, out equip);
                 Global.UIManager.dragItem = equip;
                 QueueRedraw();
             }

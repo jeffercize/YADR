@@ -118,8 +118,8 @@ public partial class Inventory : Node
     public bool phantomPlaceItemAtCoordsOverlapOne(int x, int y, Item item, out Item overlap)
     {
         item.invTopLeft = new Vector2((int)x, (int)y);
-        bool retVal= canPlaceItemAtCoordsOverlapOne(x, y, item, out overlap);
-        if (!retVal) {  return false; }
+        bool retVal = canPlaceItemAtCoordsOverlapOne(x, y, item, out overlap);
+        if (!retVal) { return false; }
         for (int xx = x; xx < x + item.width; xx++)
         {
             for (int yy = y; yy < y + item.height; yy++)
@@ -200,7 +200,6 @@ public partial class Inventory : Node
         return true;
     }
 
-    
 
     public bool isItemAtCoords(int x, int y)
     {
@@ -264,7 +263,6 @@ public partial class Inventory : Node
 
     public void debugGen()
     {
-        
         Equipable test = new Equipable(1f, 2, 2, "2x2Helmet", "testd", false, ResourceLoader.Load<Texture2D>("res://assets/items/helmet.png"));
         test.type = Equipable.EquipType.HELMET;
         placeItemAtCoords(5, 5, test);
@@ -279,7 +277,6 @@ public partial class Inventory : Node
         icon4.Texture = ResourceLoader.Load<Texture2D>("res://assets/items/bandage.png");
         Consumable test4 = new Consumable(1, 1, 1, "test4", "test4d", false, icon4);
         placeItemAtCoords(8, 3, test4);*/
-        
 
 
         Equipable test5 = new Equipable(1, 5, 2, "test5", "test5d", false, ResourceLoader.Load<Texture2D>("res://assets/items/longgun.png"));

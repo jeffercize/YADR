@@ -1,4 +1,4 @@
-<Project Sdk="Godot.NET.Sdk/4.2.2">
+﻿<Project Sdk="Godot.NET.Sdk/4.2.2">
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="scripts\networking\proto\protodef.proto" />
+    <None Include="scripts\networking\proto\NetworkingProto.proto" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.26.1" />
@@ -20,4 +20,5 @@
   <ItemGroup>
     <Folder Include="scenes\" />
   </ItemGroup>
+
 </Project>

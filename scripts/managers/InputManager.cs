@@ -1,43 +1,16 @@
 using Godot;
 using NetworkMessages;
 using System;
-using System.Collections.Generic;
-using System.Net;
+using Action = NetworkMessages.Action;
 
-public partial class InputManager: Node
+public partial class InputManager : Node
 {
-
-    public delegate void InputEventHandler(ulong clientID, ActionMessage actionMessage);
-    public static event InputEventHandler InputEvent = delegate { };
-
-    public PlayerInputData localInput = new();
-
-    public Dictionary<ulong,PlayerInputData> remoteInputs = new Dictionary<ulong,PlayerInputData>();
-
     public float mouseSens = .1f;
-
-
-    double InputSyncTimer = 1f;
-    double InputSyncCounter = 0f;
-
-
-
-    public void BindRemoteClientInput(ulong remoteClient, Player player)
-    {
-        remoteInputs.Add(remoteClient, new PlayerInputData());
-        player.input = remoteInputs[remoteClient];
-        player.clientID = remoteClient;
-    }
+    public PlayerInput frameInput = new PlayerInput();
 
     public override void _PhysicsProcess(double delta)
     {
-        InputSyncCounter += delta;
-        if (InputSyncCounter > InputSyncTimer)
-        {
-            //ClientInputHandler.CreateAndSendInputSyncMessage(Global.instance.clientID, localInput);
-            InputSyncCounter = 0;
-        }
-
+        Global.NetworkManager.client.outgoingFramePacket.Inputs.Add(frameInput.Clone());
     }
 
     public override void _Process(double delta)
@@ -47,33 +20,9 @@ public partial class InputManager: Node
 
     public override void _Ready()
     {
-        ClientInputHandler.NetworkInputActionEvent += onNetworkInputActionEvent;
-        ClientInputHandler.NetworkInputMovementDirectionEvent += onNetworkInputMovementDirectionEvent;
-        ClientInputHandler.NetworkInputFullCaptureEvent += onNetworkInputFullCaptureEvent;
+        SetProcessInput(false);
     }
 
-    private void onNetworkInputFullCaptureEvent(InputFullCaptureMessage message)
-    {
-        throw new NotImplementedException();
-    }
-
-    private void onNetworkInputMovementDirectionEvent(InputMovementDirectionMessage message)
-    {
-        if (remoteInputs.TryGetValue((ulong)message.InputOf.SteamID, out PlayerInputData value))
-        {
-            value.direction.X = message.Direction.X;
-            value.direction.Y = message.Direction.Y;
-        }
-    }
-
-    private void onNetworkInputActionEvent(InputActionMessage message)
-    {
-        if(remoteInputs.TryGetValue((ulong)message.InputOf.SteamID, out PlayerInputData value))
-        {
-            value.actionStates[message.Action.ActionType] = message.Action.ActionState;
-        }
-        InputEvent.Invoke((ulong)message.InputOf.SteamID, message.Action);
-    }
 
     public override void _Input(InputEvent @event)
     {
@@ -95,11 +44,8 @@ public partial class InputManager: Node
     {
         if (@event.IsAction("moveForward") || @event.IsAction("moveBackward") || @event.IsAction("moveLeft") || @event.IsAction("moveRight"))
         {
-            localInput.direction = Input.GetVector("moveForward", "moveBackward", "moveLeft", "moveRight");
-            if (!@event.IsEcho())
-            {
-                ClientInputHandler.CreateAndSendInputMovementDirectionMessage(Global.instance.clientID, localInput.direction);
-            }
+            Vector2 dir = Input.GetVector("moveForward", "moveBackward", "moveLeft", "moveRight");
+            frameInput.MovementDirection = new Vec2() { X = dir.X, Y= dir.Y };
         }
 
     }
@@ -107,33 +53,27 @@ public partial class InputManager: Node
     private void checkAction(InputEvent @event, ActionType action)
     {
         string actionName = Enum.GetName(typeof(ActionType), action);
-
+        Global.debugLog(actionName);
         if (@event.IsAction(actionName))
         {
-            ActionMessage msg = new ActionMessage();
-            msg.ActionType = action;
             if (@event.IsActionPressed(actionName))
             {
-                localInput.actionStates[action] = ActionState.Pressed;
-                msg.ActionState = ActionState.Pressed;
-                InputEvent.Invoke(Global.instance.clientID, msg);
-                ClientInputHandler.CreateAndSendActionDeltaMessage(Global.instance.clientID, action, ActionState.Pressed);
+                frameInput.Actions.Add(new Action() { ActionType = action, ActionState = ActionState.Pressed });
+
             }
             else if (@event.IsActionReleased(actionName))
             {
-                localInput.actionStates[action] = ActionState.Released;
-                msg.ActionState = ActionState.Released;
-                InputEvent.Invoke(Global.instance.clientID, msg);
-                ClientInputHandler.CreateAndSendActionDeltaMessage(Global.instance.clientID, action, ActionState.Released);
+                frameInput.Actions.Add(new Action() { ActionType = action, ActionState = ActionState.Released });
             }
         }
     }
     private void checkMouse(InputEvent @event)
     {
+
         if (@event is InputEventMouseMotion mouse && Input.MouseMode==Input.MouseModeEnum.Captured)
         {
-            localInput.lookDelta = mouse.Relative * mouseSens;
-            //NetworkInputHandler.CreateAndSendInputDeltaMessage(Global.instance.clientID, NetworkInputHandler.InputType.LOOKDELTA,localInput.lookDelta);
+            Vector2 mouseDelta = (mouse.Relative * mouseSens);
+            frameInput.LookDelta = new Vec2() { X = mouseDelta.X, Y = mouseDelta.Y } ;
         }
     }
 
@@ -143,5 +83,5 @@ public partial class InputManager: Node
     }
 
 
-
+    
 }

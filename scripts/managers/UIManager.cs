@@ -1,6 +1,4 @@
 using Godot;
-using NetworkMessages;
-using System;
 
 public partial class UIManager : Control
 {
@@ -20,15 +18,12 @@ public partial class UIManager : Control
         //playerInventoryUI.connectedInventory.debugGen();
 
         //Event subscription
-        InputManager.InputEvent += inputHandler;
+        //InputManager.InputEvent += inputHandler;
     }
 
-    private void inputHandler(ulong clientID, ActionMessage actionMessage)
+    private void inputHandler(ulong clientID)
     {
-        if (actionMessage.ActionType == ActionType.OpenInventory && actionMessage.ActionState == ActionState.Pressed)
-        {
-            ToggleInventory();
-        }
+
     }
 
     public void connectToPlayer(Player player)
@@ -64,7 +59,7 @@ public partial class UIManager : Control
 
     public override void _Process(double delta)
     {
-        if (player!=null && playerMenu.IsVisibleInTree())
+        if (player != null && playerMenu.IsVisibleInTree())
         {
             QueueRedraw();
         }
@@ -76,7 +71,7 @@ public partial class UIManager : Control
         {
             Item temp = dragItem;
             dragItem = Item.NONE;
-            Global.LevelManager.GetNode("proc").AddChild(temp);
+            Global.worldSim.AddChild(temp);
             Vector3 pos = new Vector3(player.GlobalPosition.X, player.GlobalPosition.Y, player.GlobalPosition.Z);
             pos -= player.GlobalBasis.Z.Normalized();
             pos.Y += 1;
@@ -108,19 +103,19 @@ public partial class UIManager : Control
     {
         return dragItem != null && dragItem != Item.NONE;
     }
-	public void clearUI()
-	{
-		foreach (Node child in GetChildren())
-		{
-			RemoveChild(child);
-			child.QueueFree();
+    public void clearUI()
+    {
+        foreach (Node child in GetChildren())
+        {
+            RemoveChild(child);
+            child.QueueFree();
 
         }
-	}
+    }
 
-	public void LoadUI(string uri)
-	{
-		AddChild(ResourceLoader.Load<PackedScene>(uri).Instantiate());
+    public void LoadUI(string uri)
+    {
+        AddChild(ResourceLoader.Load<PackedScene>(uri).Instantiate());
 
     }
 }

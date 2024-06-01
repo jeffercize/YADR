@@ -1,8 +1,6 @@
 using Godot;
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
-using System.Runtime.CompilerServices;
 
 [GlobalClass]
 public partial class Item : RigidBody3D, IEquatable<Item>
@@ -10,7 +8,7 @@ public partial class Item : RigidBody3D, IEquatable<Item>
     internal static readonly Item NONE;
 
     [Export]
-    public float physWeight; 
+    public float physWeight;
 
     [Export]
     public float weight;
@@ -44,7 +42,7 @@ public partial class Item : RigidBody3D, IEquatable<Item>
 
 
 
-    public Vector2 invTopLeft{get; set;}
+    public Vector2 invTopLeft { get; set; }
     public List<Vector2> touchingSlots = new List<Vector2>();
 
     public Item() { }
@@ -56,14 +54,14 @@ public partial class Item : RigidBody3D, IEquatable<Item>
         this.name = name;
         this.description = description;
         this.stackable = stackable;
-        touchingSlots= new List<Vector2>();
-        this.icon= icon;
-        
+        touchingSlots = new List<Vector2>();
+        this.icon = icon;
+
     }
 
-    public Item(int width,int height)
+    public Item(int width, int height)
     {
-        
+
         this.height = height;
         this.width = width;
         touchingSlots = new List<Vector2>();
@@ -92,7 +90,6 @@ public partial class Item : RigidBody3D, IEquatable<Item>
         // TODO: write your implementation of Equals() here
         Item o = obj as Item;
         return o.GetInstanceId() == this.GetInstanceId();
-          
     }
 
     // override object.GetHashCode

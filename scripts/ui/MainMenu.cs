@@ -1,7 +1,6 @@
 using Godot;
-using Steamworks;
+using NetworkMessages;
 using System;
-using System.Reflection;
 
 public partial class MainMenu : Control
 {
@@ -32,8 +31,8 @@ public partial class MainMenu : Control
         GetNode<AudioStreamPlayer>("/root/main/uisfx").Play();
         GetNode<AudioStreamPlayer>("/root/main/music").Stop();
         //Global.NetworkManager.startServer();
-        Global.NetworkManager.launchGame();
-        Global.LevelManager.loadScene("res://scenes/MPDebug.tscn");
+        Global.NetworkManager.client.outgoingFramePacket.Commands.Add(new Command { Command_ = "startgame" });
+
 
 
 
@@ -41,9 +40,9 @@ public partial class MainMenu : Control
 
     private void genPressed()
     {
-        Global.LevelManager.loadScene("res://components/TerrainPlayer.tscn");
-        Global.LevelManager.loadScene("res://scenes/TerrainGeneration.tscn");
-        TerrainGeneration terrainGenerated = (TerrainGeneration)Global.LevelManager.currentScene;
+        Global.worldSim.loadScene("res://components/TerrainPlayer.tscn");
+        Global.worldSim.loadScene("res://scenes/TerrainGeneration.tscn");
+        TerrainGeneration terrainGenerated = (TerrainGeneration)Global.worldSim.currentScene;
         Image mapImage = Image.LoadFromFile("res://scripts/terrain/blur_test_gausbox.webp");
         terrainGenerated.AddTerrain("Terrain3D");
         Global.UIManager.clearUI();
