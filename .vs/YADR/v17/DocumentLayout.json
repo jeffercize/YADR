@@ -1,12 +1,71 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "C:\\Users\\jeffe\\Desktop\\YADR\\",
-  "Documents": [],
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|c:\\users\\jeffe\\desktop\\yadr\\scripts\\terrain\\grassmeshmaker.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|solutionrelative:scripts\\terrain\\grassmeshmaker.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|c:\\users\\jeffe\\desktop\\yadr\\scripts\\terrain\\terraingeneration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|solutionrelative:scripts\\terrain\\terraingeneration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|c:\\users\\jeffe\\desktop\\yadr\\scripts\\terrain\\terrainchunk.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|solutionrelative:scripts\\terrain\\terrainchunk.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
       "VerticalTabListWidth": 256,
-      "DocumentGroups": []
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "TerrainChunk.cs",
+              "DocumentMoniker": "C:\\Users\\jeffe\\Desktop\\YADR\\scripts\\terrain\\TerrainChunk.cs",
+              "RelativeDocumentMoniker": "scripts\\terrain\\TerrainChunk.cs",
+              "ToolTip": "C:\\Users\\jeffe\\Desktop\\YADR\\scripts\\terrain\\TerrainChunk.cs",
+              "RelativeToolTip": "scripts\\terrain\\TerrainChunk.cs",
+              "ViewState": "AQIAALEAAAAAAAAAAAAAANoAAABYAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-06-01T23:47:45.3Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "GrassMeshMaker.cs",
+              "DocumentMoniker": "C:\\Users\\jeffe\\Desktop\\YADR\\scripts\\terrain\\GrassMeshMaker.cs",
+              "RelativeDocumentMoniker": "scripts\\terrain\\GrassMeshMaker.cs",
+              "ToolTip": "C:\\Users\\jeffe\\Desktop\\YADR\\scripts\\terrain\\GrassMeshMaker.cs",
+              "RelativeToolTip": "scripts\\terrain\\GrassMeshMaker.cs",
+              "ViewState": "AQIAAJ4BAAAAAAAAAAAuwMABAAAJAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-06-01T21:22:37.585Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "TerrainGeneration.cs",
+              "DocumentMoniker": "C:\\Users\\jeffe\\Desktop\\YADR\\scripts\\terrain\\TerrainGeneration.cs",
+              "RelativeDocumentMoniker": "scripts\\terrain\\TerrainGeneration.cs",
+              "ToolTip": "C:\\Users\\jeffe\\Desktop\\YADR\\scripts\\terrain\\TerrainGeneration.cs",
+              "RelativeToolTip": "scripts\\terrain\\TerrainGeneration.cs",
+              "ViewState": "AQIAACEBAAAAAAAAAAAAwEMBAAAiAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-06-01T19:47:52.858Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
     }
   ]
 }

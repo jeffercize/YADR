@@ -3,6 +3,8 @@ shader_type spatial;
 uniform sampler2D heightMap : repeat_disable, filter_nearest;
 uniform sampler2D rockTexture;
 uniform sampler2D grassTexture;
+uniform sampler2D rockNormalMap;
+uniform sampler2D grassNormalMap;
 uniform vec2 heightParams = vec2(1.0, 1.0);
 uniform float heightScale = 1.0;
 
@@ -49,6 +51,12 @@ void fragment() {
     vec3 rockColor = vec3(texture(rockTexture, scaledUV).xyz);
     vec3 grassColor = vec3(texture(grassTexture, scaledUV).xyz);
 
-    // Mix the rock and grass colors based on the steepness
+    // Sample the normal maps
+    vec3 rockNormal = texture(rockNormalMap, scaledUV).xyz * 2.0 - 1.0;
+    vec3 grassNormal = texture(grassNormalMap, scaledUV).xyz * 2.0 - 1.0;
+    vec3 vibrantGrassColor = mix(vec3(dot(grassColor, vec3(0.0, 1.0, 0.0))), grassColor, 1.5);
+
+    // Mix the rock and grass colors and normals based on the steepness
     ALBEDO = mix(grassColor, rockColor, smoothstep(0.0, 1.0, steepnessFactor));
+    //NORMAL = normalize(mix(grassNormal, rockNormal, smoothstep(0.0, 1.0, steepnessFactor)));
 }

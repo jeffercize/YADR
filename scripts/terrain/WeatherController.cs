@@ -13,7 +13,7 @@ public partial class WeatherController : Node3D
     public override void _Ready()
 	{
         myEnvironment = new WorldEnvironment();
-        myRainMaker = GetNode<GpuParticles3D>("/root/main/LevelManager/Player/RainGPUParticles");
+        myRainMaker = GetNode<GpuParticles3D>("/root/TerrainGeneration/Player/RainGPUParticles");//"/root/main/LevelManager/Player/RainGPUParticles");
         myEnvironment.Environment = new Godot.Environment();
 		myEnvironment.Environment.BackgroundMode = Godot.Environment.BGMode.Sky;
 

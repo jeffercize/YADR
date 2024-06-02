@@ -241,9 +241,9 @@ public partial class TerrainGeneration : Node3D
         x_axis += 26;
         offsetY -= 13;
         y_axis += 26;
-
-        Stopwatch stopwatch = Stopwatch.StartNew();
         
+
+        //consider moving all this noise generation to GPU and do errosion and other fun stuff
 		FastNoiseLite noise = new FastNoiseLite();
 		noise.Frequency = 0.0005f;
 		noise.Seed = 1;
@@ -264,7 +264,6 @@ public partial class TerrainGeneration : Node3D
                 noiseImage.SetPixel(i, j, new Color(noiseValue, 0, 0, 0));
             }
         }
-        //GD.Print($"Noise Time: {stopwatch.Elapsed}");
         noiseImage.SavePng("C:\\Users\\jeffe\\test_images\\noise_test"+"("+ offsetX + "," + offsetY + ")"+ ".png");
 
 
@@ -288,33 +287,20 @@ public partial class TerrainGeneration : Node3D
                 path.AddPoint(new Vector3(8192, 2048, 0.0f));
 
         Image pathImg = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
-        stopwatch.Restart();
         path.BakeInterval = 0.1f;
         Vector3[] localPath = path.GetBakedPoints();
-/*        for (int i = 0; i < localPath.Length; i++)
-        {
-            localPath[i] = new Vector3(localPath[i].X, localPath[i].Y, localPath[i].Z);
-        }*/
         pathImg = GPUGeneratePath(noiseImage, x_axis, y_axis, offsetX, offsetY, localPath);
-        //GD.Print($"GPUPath Time Elapsed: {stopwatch.Elapsed}");
-        //pathImg.SavePng("C:\\Users\\jeffe\\test_images\\gpu_path_test.png");
 
         // Run the blur shader
         pathImg = ApplyGassianAndBoxBlur(pathImg, RenderingDevice.DataFormat.R32G32Sfloat);
-        
-        Image finalImage = Image.Create(x_axis-26, y_axis-26, false, Image.Format.Rgf);
-        finalImage.BlitRect(pathImg, new Rect2I(13, 13, x_axis-13, y_axis-13), new Vector2I(0, 0));
-        //GD.Print($"Blur Time Elapsed: {stopwatch.Elapsed}");
+        //THIS LOOKS CONFUSING but its because we adjust x_axis and y_axis at the top of this function to make passing it easier
 
-        //pathImg.SavePng("C:\\Users\\jeffe\\test_images\\blur_test_gausbox.png");
-        //ResourceSaver.Save(pathImg, "C:\\Users\\jeffe\\Desktop\\Untitled41\\scripts\\terrain\\map_output.tres");
-
-        return finalImage;
+        return pathImg;
     }
     
     public void AddTerrain(bool wantGrass=true)
     {
-        wantGrass = false;
+        wantGrass = true;
         Stopwatch stopwatch = Stopwatch.StartNew();
         int x_axis = 512;//16000; //if you change these a lot of shaders need re-coded maybe?
         int y_axis = 512;//6000; //if you change these a lot of shaders need re-coded maybe?
@@ -328,11 +314,13 @@ public partial class TerrainGeneration : Node3D
             {
                 int offsetX = i*x_axis-i;
                 int offsetY = j*y_axis-j;
-                Image mapImage = GenerateTerrain(offsetX, offsetY, x_axis, y_axis);
+                Image paddedImg = GenerateTerrain(offsetX, offsetY, x_axis, y_axis);
+                Image mapImage = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
+                mapImage.BlitRect(paddedImg, new Rect2I(13, 13, x_axis + 13, y_axis + 13), new Vector2I(0, 0));
                 //Image mapImage = Image.LoadFromFile("C:\\Users\\jeffe\\test_images\\noise_test.png");
                 TerrainChunk terrainChunk = new TerrainChunk();
                 AddChild(terrainChunk);
-                terrainChunk.BuildDebugCollision(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX-0.5f, 0.0f, offsetY-0.5f)); //TODO kinda weird?
+                terrainChunk.BuildCollision(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX-0.5f, 0.0f, offsetY-0.5f)); //TODO kinda weird that we adjust by 0.5 here
                 terrainChunk.BuildMesh(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX, 0.0f, offsetY));
                 if (wantGrass)
                 {

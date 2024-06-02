@@ -17,6 +17,7 @@ render_priority = 0
 shader = ExtResource("9_07r24")
 shader_parameter/grassTotalWidth = 0.5
 shader_parameter/grassTotalHeight = 1.0
+shader_parameter/globalOffset = null
 shader_parameter/heightParams = null
 
 [sub_resource type="BoxMesh" id="BoxMesh_652tm"]
