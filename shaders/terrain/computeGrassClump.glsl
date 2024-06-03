@@ -146,8 +146,8 @@ void main() {
     float height = mix(mix(h00, h10, f.x), mix(h01, h11, f.x), f.y)*400.0-0.1;
 	transform[3] = vec4(transform[3][0], transform[3][1]+height, transform[3][2], transform[3][3]);
 
-
-    if(control > 0.9 || slope > 0.9)
+    //reuse x_jitter as our slope jitter and y_jitter as our control jitter because why not
+    if(control - (y_jitter * 0.10) > 0.9 || slope - (x_jitter * 0.1) > 0.6)
     {
         float controlVal = -5000.1337;
         // Add the transform data to the array

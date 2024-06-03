@@ -44,6 +44,39 @@ public partial class GrassMeshMaker : Node3D
     Thread processGrassThread;
 
 
+    //shader stuff
+    Rid materialShader;
+    Rid lowMaterialShader;
+    Rid grassMaterial;
+    Rid lowGrassMaterial;
+
+
+    //compute shader variables
+    RDSamplerState heightMapSamplerState;
+    Rid heightMapSampler;
+    RDTextureFormat heightMapInputFmt;
+    RDTextureView heightMapInputView;
+    byte[] heightMapInputImageData;
+    Godot.Collections.Array<byte[]> heightMapData;
+    Rid heightMapTex;
+    RDUniform heightMapSamplerUniform;
+
+    public void Cleanup()
+    {
+        rd.FreeRid(computeClumpShader);
+        rd.FreeRid(heightMapSampler);
+        rd.FreeRid(heightMapTex);
+        rd.FreeRid(materialShader);
+        rd.FreeRid(lowMaterialShader);
+        foreach(var chunk in activeChunkDictionary)
+        {
+            rd.FreeRid(chunk.Value.Item1);
+            rd.FreeRid(chunk.Value.Item2);
+            rd.FreeRid(chunk.Value.Item3);
+            rd.FreeRid(chunk.Value.Item4);
+        }
+    }
+
     // Called when the node enters the scene tree for the first time.
     public override void _Ready()
     {        //configure a set randomSeed, could share between users to make grass look the same in theory, tie it to the map generation seed TODO
@@ -60,7 +93,7 @@ public partial class GrassMeshMaker : Node3D
             if (readyDataChunks.Count != 0)
             {
                 int i = 0;
-                while (i < 10 && readyDataChunks.Count != 0)
+                while (i < 5 && readyDataChunks.Count != 0)
                 {
                     i++;
                     (float[], float, int, Vector3, Mesh, int, int, int) readyDataChunk;
@@ -111,18 +144,15 @@ public partial class GrassMeshMaker : Node3D
         lowLODMesh = CreateLowLODGrassBlade(grassWidth, grassHeight, grassMat); //we progressively widen the grass for lower lods to help it fill the screen with less blades/triangles
 
         //create and assign a shader per mesh
-        Rid materialShader = RenderingServer.ShaderCreate();
+        materialShader = RenderingServer.ShaderCreate();
         RenderingServer.ShaderSetCode(materialShader, grassMat.Shader.Code);
 
-        Rid mediumMaterialShader = RenderingServer.ShaderCreate();
-        RenderingServer.ShaderSetCode(mediumMaterialShader, grassMat.Shader.Code);
-
-        Rid lowMaterialShader = RenderingServer.ShaderCreate();
+        lowMaterialShader = RenderingServer.ShaderCreate();
         RenderingServer.ShaderSetCode(lowMaterialShader, grassMat.Shader.Code);
 
 
         // Create a RID for the material and set its shader HIGH
-        Rid grassMaterial = RenderingServer.MaterialCreate();
+        grassMaterial = RenderingServer.MaterialCreate();
         RenderingServer.MaterialSetShader(grassMaterial, materialShader);
         // Set the shader parameters HIGH
         RenderingServer.MaterialSetParam(grassMaterial, "grassTotalWidth", grassWidth);
@@ -137,7 +167,7 @@ public partial class GrassMeshMaker : Node3D
         RenderingServer.MaterialSetParam(grassMaterial, "globalOffset", new Vector2(globalOffsetX, globalOffsetY));
 
         // Create a RID for the material and set its shader LOW
-        Rid lowGrassMaterial = RenderingServer.MaterialCreate();
+        lowGrassMaterial = RenderingServer.MaterialCreate();
         RenderingServer.MaterialSetShader(lowGrassMaterial, lowMaterialShader);
         // Set the shader parameters LOW
         RenderingServer.MaterialSetParam(lowGrassMaterial, "grassTotalWidth", grassWidth * 4);
@@ -160,6 +190,34 @@ public partial class GrassMeshMaker : Node3D
         // Set the material for the mesh surface
         RenderingServer.MeshSurfaceSetMaterial(mediumLODMesh.GetRid(), 0, grassMaterial);
         RenderingServer.MeshSurfaceSetMaterial(lowLODMesh.GetRid(), 0, lowGrassMaterial);
+
+        //compute shader prep
+        //Setup heightMap Image
+        heightMapSamplerState = new RDSamplerState();
+        heightMapSamplerState.RepeatU = RenderingDevice.SamplerRepeatMode.ClampToEdge;
+        heightMapSamplerState.RepeatV = RenderingDevice.SamplerRepeatMode.ClampToEdge;
+        heightMapSamplerState.RepeatW = RenderingDevice.SamplerRepeatMode.ClampToEdge;
+        heightMapSamplerState.MinFilter = RenderingDevice.SamplerFilter.Linear;
+        heightMapSamplerState.MipFilter = RenderingDevice.SamplerFilter.Linear;
+        heightMapSamplerState.MagFilter = RenderingDevice.SamplerFilter.Linear;
+        heightMapSampler = rd.SamplerCreate(heightMapSamplerState);
+        heightMapInputFmt = new RDTextureFormat();
+        heightMapInputFmt.Width = (uint)heightMap.GetWidth();
+        heightMapInputFmt.Height = (uint)heightMap.GetHeight();
+        heightMapInputFmt.Format = RenderingDevice.DataFormat.R32G32Sfloat;
+        heightMapInputFmt.UsageBits = RenderingDevice.TextureUsageBits.CanCopyFromBit | RenderingDevice.TextureUsageBits.SamplingBit | RenderingDevice.TextureUsageBits.CanUpdateBit;
+        heightMapInputView = new RDTextureView();
+        heightMapInputImageData = heightMap.GetData();
+        heightMapData = new Godot.Collections.Array<byte[]>
+            {
+                heightMapInputImageData
+            };
+        heightMapTex = rd.TextureCreate(heightMapInputFmt, heightMapInputView, heightMapData);
+        heightMapSamplerUniform = new RDUniform();
+        heightMapSamplerUniform.UniformType = RenderingDevice.UniformType.SamplerWithTexture;
+        heightMapSamplerUniform.Binding = 4;
+        heightMapSamplerUniform.AddId(heightMapSampler);
+        heightMapSamplerUniform.AddId(heightMapTex);
 
 
 
@@ -264,8 +322,8 @@ public partial class GrassMeshMaker : Node3D
         {
             for (int j = 0; j < arraySize + 2; j++)
             {
-                float x = (rand.NextSingle() * fieldWidth) - fieldWidth / 2;
-                float y = (rand.NextSingle() * fieldHeight) - fieldHeight / 2;
+                float x = (rand.NextSingle()*1.2f * fieldWidth) - fieldWidth / 2;
+                float y = (rand.NextSingle()*1.2f * fieldHeight) - fieldHeight / 2;
                 clumpPoints[i, j] = new Tuple<float, float, float, int>(x, y, rand.NextSingle() + 0.6f, 1); //random height from 0.4 to 1.4 for now, all grass is type 1
             }
         }
@@ -347,33 +405,6 @@ public partial class GrassMeshMaker : Node3D
             Binding = 3
         };
         instanceDataUniform.AddId(instanceDataBuffer);
-
-        //Setup heightMap Image
-        RDSamplerState heightMapSamplerState = new RDSamplerState();
-        heightMapSamplerState.RepeatU = RenderingDevice.SamplerRepeatMode.ClampToEdge;
-        heightMapSamplerState.RepeatV = RenderingDevice.SamplerRepeatMode.ClampToEdge;
-        heightMapSamplerState.RepeatW = RenderingDevice.SamplerRepeatMode.ClampToEdge;
-        heightMapSamplerState.MinFilter = RenderingDevice.SamplerFilter.Linear;
-        heightMapSamplerState.MipFilter = RenderingDevice.SamplerFilter.Linear;
-        heightMapSamplerState.MagFilter = RenderingDevice.SamplerFilter.Linear;
-        Rid heightMapSampler = rd.SamplerCreate(heightMapSamplerState);
-        RDTextureFormat heightMapInputFmt = new RDTextureFormat();
-        heightMapInputFmt.Width = (uint)heightMap.GetWidth();
-        heightMapInputFmt.Height = (uint)heightMap.GetHeight();
-        heightMapInputFmt.Format = RenderingDevice.DataFormat.R32G32Sfloat;
-        heightMapInputFmt.UsageBits = RenderingDevice.TextureUsageBits.CanCopyFromBit | RenderingDevice.TextureUsageBits.SamplingBit | RenderingDevice.TextureUsageBits.CanUpdateBit;
-        RDTextureView heightMapInputView = new RDTextureView();
-        byte[] heightMapInputImageData = heightMap.GetData();
-        Godot.Collections.Array<byte[]> heightMapData = new Godot.Collections.Array<byte[]>
-            {
-                heightMapInputImageData
-            };
-        Rid heightMapTex = rd.TextureCreate(heightMapInputFmt, heightMapInputView, heightMapData);
-        RDUniform heightMapSamplerUniform = new RDUniform();
-        heightMapSamplerUniform.UniformType = RenderingDevice.UniformType.SamplerWithTexture;
-        heightMapSamplerUniform.Binding = 4;
-        heightMapSamplerUniform.AddId(heightMapSampler);
-        heightMapSamplerUniform.AddId(heightMapTex);
 
         var computeUniformSet = rd.UniformSetCreate(new Array<RDUniform> { fieldDimensionsUniform, randNumUniform, clumpPointsUniform, instanceDataUniform, heightMapSamplerUniform }, computeClumpShader, 0);
 

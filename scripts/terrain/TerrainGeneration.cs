@@ -336,19 +336,7 @@ public partial class TerrainGeneration : Node3D
         {
             for(int j = 0; j < 3; j++)
             {
-                int offsetX = i*x_axis-i;
-                int offsetY = j*y_axis-j;
-                Stopwatch sw = Stopwatch.StartNew();
-                Image paddedImg = GenerateTerrain(offsetX, offsetY, x_axis, y_axis);
-                GD.Print($"Generate TerrainImage: {sw.ElapsedMilliseconds}");
-                sw.Restart();
-                Image mapImage = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
-                mapImage.BlitRect(paddedImg, new Rect2I(16, 16, x_axis + 16, y_axis + 16), new Vector2I(0, 0));
-                GD.Print($"Clip Image: {sw.ElapsedMilliseconds}");
-                //Image mapImage = Image.LoadFromFile("C:\\Users\\jeffe\\test_images\\noise_test.png");
-                TerrainChunk terrainChunk = new TerrainChunk(mapImage, paddedImg, heightScale, x_axis, y_axis, offsetX, offsetY, wantGrass);
-                innerChunks[i,j] = terrainChunk;
-                CallDeferred(Node3D.MethodName.AddChild, (terrainChunk));
+                AddTerrainChunk(i, j, x_axis, y_axis, heightScale, wantGrass);
             }
         }
 
@@ -357,6 +345,23 @@ public partial class TerrainGeneration : Node3D
         //runtime_nav_baker.Set("enabled", true);
         GD.Print($"Terrrain Full Time elapsed: {stopwatch.Elapsed}");
 
+    }
+
+    private void AddTerrainChunk(int i, int j, int x_axis, int y_axis, float heightScale, bool wantGrass)
+    {
+        int offsetX = i * x_axis - i;
+        int offsetY = j * y_axis - j;
+        Stopwatch sw = Stopwatch.StartNew();
+        Image paddedImg = GenerateTerrain(offsetX, offsetY, x_axis, y_axis);
+        GD.Print($"Generate TerrainImage: {sw.ElapsedMilliseconds}");
+        sw.Restart();
+        Image mapImage = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
+        mapImage.BlitRect(paddedImg, new Rect2I(16, 16, x_axis + 16, y_axis + 16), new Vector2I(0, 0));
+        GD.Print($"Clip Image: {sw.ElapsedMilliseconds}");
+        //Image mapImage = Image.LoadFromFile("C:\\Users\\jeffe\\test_images\\noise_test.png");
+        TerrainChunk terrainChunk = new TerrainChunk(mapImage, paddedImg, heightScale, x_axis, y_axis, offsetX, offsetY, wantGrass);
+        innerChunks[i, j] = terrainChunk;
+        CallDeferred(Node3D.MethodName.AddChild, (terrainChunk));
     }
 
     public void SetShaderStuff()

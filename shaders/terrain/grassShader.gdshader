@@ -172,7 +172,6 @@ void vertex() {
 
 	vec2 heightmap_uv = vec2((grassBladeWorldPos.x-globalOffset.x+16.0) / heightParams.x, (grassBladeWorldPos.z-globalOffset.y+16.0) / heightParams.y);
 	heightmap_uv = clamp(heightmap_uv, 0.0, 1.0);
-	vDontDraw = texture(heightMap, heightmap_uv).g;
 	// Calculate the fractional part of the uv coordinates
 	vec2 f = fract(heightmap_uv * heightParams.xy);
 
@@ -188,9 +187,6 @@ void vertex() {
 	float heightMapSample = mix(mix(h00, h10, f.x), mix(h01, h11, f.x), f.y);
 
 	//VERTEX.y += heightMapSample * 400.0 - 0.1;
-
-	vec2 gradient = vec2(h10 - hm1, h01 - h0m1) * 200.0;
-	vSteepness = length(gradient);
 
 	//get camera and view direction info for later
 	vec3 cameraPosition = INV_VIEW_MATRIX[3].xyz;
