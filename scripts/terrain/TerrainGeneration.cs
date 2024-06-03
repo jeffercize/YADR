@@ -9,6 +9,7 @@ using Godot.Collections;
 
 public partial class TerrainGeneration : Node3D
 {
+    Rid navMap;
     public override void _Ready()
     {
         AddTerrain(false);
@@ -237,10 +238,10 @@ public partial class TerrainGeneration : Node3D
 	{
         //move offset back by 10 and add 20 extra pixels to discard after blurring
         //that way we have a ring of extra pixels so we can calculate blur
-        offsetX -= 13;
-        x_axis += 26;
-        offsetY -= 13;
-        y_axis += 26;
+        offsetX -= 16;
+        x_axis += 32;
+        offsetY -= 16;
+        y_axis += 32;
         
 
         //consider moving all this noise generation to GPU and do errosion and other fun stuff
@@ -252,7 +253,7 @@ public partial class TerrainGeneration : Node3D
         noise.Offset = new Vector3(offsetX, offsetY, 0.0f);
 
         Image noiseImage = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
-
+        Stopwatch sw = Stopwatch.StartNew();
         for(int i = 0; i < x_axis; i++)
         {
             for(int j = 0; j < y_axis; j++)
@@ -265,7 +266,7 @@ public partial class TerrainGeneration : Node3D
             }
         }
         noiseImage.SavePng("C:\\Users\\jeffe\\test_images\\noise_test"+"("+ offsetX + "," + offsetY + ")"+ ".png");
-
+        GD.Print(sw.ElapsedMilliseconds);
 
 		Curve3D path = new Curve3D();
                 path.AddPoint(new Vector3(300, 0, 1.0f));
@@ -289,15 +290,17 @@ public partial class TerrainGeneration : Node3D
         Image pathImg = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
         path.BakeInterval = 0.1f;
         Vector3[] localPath = path.GetBakedPoints();
+        sw.Restart();
         pathImg = GPUGeneratePath(noiseImage, x_axis, y_axis, offsetX, offsetY, localPath);
-
+        GD.Print("tuh" + sw.ElapsedMilliseconds);
         // Run the blur shader
         pathImg = ApplyGassianAndBoxBlur(pathImg, RenderingDevice.DataFormat.R32G32Sfloat);
         //THIS LOOKS CONFUSING but its because we adjust x_axis and y_axis at the top of this function to make passing it easier
 
         return pathImg;
     }
-    
+    GrassMeshMaker[,] grassMeshMakers = new GrassMeshMaker[3,3];
+    TerrainChunk[,] innerChunks = new TerrainChunk[3,3];
     public void AddTerrain(bool wantGrass=true)
     {
         wantGrass = true;
@@ -308,54 +311,48 @@ public partial class TerrainGeneration : Node3D
         
         GrassMeshMaker grassMeshMakerNode = (GrassMeshMaker)GetNode("GrassMeshMaker");
 
-        for(int i = 0; i < 3; i++)
+        //we declare the nav map here so it is shared for all the chunks
+        navMap = NavigationServer3D.MapCreate();
+        NavigationServer3D.MapSetUp(navMap, Vector3.Up);
+        NavigationServer3D.MapSetActive(navMap, true);
+
+        for (int i = 0; i < 3; i++)
         {
             for(int j = 0; j < 3; j++)
             {
                 int offsetX = i*x_axis-i;
                 int offsetY = j*y_axis-j;
+                Stopwatch sw = Stopwatch.StartNew();
                 Image paddedImg = GenerateTerrain(offsetX, offsetY, x_axis, y_axis);
+                GD.Print($"Generate TerrainImage: {sw.ElapsedMilliseconds}");
+                sw.Restart();
                 Image mapImage = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
-                mapImage.BlitRect(paddedImg, new Rect2I(13, 13, x_axis + 13, y_axis + 13), new Vector2I(0, 0));
+                mapImage.BlitRect(paddedImg, new Rect2I(16, 16, x_axis + 16, y_axis + 16), new Vector2I(0, 0));
+                GD.Print($"Clip Image: {sw.ElapsedMilliseconds}");
                 //Image mapImage = Image.LoadFromFile("C:\\Users\\jeffe\\test_images\\noise_test.png");
                 TerrainChunk terrainChunk = new TerrainChunk();
+                innerChunks[i,j] = terrainChunk;
                 AddChild(terrainChunk);
                 terrainChunk.BuildCollision(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX-0.5f, 0.0f, offsetY-0.5f)); //TODO kinda weird that we adjust by 0.5 here
                 terrainChunk.BuildMesh(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX, 0.0f, offsetY));
+                //Thread buildNavMeshThread = new Thread(() => terrainChunk.BuildNavigationMesh(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX, 0.0f, offsetY)));
+                //buildNavMeshThread.Start();
+                //terrainChunk.BuildNavigationMesh(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX, 0.0f, offsetY), navMap); //TODO this seems like the correct way to do
+                //it but after a long stutter there is still no nav mesh, not sure what to try next, check docs or terrain3d more :|
+                sw.Restart();
                 if (wantGrass)
                 {
                     GrassMeshMaker myGrassManager = (GrassMeshMaker)grassMeshMakerNode.Duplicate();
                     grassMeshMakerNode.AddSibling(myGrassManager);
-                    myGrassManager.SetupGrass("/Player", mapImage, offsetX, offsetY, x_axis, y_axis, null, null);
+                    grassMeshMakers[i,j] = myGrassManager;
+                    myGrassManager.SetupGrass("/Player", paddedImg, offsetX, offsetY, x_axis, y_axis, null, null);
                 }
+                GD.Print($"Grass Setup: {sw.ElapsedMilliseconds}");
             }
         }
 
         GD.Print($"Time elapsed: {stopwatch.Elapsed}");
-        //hole testing
-        /*        var terrainUtil = ClassDB.Instantiate("Terrain3DUtil");
-                int bits = (int)terrainUtil.AsGodotObject().Call("enc_base", (0)) | (int)terrainUtil.AsGodotObject().Call("enc_overlay", (0)) | (int)terrainUtil.AsGodotObject().Call("enc_blend", (0)) |
-                   (int)terrainUtil.AsGodotObject().Call("enc_auto", (0)) | (int)terrainUtil.AsGodotObject().Call("enc_nav", (0)) | (int)terrainUtil.AsGodotObject().Call("enc_hole", (1));
-                Color hole_color = new Color((float)terrainUtil.AsGodotObject().Call("as_float", bits), 0f, 0f, 1f);
 
-                for (int x = 1000; x < 2000; x++)
-                {
-                    for (int z = 1000; z < 2000; z++)
-                    {
-                        terrain.AsGodotObject().Get("storage").AsGodotObject().Call("set_control", new Vector3(x, 0, z), hole_color);
-                        terrain.AsGodotObject().Get("storage").AsGodotObject().Call("set_pixel", 1, new Vector3(x, 0, z), hole_color);
-                    }
-                }
-                terrain.AsGodotObject().Get("storage").AsGodotObject().Call("force_update_maps", 1);*/
-
-        //GD.Print("navigation");
-        // Enable collision. Enable the first if you wish to see it with Debug/Visible Collision Shapes
-        //terrain.AsGodotObject().Call("set_show_debug_collision", true);
-        //terrain.AsGodotObject().Call("set_collision_enabled", true);
-
-        //Enable runtime navigation baking using the terrain
-        //Node runtime_nav_baker = GetNode("RuntimeNavigationBaker");
-        //runtime_nav_baker.Set("terrain", terrain);
         //runtime_nav_baker.Set("enabled", true);
         GD.Print($"Terrrain Full Time elapsed: {stopwatch.Elapsed}");
 

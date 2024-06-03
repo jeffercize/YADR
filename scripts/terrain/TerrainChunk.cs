@@ -21,6 +21,7 @@ public partial class TerrainChunk : Node3D
 	}
 	public bool BuildCollision(Image heightMap, float heightScale, int width, int depth, Vector3 globalPosition)
 	{
+        Stopwatch sw = Stopwatch.StartNew();
         staticBody = PhysicsServer3D.BodyCreate();
         PhysicsServer3D.BodySetMode(staticBody, PhysicsServer3D.BodyMode.Static);
         PhysicsServer3D.BodySetSpace(staticBody, GetWorld3D().Space);
@@ -65,6 +66,8 @@ public partial class TerrainChunk : Node3D
         PhysicsServer3D.BodySetCollisionMask(staticBody, 1);
         PhysicsServer3D.BodySetCollisionLayer(staticBody, 1);
         PhysicsServer3D.BodySetCollisionPriority(staticBody, 1);
+        GD.Print("Build y: " + sw.ElapsedMilliseconds);
+
         return true;
     }
 
@@ -86,14 +89,6 @@ public partial class TerrainChunk : Node3D
             for (int j = depth - 1; j >= 0; j--)
             {
                 int index = i * depth + (depth - 1 - j);
-/*                if(i == 511 && j == 511)
-                {
-                    GD.Print("I is 511: "+j+","+heightMap.GetPixel(i, j).R * heightScale);
-                }
-                if (i == 0 && j == 511)
-                {
-                    GD.Print("I is zero: "+j + "," + heightMap.GetPixel(i, j).R * heightScale);
-                }*/
                 mapData[index] = heightMap.GetPixel(i, j).R * heightScale;
                 if (mapData[index] < minHeight)
                 {
@@ -138,8 +133,71 @@ public partial class TerrainChunk : Node3D
         return false;
     }
 
+    public bool BuildNavigationMesh(Image heightMap, float heightScale, int width, int depth, Vector3 globalPosition, Rid navMap)
+    {
+        // Create the NavigationMeshSourceGeometryData3D instance
+        NavigationMeshSourceGeometryData3D sourceGeometry = new NavigationMeshSourceGeometryData3D();
+
+        NavigationMesh navigationMesh = new NavigationMesh();
+
+
+        // Create an array for the vertices
+        Vector3[] vertices = new Vector3[width * depth];
+
+        // Populate the vertices array
+        for (int i = 0; i < width; i++)
+        {
+            for (int j = 0; j < depth; j++)
+            {
+                int index = i * width + j;
+                float height = heightMap.GetPixel(i, j).R * heightScale;
+                vertices[index] = new Vector3(i, height, j);
+            }
+        }
+
+        // Set the vertices
+        navigationMesh.Vertices = vertices;
+
+        // Populate the polygons array
+        for (int i = 0; i < width - 1; i++)
+        {
+            for (int j = 0; j < depth - 1; j++)
+            {
+                // First triangle
+                int[] polygon1 = new int[3];
+                polygon1[0] = i * width + j;
+                polygon1[1] = (i + 1) * width + j;
+                polygon1[2] = i * width + j + 1;
+                navigationMesh.AddPolygon(polygon1);
+
+                // Second triangle
+                int[] polygon2 = new int[3];
+                polygon2[0] = (i + 1) * width + j;
+                polygon2[1] = (i + 1) * width + j + 1;
+                polygon2[2] = i * width + j + 1;
+                navigationMesh.AddPolygon(polygon2);
+            }
+        }
+
+
+        // Bake the navigation mesh
+        //NavigationServer3D.BakeFromSourceGeometryData(navigationMesh, sourceGeometry); //NO POLYGONS GUH
+
+        Rid region = NavigationServer3D.RegionCreate();
+        NavigationServer3D.RegionSetTransform(region, new Transform3D(Basis.Identity, globalPosition));
+        NavigationServer3D.RegionSetMap(region, navMap);
+
+        NavigationServer3D.RegionSetNavigationMesh(region, navigationMesh);
+
+        NavigationServer3D.RegionSetEnabled(region, true);
+        //GD.Print(NavigationServer3D.RegionGetConnectionsCount(region));
+
+        return true;
+    }
+
     public bool BuildMesh(Image heightMap, float heightScale, int width, int depth, Vector3 globalPosition)
     {
+        Stopwatch sw = Stopwatch.StartNew();
         // Create an array for the vertices
         Vector3[] p_vertices = new Vector3[width * depth];
 
@@ -181,11 +239,11 @@ public partial class TerrainChunk : Node3D
         // Set the vertices and indices
         arrays[(int)RenderingServer.ArrayType.Vertex] = p_vertices;
         arrays[(int)RenderingServer.ArrayType.Index] = p_indices;
-
+        GD.Print("Build Mesh: " + sw.ElapsedMilliseconds);
+        sw.Restart();
         // Create the mesh
         Rid mesh = RenderingServer.MeshCreate();
         RenderingServer.MeshAddSurfaceFromArrays(mesh, RenderingServer.PrimitiveType.Triangles, arrays);
-
         // Set the custom AABB
         RenderingServer.MeshSetCustomAabb(mesh, p_aabb);
 
@@ -225,7 +283,7 @@ public partial class TerrainChunk : Node3D
 
         RenderingServer.InstanceGeometrySetMaterialOverride(instance, terrainMaterial);
         //RenderingServer.MeshSurfaceSetMaterial(mesh, 0, terrainMaterial);
-        
+        GD.Print("RenderServer Mesh: " + sw.ElapsedMilliseconds);
 
 
         return true;

@@ -176,7 +176,7 @@ void vertex() {
 
 
 	//heightmap sampling
-	vec2 heightmap_uv = vec2((grassBladeWorldPos.x-globalOffset.x) / heightParams.x, (grassBladeWorldPos.z-globalOffset.y) / heightParams.y);
+	vec2 heightmap_uv = vec2((grassBladeWorldPos.x-globalOffset.x+16.0) / heightParams.x, (grassBladeWorldPos.z-globalOffset.y+16.0) / heightParams.y);
 	heightmap_uv = clamp(heightmap_uv, 0.0, 1.0);
 	// Calculate the fractional part of the uv coordinates
 	vec2 f = fract(heightmap_uv * heightParams.xy);

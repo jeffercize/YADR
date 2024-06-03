@@ -1,8 +1,9 @@
-[gd_scene load_steps=11 format=3 uid="uid://cofnhdcclon1w"]
+[gd_scene load_steps=12 format=3 uid="uid://cofnhdcclon1w"]
 
 [ext_resource type="Script" path="res://scripts/terrain/TerrainGeneration.cs" id="1_btvwy"]
 [ext_resource type="Script" path="res://scripts/terrain/RuntimeNavigationBaker.gd" id="5_445ur"]
 [ext_resource type="PackedScene" uid="uid://domhm87hbhbg1" path="res://components/TerrainPlayer.tscn" id="6_0p1nw"]
+[ext_resource type="PackedScene" uid="uid://di5fovhcyd7re" path="res://components/Enemy.tscn" id="7_emj64"]
 [ext_resource type="Script" path="res://scripts/terrain/GrassMeshMaker.cs" id="8_hyt63"]
 [ext_resource type="Script" path="res://scripts/terrain/WeatherController.cs" id="8_n3tlt"]
 [ext_resource type="Shader" path="res://shaders/terrain/grassShader.gdshader" id="9_07r24"]
@@ -46,3 +47,8 @@ multimesh = SubResource("MultiMesh_3gj5r")
 script = ExtResource("8_n3tlt")
 
 [node name="Player" parent="." instance=ExtResource("6_0p1nw")]
+
+[node name="Enemy" parent="." instance=ExtResource("7_emj64")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.9968, 6.69006, 15.0899)
+motion_mode = 1
+script = null

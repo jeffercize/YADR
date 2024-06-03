@@ -214,7 +214,7 @@ public partial class GrassMeshMaker : Node3D
             for(int y = 0; y < gridSize; y++)
             {
                 // Calculate the center position of the block
-                Vector3 centerPosition = new Vector3(x * blockSize, 0, y * blockSize);
+                Vector3 centerPosition = new Vector3(x * blockSize + blockSize/2, 0, y * blockSize + blockSize / 2);
 
                 // Process the grass clump with the given properties
                 processGrassClump(blockSize, numBlades, highLODMesh, centerPosition, x, y, 0);
@@ -441,11 +441,11 @@ public partial class GrassMeshMaker : Node3D
         RenderingServer.InstanceGeometrySetCastShadowsSetting(instance, RenderingServer.ShadowCastingSetting.Off);
         if (myLOD == 0)
         {
-            //RenderingServer.InstanceGeometrySetVisibilityRange(instance, 0.0f, 100.0f, 2.0f, 2.0f, RenderingServer.VisibilityRangeFadeMode.Disabled);
+            RenderingServer.InstanceGeometrySetVisibilityRange(instance, 0.0f, 200.0f, 2.0f, 2.0f, RenderingServer.VisibilityRangeFadeMode.Disabled);
         }
         else
         {
-           // RenderingServer.InstanceGeometrySetVisibilityRange(instance, 100.0f, 250.0f, 2.0f, 2.0f, RenderingServer.VisibilityRangeFadeMode.Disabled);
+            RenderingServer.InstanceGeometrySetVisibilityRange(instance, 100.0f, 350.0f, 2.0f, 2.0f, RenderingServer.VisibilityRangeFadeMode.Disabled);
         }
         return (instance, grassChunk);
     }
@@ -470,8 +470,8 @@ public partial class GrassMeshMaker : Node3D
 
         //AABB setting, maybe we can trim this out? we cant
         Aabb multiMeshAABB = RenderingServer.MultimeshGetAabb(multimesh);
-        multiMeshAABB = multiMeshAABB.Expand(new Vector3(0, 800, 0));
-        multiMeshAABB = multiMeshAABB.Expand(new Vector3(0, -800, 0));
+        multiMeshAABB = multiMeshAABB.Expand(new Vector3(0, 8000, 0));
+        multiMeshAABB = multiMeshAABB.Expand(new Vector3(0, -8000, 0));
         RenderingServer.InstanceSetCustomAabb(instance, multiMeshAABB);
         RenderingServer.InstanceSetTransform(instance, new Transform3D(Basis.Identity, new Vector3(centerPosition.X + globalOffsetX, chunkHeight, centerPosition.Z+globalOffsetY)));
     }
