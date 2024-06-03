@@ -120,34 +120,21 @@ void main() {
         transform = rotationalBasis * transform;
     }
 
-    ivec2 coord = ivec2(transform[3][0]+globalPosX+17.0, transform[3][2]+globalPosZ+17.0);
-    vec2 heightmap_uv = vec2(coord) / vec2(544.0, 544.0);
-    heightmap_uv = clamp(heightmap_uv, 0.0, 1.0);
-    vec2 f = fract(heightmap_uv * vec2(544.0, 544.0));
-	// Sample the closest texels
-	float h00 = texture(heightMap, heightmap_uv).r;
-	float h10 = texture(heightMap, heightmap_uv + vec2(1.0, 0.0) / vec2(544.0, 544.0)).r;
-	float h01 = texture(heightMap, heightmap_uv + vec2(0.0, 1.0) / vec2(544.0, 544.0)).r;
-    float h11 = texture(heightMap, heightmap_uv + vec2(1.0, 1.0) / vec2(544.0, 544.0)).r;
-    float hm1 = texture(heightMap, heightmap_uv - vec2(1.0, 0.0) / vec2(544.0, 544.0)).r;
-	float h0m1 = texture(heightMap, heightmap_uv - vec2(0.0, 1.0) / vec2(544.0, 544.0)).r;
-
-
-    
-
-    //calculate slope
-    vec2 gradient = vec2(h10 - hm1, h01 - h0m1);
-	float slope = length(gradient)*200.0;
-
-    //calculate control value
-    float control = texture(heightMap, heightmap_uv).g;
-
+    ivec2 coord = ivec2(transform[3][0], transform[3][2]);
+    vec2 uv = vec2(coord) / vec2(heightParamsX, heightParamsY);
+    uv = clamp(uv, 0.001, 0.999);
+    float height = texture(heightMap, uv).r * 400.0;
     //set instance height
-    float height = mix(mix(h00, h10, f.x), mix(h01, h11, f.x), f.y)*400.0-0.1;
-	transform[3] = vec4(transform[3][0], transform[3][1]+height, transform[3][2], transform[3][3]);
+	
+    float h10 = texture(heightMap, uv + vec2(1.0, 0.0) / vec2(heightParamsX, heightParamsY)).r;
+	float h01 = texture(heightMap, uv + vec2(0.0, 1.0) / vec2(heightParamsX, heightParamsY)).r;
+	float hm1 = texture(heightMap, uv - vec2(1.0, 0.0) / vec2(heightParamsX, heightParamsY)).r;
+	float h0m1 = texture(heightMap, uv - vec2(0.0, 1.0) / vec2(heightParamsX, heightParamsY)).r;
+    vec2 gradient = vec2(h10 - hm1, h01 - h0m1) * 200.0;
+	float slope = length(gradient);
 
-
-    if(control > 0.9 || slope > 0.9)
+    float control = texture(heightMap, uv).g;
+    if(control > 0.5)
     {
         float controlVal = -5000.1337;
         // Add the transform data to the array

@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Collections.Generic;
 using Godot.Collections;
 using System.Diagnostics;
+using System.Threading;
 
 public partial class TerrainChunk : Node3D
 {
@@ -16,19 +17,59 @@ public partial class TerrainChunk : Node3D
 
     CompressedTexture2D rockNormal;
     CompressedTexture2D grassNormal;
-    public TerrainChunk()
+
+    Image mapImage;
+    Image paddedImg;
+    float heightScale;
+    int x_axis;
+    int y_axis;
+    int offsetX;
+    int offsetY;
+    bool wantGrass;
+    GrassMeshMaker myGrassMeshMaker;
+
+    public TerrainChunk(Image mapImage, Image paddedImg, float heightScale, int x_axis, int y_axis, int offsetX, int offsetY, bool wantGrass)
 	{
+        this.mapImage = mapImage;
+        this.paddedImg = paddedImg;
+        this.heightScale = heightScale;
+        this.x_axis = x_axis;
+        this.y_axis = y_axis;
+        this.offsetX = offsetX;
+        this.offsetY = offsetY;
+        this.wantGrass = wantGrass;
 	}
-	public bool BuildCollision(Image heightMap, float heightScale, int width, int depth, Vector3 globalPosition)
-	{
-        Stopwatch sw = Stopwatch.StartNew();
-        staticBody = PhysicsServer3D.BodyCreate();
-        PhysicsServer3D.BodySetMode(staticBody, PhysicsServer3D.BodyMode.Static);
-        PhysicsServer3D.BodySetSpace(staticBody, GetWorld3D().Space);
-        PhysicsServer3D.BodyAttachObjectInstanceId(staticBody, GetInstanceId());
-        
-        Rid shape = PhysicsServer3D.HeightmapShapeCreate();
-        float[] mapData = new float[width * depth];
+    public override void _Ready()
+    {
+        Thread setupColliderThread = new Thread(() => BuildCollision(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX - 0.5f, 0.0f, offsetY - 0.5f)));
+        setupColliderThread.Start();
+        //BuildCollision(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX - 0.5f, 0.0f, offsetY - 0.5f)); //TODO kinda weird that we adjust by 0.5 here
+
+        Thread setupMeshThread = new Thread(() => BuildMesh(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX, 0.0f, offsetY)));
+        setupMeshThread.Start();
+        //BuildMesh(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX, 0.0f, offsetY));
+
+        //Thread buildNavMeshThread = new Thread(() => terrainChunk.BuildNavigationMesh(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX, 0.0f, offsetY)));
+        //buildNavMeshThread.Start();
+        //terrainChunk.BuildNavigationMesh(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX, 0.0f, offsetY), navMap); //TODO this seems like the correct way to do
+        //it but after a long stutter there is still no nav mesh, not sure what to try next, check docs or terrain3d more :|
+
+        if (wantGrass)
+        {
+            myGrassMeshMaker = new GrassMeshMaker();
+            AddChild(myGrassMeshMaker);
+            //grassMeshMakerNode.AddChild(myGrassManager);
+            Thread setupGrassThread = new Thread(() => myGrassMeshMaker.SetupGrass(paddedImg, offsetX, offsetY, x_axis, y_axis, null, null));
+            setupGrassThread.Start();
+            //myGrassManager.SetupGrass(paddedImg, offsetX, offsetY, x_axis, y_axis, null, null);
+        }
+    }
+    float[] mapData;
+    Transform3D xform;
+    Dictionary shape_data;
+    public void BuildCollision(Image heightMap, float heightScale, int width, int depth, Vector3 globalPosition)
+    {
+        mapData = new float[width * depth];
 
         float minHeight = float.MaxValue;
         float maxHeight = float.MinValue;
@@ -50,23 +91,34 @@ public partial class TerrainChunk : Node3D
             }
         }
         //Transform3D xform = new Transform3D(Basis.Identity, globalPosition);
-        Transform3D xform = new Transform3D(new Basis(new Vector3(0f, 1f, 0f), Mathf.Pi * 0.5f), globalPosition + new Vector3(width * 0.5f, 0.0f, depth * 0.5f)); CollisionShape3D debugColShape = new CollisionShape3D();
+        xform = new Transform3D(new Basis(new Vector3(0f, 1f, 0f), Mathf.Pi * 0.5f), globalPosition + new Vector3(width * 0.5f, 0.0f, depth * 0.5f)); CollisionShape3D debugColShape = new CollisionShape3D();
 
         // scale the xform if we want to increase or decrease mesh_vertex_spacing, I think a value of 1 is good for now
         //xform.scale(Vector3(_mesh_vertex_spacing, 1.f, _mesh_vertex_spacing));
 
-        Dictionary shape_data = new Dictionary();
+        shape_data = new Dictionary();
         shape_data["width"] = width;
         shape_data["depth"] = depth;
         shape_data["heights"] = mapData;
         shape_data["min_height"] = minHeight;
         shape_data["max_height"] = maxHeight;
+        CallDeferred(TerrainChunk.MethodName.DeployCollision, shape_data, xform);
+    }
+    public bool DeployCollision(Dictionary shape_data, Transform3D xform)
+	{
+        Stopwatch sw = Stopwatch.StartNew();
+        staticBody = PhysicsServer3D.BodyCreate();
+        PhysicsServer3D.BodySetMode(staticBody, PhysicsServer3D.BodyMode.Static);
+        PhysicsServer3D.BodySetSpace(staticBody, GetWorld3D().Space);
+        PhysicsServer3D.BodyAttachObjectInstanceId(staticBody, GetInstanceId());
+        Rid shape = PhysicsServer3D.HeightmapShapeCreate();
+      
         PhysicsServer3D.ShapeSetData(shape, shape_data);
         PhysicsServer3D.BodyAddShape(staticBody, shape, xform);
         PhysicsServer3D.BodySetCollisionMask(staticBody, 1);
         PhysicsServer3D.BodySetCollisionLayer(staticBody, 1);
         PhysicsServer3D.BodySetCollisionPriority(staticBody, 1);
-        GD.Print("Build y: " + sw.ElapsedMilliseconds);
+        GD.Print("Deploy Collision: " + sw.ElapsedMilliseconds);
 
         return true;
     }
@@ -195,9 +247,8 @@ public partial class TerrainChunk : Node3D
         return true;
     }
 
-    public bool BuildMesh(Image heightMap, float heightScale, int width, int depth, Vector3 globalPosition)
+    private void BuildMesh(Image heightMap, float heightScale, int width, int depth, Vector3 globalPosition)
     {
-        Stopwatch sw = Stopwatch.StartNew();
         // Create an array for the vertices
         Vector3[] p_vertices = new Vector3[width * depth];
 
@@ -239,8 +290,15 @@ public partial class TerrainChunk : Node3D
         // Set the vertices and indices
         arrays[(int)RenderingServer.ArrayType.Vertex] = p_vertices;
         arrays[(int)RenderingServer.ArrayType.Index] = p_indices;
-        GD.Print("Build Mesh: " + sw.ElapsedMilliseconds);
-        sw.Restart();
+
+        heightMapTexture = ImageTexture.CreateFromImage(heightMap);
+
+        CallDeferred(TerrainChunk.MethodName.DeployMesh, arrays, p_aabb, globalPosition);
+    }
+    public bool DeployMesh(Godot.Collections.Array arrays, Aabb p_aabb, Vector3 globalPosition)
+    {
+        Stopwatch sw = Stopwatch.StartNew();
+
         // Create the mesh
         Rid mesh = RenderingServer.MeshCreate();
         RenderingServer.MeshAddSurfaceFromArrays(mesh, RenderingServer.PrimitiveType.Triangles, arrays);
@@ -272,13 +330,12 @@ public partial class TerrainChunk : Node3D
         rockNormal = ResourceLoader.Load<CompressedTexture2D>("res://.godot/imported/rock030_nrm_rgh.png-f372ae26829f66919317068d636f6985.bptc.ctex");
         grassNormal = ResourceLoader.Load<CompressedTexture2D>("res://.godot/imported/ground037_nrm_rgh.png-6815d522079724ff9e191de06a20875a.bptc.ctex");
 
-        heightMapTexture = ImageTexture.CreateFromImage(heightMap);
         RenderingServer.MaterialSetParam(terrainMaterial, "heightMap", heightMapTexture.GetRid());
         RenderingServer.MaterialSetParam(terrainMaterial, "rockTexture", rock.GetRid());
         RenderingServer.MaterialSetParam(terrainMaterial, "grassTexture", grass.GetRid());
         RenderingServer.MaterialSetParam(terrainMaterial, "rockNormalMap", rockNormal.GetRid());
         RenderingServer.MaterialSetParam(terrainMaterial, "grassNormalMap", grassNormal.GetRid());
-        RenderingServer.MaterialSetParam(terrainMaterial, "heightParams", new Vector2(heightMap.GetWidth(), heightMap.GetHeight()));
+        RenderingServer.MaterialSetParam(terrainMaterial, "heightParams", new Vector2(heightMapTexture.GetWidth(), heightMapTexture.GetHeight()));
         RenderingServer.MaterialSetParam(terrainMaterial, "heightScale", heightScale);
 
         RenderingServer.InstanceGeometrySetMaterialOverride(instance, terrainMaterial);

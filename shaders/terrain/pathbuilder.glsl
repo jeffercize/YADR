@@ -24,7 +24,7 @@ void main() {
     ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
     ivec2 global_coord = ivec2(gl_GlobalInvocationID.x+ offsetX, gl_GlobalInvocationID.y + offsetY);
     vec2 uv = vec2(coord) / vec2(imageWidth, imageHeight);
-    uv = clamp(uv, 0.001, 0.999);
+    uv = clamp(uv, 0.0, 1.0);
     float pathHeight = 0.1;
     float height = texture(noiseTexture, uv).r;
 
@@ -61,12 +61,17 @@ void main() {
     if(distanceToClosest < 20.0)
     {
         height = closestPoint.z;
+        imageStore(outputImage, coord, vec4(height, 1.0, 0.0, 1.0));
     }
     else if (distanceToClosest < 60.0)
     {
         float blendFactor = (distanceToClosest - 20.0) / 40.0;
         height = mix(closestPoint.z, height, blendFactor);
+        imageStore(outputImage, coord, vec4(height, 0.0, 0.0, 1.0));
+    }
+    else
+    {
+        imageStore(outputImage, coord, vec4(height, 0.0, 0.0, 1.0));
     }
 
-    imageStore(outputImage, coord, vec4(height, 0.0, 0.0, 1.0));
 }

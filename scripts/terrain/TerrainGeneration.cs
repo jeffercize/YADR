@@ -6,19 +6,34 @@ using System.Threading;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Godot.Collections;
+using System.Runtime.CompilerServices;
 
 public partial class TerrainGeneration : Node3D
 {
     Rid navMap;
+    float totalTime = 0.0f;
+    Image grassFlattenMap;
     public override void _Ready()
     {
-        AddTerrain(false);
+        Thread addTerrainThread = new Thread(() => AddTerrain(false));
+        addTerrainThread.Start();
+        //AddTerrain(false);
+        Thread shaderParamThread = new Thread(() =>
+        {
+            while (true) //change to isRunning and shutdown on tree exit
+            {
+                SetShaderStuff();
+                Thread.Sleep(16); // Wait for 16 milliseconds
+            }
+        });
+        shaderParamThread.Start();
     }
 
     public override void _Process(double delta)
     {
         // Called every frame. Delta is time since the last frame.
         // Update game logic here.
+        totalTime += (float)delta;
     }
 
 
@@ -46,6 +61,12 @@ public partial class TerrainGeneration : Node3D
 
             //Setup Input Image
             RDSamplerState samplerState = new RDSamplerState();
+            samplerState.RepeatU = RenderingDevice.SamplerRepeatMode.ClampToEdge;
+            samplerState.RepeatV = RenderingDevice.SamplerRepeatMode.ClampToEdge;
+            samplerState.RepeatW = RenderingDevice.SamplerRepeatMode.ClampToEdge;
+            samplerState.MinFilter = RenderingDevice.SamplerFilter.Linear;
+            samplerState.MipFilter = RenderingDevice.SamplerFilter.Linear;
+            samplerState.MagFilter = RenderingDevice.SamplerFilter.Linear;
             Rid sampler = rd.SamplerCreate(samplerState);
             RDTextureFormat inputFmt = new RDTextureFormat();
             inputFmt.Width = (uint)image.GetWidth();
@@ -266,7 +287,6 @@ public partial class TerrainGeneration : Node3D
             }
         }
         noiseImage.SavePng("C:\\Users\\jeffe\\test_images\\noise_test"+"("+ offsetX + "," + offsetY + ")"+ ".png");
-        GD.Print(sw.ElapsedMilliseconds);
 
 		Curve3D path = new Curve3D();
                 path.AddPoint(new Vector3(300, 0, 1.0f));
@@ -290,17 +310,15 @@ public partial class TerrainGeneration : Node3D
         Image pathImg = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
         path.BakeInterval = 0.1f;
         Vector3[] localPath = path.GetBakedPoints();
-        sw.Restart();
         pathImg = GPUGeneratePath(noiseImage, x_axis, y_axis, offsetX, offsetY, localPath);
-        GD.Print("tuh" + sw.ElapsedMilliseconds);
         // Run the blur shader
         pathImg = ApplyGassianAndBoxBlur(pathImg, RenderingDevice.DataFormat.R32G32Sfloat);
+
         //THIS LOOKS CONFUSING but its because we adjust x_axis and y_axis at the top of this function to make passing it easier
 
         return pathImg;
     }
-    GrassMeshMaker[,] grassMeshMakers = new GrassMeshMaker[3,3];
-    TerrainChunk[,] innerChunks = new TerrainChunk[3,3];
+    TerrainChunk[,] innerChunks = new TerrainChunk[5,5];
     public void AddTerrain(bool wantGrass=true)
     {
         wantGrass = true;
@@ -308,8 +326,6 @@ public partial class TerrainGeneration : Node3D
         int x_axis = 512;//16000; //if you change these a lot of shaders need re-coded maybe?
         int y_axis = 512;//6000; //if you change these a lot of shaders need re-coded maybe?
         float heightScale = 400.0f;
-        
-        GrassMeshMaker grassMeshMakerNode = (GrassMeshMaker)GetNode("GrassMeshMaker");
 
         //we declare the nav map here so it is shared for all the chunks
         navMap = NavigationServer3D.MapCreate();
@@ -330,24 +346,9 @@ public partial class TerrainGeneration : Node3D
                 mapImage.BlitRect(paddedImg, new Rect2I(16, 16, x_axis + 16, y_axis + 16), new Vector2I(0, 0));
                 GD.Print($"Clip Image: {sw.ElapsedMilliseconds}");
                 //Image mapImage = Image.LoadFromFile("C:\\Users\\jeffe\\test_images\\noise_test.png");
-                TerrainChunk terrainChunk = new TerrainChunk();
+                TerrainChunk terrainChunk = new TerrainChunk(mapImage, paddedImg, heightScale, x_axis, y_axis, offsetX, offsetY, wantGrass);
                 innerChunks[i,j] = terrainChunk;
-                AddChild(terrainChunk);
-                terrainChunk.BuildCollision(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX-0.5f, 0.0f, offsetY-0.5f)); //TODO kinda weird that we adjust by 0.5 here
-                terrainChunk.BuildMesh(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX, 0.0f, offsetY));
-                //Thread buildNavMeshThread = new Thread(() => terrainChunk.BuildNavigationMesh(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX, 0.0f, offsetY)));
-                //buildNavMeshThread.Start();
-                //terrainChunk.BuildNavigationMesh(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX, 0.0f, offsetY), navMap); //TODO this seems like the correct way to do
-                //it but after a long stutter there is still no nav mesh, not sure what to try next, check docs or terrain3d more :|
-                sw.Restart();
-                if (wantGrass)
-                {
-                    GrassMeshMaker myGrassManager = (GrassMeshMaker)grassMeshMakerNode.Duplicate();
-                    grassMeshMakerNode.AddSibling(myGrassManager);
-                    grassMeshMakers[i,j] = myGrassManager;
-                    myGrassManager.SetupGrass("/Player", paddedImg, offsetX, offsetY, x_axis, y_axis, null, null);
-                }
-                GD.Print($"Grass Setup: {sw.ElapsedMilliseconds}");
+                CallDeferred(Node3D.MethodName.AddChild, (terrainChunk));
             }
         }
 
@@ -356,5 +357,10 @@ public partial class TerrainGeneration : Node3D
         //runtime_nav_baker.Set("enabled", true);
         GD.Print($"Terrrain Full Time elapsed: {stopwatch.Elapsed}");
 
+    }
+
+    public void SetShaderStuff()
+    {
+        RenderingServer.GlobalShaderParameterSet("time", totalTime);
     }
 }
