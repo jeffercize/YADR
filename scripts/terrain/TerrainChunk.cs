@@ -14,6 +14,7 @@ public partial class TerrainChunk : Node3D
     ImageTexture heightMapTexture;
     CompressedTexture2D rock;
     CompressedTexture2D grass;
+    CompressedTexture2D road;
 
     CompressedTexture2D rockNormal;
     CompressedTexture2D grassNormal;
@@ -326,6 +327,7 @@ public partial class TerrainChunk : Node3D
         // Set the shader parameters
         rock = ResourceLoader.Load<CompressedTexture2D>("res://.godot/imported/rock030_alb_ht.png-c841db18b37aa5c942943cffad123dc2.bptc.ctex");
         grass = ResourceLoader.Load<CompressedTexture2D>("res://.godot/imported/ground037_alb_ht.png-587e922b9c8fcab3f2d4050ac005b844.bptc.ctex");
+        road = ResourceLoader.Load<CompressedTexture2D>("res://.godot/imported/asphalt_04_diff_1k.png-6fb6a69fb7bdad4149863435ba87c518.bptc.ctex");
 
         rockNormal = ResourceLoader.Load<CompressedTexture2D>("res://.godot/imported/rock030_nrm_rgh.png-f372ae26829f66919317068d636f6985.bptc.ctex");
         grassNormal = ResourceLoader.Load<CompressedTexture2D>("res://.godot/imported/ground037_nrm_rgh.png-6815d522079724ff9e191de06a20875a.bptc.ctex");
@@ -333,6 +335,7 @@ public partial class TerrainChunk : Node3D
         RenderingServer.MaterialSetParam(terrainMaterial, "heightMap", heightMapTexture.GetRid());
         RenderingServer.MaterialSetParam(terrainMaterial, "rockTexture", rock.GetRid());
         RenderingServer.MaterialSetParam(terrainMaterial, "grassTexture", grass.GetRid());
+        RenderingServer.MaterialSetParam(terrainMaterial, "roadTexture", road.GetRid());
         RenderingServer.MaterialSetParam(terrainMaterial, "rockNormalMap", rockNormal.GetRid());
         RenderingServer.MaterialSetParam(terrainMaterial, "grassNormalMap", grassNormal.GetRid());
         RenderingServer.MaterialSetParam(terrainMaterial, "heightParams", new Vector2(heightMapTexture.GetWidth(), heightMapTexture.GetHeight()));

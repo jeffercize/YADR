@@ -38,7 +38,7 @@ public partial class WeatherController : Node3D
         mySun = new DirectionalLight3D();
 
         mySun.DirectionalShadowMaxDistance = 256.0f;
-        mySun.Rotation = new Vector3(100.0f, 0.0f, 0.0f);
+        mySun.Rotation = new Vector3(0.0f, 0.0f, 0.0f);
         mySun.LightColor = (new Color(0.5f, 0.5f, 0.5f));
         mySun.LightEnergy = 0.2f;
 		mySun.ShadowEnabled = true;

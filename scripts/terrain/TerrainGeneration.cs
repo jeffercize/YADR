@@ -28,12 +28,24 @@ public partial class TerrainGeneration : Node3D
         });
         shaderParamThread.Start();
     }
-
+    bool pressedJ = false;
     public override void _Process(double delta)
     {
         // Called every frame. Delta is time since the last frame.
         // Update game logic here.
         totalTime += (float)delta;
+        if (!pressedJ && Input.IsKeyPressed(Key.J))
+        {
+            pressedJ = true;
+            //AddTerrain(true);
+            //THERE IS A MULTI THREAD ISSUE, LIKELY OR ALMOST 100% RELATED TO RENDERDEVICE
+            Thread addTerrainThread = new Thread(() => AddTerrain(false));
+            addTerrainThread.Start();
+        }
+        else
+        {
+            pressedJ = false;
+        }
     }
 
 
@@ -232,10 +244,11 @@ public partial class TerrainGeneration : Node3D
         imageDimensionsUniform.AddId(imageDimensionsBuffer);
 
         //create the uniformSet
-        var blenduniformSet = rd.UniformSetCreate(new Array<RDUniform> { noiseSamplerUniform, pathUniform, blendOutputTexUniform, imageDimensionsUniform }, blendShader, 0);
+        Rid blenduniformSet = rd.UniformSetCreate(new Array<RDUniform> { noiseSamplerUniform, pathUniform, blendOutputTexUniform, imageDimensionsUniform }, blendShader, 0);
 
         // Create a compute pipeline
-        var blendpipeline = rd.ComputePipelineCreate(blendShader);
+        Rid blendpipeline = rd.ComputePipelineCreate(blendShader);
+
         var blendcomputeList = rd.ComputeListBegin();
         rd.ComputeListBindComputePipeline(blendcomputeList, blendpipeline);
         rd.ComputeListBindUniformSet(blendcomputeList, blenduniformSet, 0);
@@ -248,6 +261,15 @@ public partial class TerrainGeneration : Node3D
         // Submit to GPU and wait for sync
         rd.Submit();
         rd.Sync();
+
+        rd.FreeRid(blendShader);
+        rd.FreeRid(noiseSampler);
+        rd.FreeRid(noiseTex);
+        rd.FreeRid(pointsBuffer);
+        rd.FreeRid(blendOutputTex);
+        rd.FreeRid(imageDimensionsBuffer);
+        rd.FreeRid(blenduniformSet);
+        rd.FreeRid(blendpipeline);
 
         //Get Data
         var blendbyteData = rd.TextureGetData(blendOutputTex, 0);
@@ -318,10 +340,11 @@ public partial class TerrainGeneration : Node3D
 
         return pathImg;
     }
-    TerrainChunk[,] innerChunks = new TerrainChunk[5,5];
-    public void AddTerrain(bool wantGrass=true)
+    TerrainChunk[,] innerChunks = new TerrainChunk[10,10];
+    int indexI = 0;
+    int indexJ = 0;
+    public void AddTerrain(bool wantGrass)
     {
-        wantGrass = true;
         Stopwatch stopwatch = Stopwatch.StartNew();
         int x_axis = 512;//16000; //if you change these a lot of shaders need re-coded maybe?
         int y_axis = 512;//6000; //if you change these a lot of shaders need re-coded maybe?
@@ -332,7 +355,7 @@ public partial class TerrainGeneration : Node3D
         NavigationServer3D.MapSetUp(navMap, Vector3.Up);
         NavigationServer3D.MapSetActive(navMap, true);
 
-        for (int i = 0; i < 3; i++)
+        for (int i = indexI; i < indexI+1; i++)
         {
             for(int j = 0; j < 3; j++)
             {
@@ -344,7 +367,7 @@ public partial class TerrainGeneration : Node3D
 
         //runtime_nav_baker.Set("enabled", true);
         GD.Print($"Terrrain Full Time elapsed: {stopwatch.Elapsed}");
-
+        indexI += 1;
     }
 
     private void AddTerrainChunk(int i, int j, int x_axis, int y_axis, float heightScale, bool wantGrass)
@@ -353,11 +376,9 @@ public partial class TerrainGeneration : Node3D
         int offsetY = j * y_axis - j;
         Stopwatch sw = Stopwatch.StartNew();
         Image paddedImg = GenerateTerrain(offsetX, offsetY, x_axis, y_axis);
-        GD.Print($"Generate TerrainImage: {sw.ElapsedMilliseconds}");
         sw.Restart();
         Image mapImage = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
         mapImage.BlitRect(paddedImg, new Rect2I(16, 16, x_axis + 16, y_axis + 16), new Vector2I(0, 0));
-        GD.Print($"Clip Image: {sw.ElapsedMilliseconds}");
         //Image mapImage = Image.LoadFromFile("C:\\Users\\jeffe\\test_images\\noise_test.png");
         TerrainChunk terrainChunk = new TerrainChunk(mapImage, paddedImg, heightScale, x_axis, y_axis, offsetX, offsetY, wantGrass);
         innerChunks[i, j] = terrainChunk;
