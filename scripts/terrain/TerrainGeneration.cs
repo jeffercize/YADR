@@ -1,5 +1,6 @@
 using Godot;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System;
 using System.Linq;
 using System.Threading;
@@ -10,14 +11,47 @@ using System.Runtime.CompilerServices;
 
 public partial class TerrainGeneration : Node3D
 {
+    CharacterBody3D player;
     Rid navMap;
     float totalTime = 0.0f;
+    bool waitingForRenderingDevices = false;
     Image grassFlattenMap;
+    public ConcurrentQueue<RenderingDevice> renderingDevices = new ConcurrentQueue<RenderingDevice>();
+    RDShaderFile[] shaderList = new RDShaderFile[] {
+            GD.Load<RDShaderFile>("res://shaders/terrain/gausianblur.glsl")
+        };
+    RDShaderFile pathBuilderShaderFile;
+
+    RDShaderFile blendShaderFile;
+    Shader grassShader;
+
+    private (int, int) currentChunk = (-5, -5);
+    private ConcurrentQueue<(int,int)> chuckRequests = new ConcurrentQueue<(int,int)>();    
+    private ConcurrentDictionary<(int, int), TerrainChunk> terrainChunks = new ConcurrentDictionary<(int, int), TerrainChunk>();
+
+    public ConcurrentQueue<(Rid, Rid, Transform3D)> queuedPhysicsShapes = new ConcurrentQueue<(Rid, Rid, Transform3D)>();
+
+    CompressedTexture2D rock = ResourceLoader.Load<CompressedTexture2D>("res://.godot/imported/rock030_alb_ht.png-c841db18b37aa5c942943cffad123dc2.bptc.ctex");
+    CompressedTexture2D grass = ResourceLoader.Load<CompressedTexture2D>("res://.godot/imported/ground037_alb_ht.png-587e922b9c8fcab3f2d4050ac005b844.bptc.ctex");
+    CompressedTexture2D road = ResourceLoader.Load<CompressedTexture2D>("res://.godot/imported/asphalt_04_diff_1k.png-6fb6a69fb7bdad4149863435ba87c518.bptc.ctex");
+
+    CompressedTexture2D rockNormal = ResourceLoader.Load<CompressedTexture2D>("res://.godot/imported/rock030_nrm_rgh.png-f372ae26829f66919317068d636f6985.bptc.ctex");
+    CompressedTexture2D grassNormal = ResourceLoader.Load<CompressedTexture2D>("res://.godot/imported/ground037_nrm_rgh.png-6815d522079724ff9e191de06a20875a.bptc.ctex");
+
+    Shader terrainShader = GD.Load<Shader>("res://shaders/terrain/terrainChunk.gdshader");
+
+
     public override void _Ready()
     {
-        Thread addTerrainThread = new Thread(() => AddTerrain(false));
-        addTerrainThread.Start();
-        //AddTerrain(false);
+        blendShaderFile = GD.Load<RDShaderFile>("res://shaders/terrain/computeGrassClump.glsl");
+        grassShader = GD.Load<Shader>("res://shaders/terrain/grassShader.gdshader");
+        pathBuilderShaderFile = GD.Load<RDShaderFile>("res://shaders/terrain/pathbuilder.glsl");
+
+        player = GetNode<CharacterBody3D>("Player");
+        for (int i = 0; i < 20; i++)
+        {
+            renderingDevices.Enqueue(RenderingServer.CreateLocalRenderingDevice());
+        }
         Thread shaderParamThread = new Thread(() =>
         {
             while (true) //change to isRunning and shutdown on tree exit
@@ -27,24 +61,103 @@ public partial class TerrainGeneration : Node3D
             }
         });
         shaderParamThread.Start();
+
+        //we declare the nav map here so it is shared for all the chunks
+        navMap = NavigationServer3D.MapCreate();
+        NavigationServer3D.MapSetUp(navMap, Vector3.Up);
+        NavigationServer3D.MapSetActive(navMap, true);
     }
-    bool pressedJ = false;
+    public override void _PhysicsProcess(double delta)
+    {
+        (Rid, Rid, Transform3D) physicsShape;
+        if(queuedPhysicsShapes.TryDequeue(out physicsShape))
+        {
+            PhysicsServer3D.BodyAddShape(physicsShape.Item1, physicsShape.Item2, physicsShape.Item3);
+        }
+    }
     public override void _Process(double delta)
     {
-        // Called every frame. Delta is time since the last frame.
+        Stopwatch sw2 = Stopwatch.StartNew();
+        Stopwatch sw1 = new Stopwatch();
+        Stopwatch sw3 = new Stopwatch();
+        Stopwatch sw4 = new Stopwatch();
+        sw4.Start();
+        // Called every frame. Delta is time since the last frame
         // Update game logic here.
         totalTime += (float)delta;
-        if (!pressedJ && Input.IsKeyPressed(Key.J))
+
+        // Get the player's global position
+        Vector3 playerPosition = player.GlobalTransform.Origin;
+
+        // Calculate the player's current chunk
+        int playerChunkX = (int)Math.Floor((playerPosition.X / 512));
+        int playerChunkY = (int)Math.Floor((playerPosition.Z / 512));
+
+        int buffer = 10;
+
+        // Calculate the player's position within the current chunk
+        float playerPositionInChunkX = playerPosition.X % 512;
+        float playerPositionInChunkY = playerPosition.Z % 512;
+
+        sw4.Stop();
+        // Only update the current chunk if the player is outside the buffer zone
+        if (playerPositionInChunkX > buffer && playerPositionInChunkX < 512 - buffer &&
+            playerPositionInChunkY > buffer && playerPositionInChunkY < 512 - buffer ||
+            Math.Abs(playerChunkX - currentChunk.Item1) > 1 || Math.Abs(playerChunkY - currentChunk.Item2) > 1)
         {
-            pressedJ = true;
-            //AddTerrain(true);
-            //THERE IS A MULTI THREAD ISSUE, LIKELY OR ALMOST 100% RELATED TO RENDERDEVICE
-            Thread addTerrainThread = new Thread(() => AddTerrain(false));
-            addTerrainThread.Start();
+            (int, int) prevChunk = currentChunk;
+            currentChunk = (playerChunkX, playerChunkY);
+            if(currentChunk.Item1 != prevChunk.Item1 || currentChunk.Item2 != prevChunk.Item2)
+            {
+                sw3.Start();
+                // Request a 3x3 grid of chunks around the player.
+                for (int x = playerChunkX - 1; x <= playerChunkX + 1; x++)
+                {
+                    for (int y = playerChunkY - 1; y <= playerChunkY + 1; y++)
+                    {
+                        (int, int) chunk = (x, y);
+
+                        // If the chunk doesn't already exist, create it.
+                        if (!terrainChunks.ContainsKey(chunk))
+                        {
+                            terrainChunks.TryAdd(chunk, null);
+                            chuckRequests.Enqueue(chunk);
+                        }
+                    }
+                }
+                sw3.Stop();
+                sw1.Start();
+                // Remove chunks that are no longer needed.
+                Thread removeChunksThread = new Thread(() => RemoveChunks(playerChunkX, playerChunkY));
+                removeChunksThread.Start();
+                sw1.Stop();
+            }
         }
-        else
+        Stopwatch sw = Stopwatch.StartNew();
+        while (chuckRequests.Any() && renderingDevices.Any())
         {
-            pressedJ = false;
+            (int, int) requestedChunk;
+            if (chuckRequests.TryDequeue(out requestedChunk))
+            {
+                if(renderingDevices.TryDequeue(out RenderingDevice rd))
+                {
+                    bool wantGrass = true;
+                    Thread addTerrainThread = new Thread(() => AddTerrain(rd, wantGrass, requestedChunk));
+                    addTerrainThread.Start();
+                }
+                else
+                {
+                    chuckRequests.Enqueue(requestedChunk);
+                }
+            }
+        }
+        if(sw2.ElapsedMilliseconds > 4)
+        {
+            GD.Print($"Other STuff Time elapsed: {sw4.ElapsedMilliseconds}");
+            GD.Print($"Add Chunks Time elapsed: {sw3.ElapsedMilliseconds}");
+            GD.Print($"Remove Chunks Time elapsed: {sw1.ElapsedMilliseconds}");
+            GD.Print($"Chunk Requests Time elapsed: {sw.ElapsedMilliseconds}");
+            GD.Print($"Full Process Time elapsed: {sw2.ElapsedMilliseconds}");
         }
     }
 
@@ -54,18 +167,31 @@ public partial class TerrainGeneration : Node3D
         return a + (b - a) * t;
     }
 
+    private void RemoveChunks(int playerChunkX, int playerChunkY)
+    {
+        foreach ((int, int) chunk in terrainChunks.Keys)
+        {
+            if (Math.Abs(chunk.Item1 - playerChunkX) > 1 || Math.Abs(chunk.Item2 - playerChunkY) > 1)
+            {
+                TerrainChunk temp;
+                terrainChunks.TryGetValue(chunk, out temp);
+                if (temp != null)
+                {
+                    terrainChunks.TryRemove(chunk, out temp);
+                    temp.CleanUp();
+                }
+            }
+        }
+    }
 
 
 
 
-    public Image ApplyGassianAndBoxBlur(Image image, RenderingDevice.DataFormat imageFormat)
+
+    public Image ApplyGassianAndBoxBlur(RenderingDevice rd, Image image, RenderingDevice.DataFormat imageFormat)
     {
         // Create a local rendering device.
-        var rd = RenderingServer.CreateLocalRenderingDevice();
         Image pathImg = Image.Create(image.GetWidth(), image.GetHeight(), false, Image.Format.Rgf);
-        RDShaderFile[] shaderList = new RDShaderFile[] {
-            GD.Load<RDShaderFile>("res://shaders/terrain/gausianblur.glsl")
-        };
         foreach (var shaderFile in shaderList)
         {
             RDShaderSpirV shaderBytecode = shaderFile.GetSpirV();
@@ -135,11 +261,11 @@ public partial class TerrainGeneration : Node3D
             imageDimensionsUniform.AddId(imageDimensionsBuffer);
 
             //create the uniformSet
-            var uniformSet = rd.UniformSetCreate(new Array<RDUniform> { samplerUniform, outputTexUniform, imageDimensionsUniform }, shader, 0);
+            Rid uniformSet = rd.UniformSetCreate(new Array<RDUniform> { samplerUniform, outputTexUniform, imageDimensionsUniform }, shader, 0);
 
             // Create a compute pipeline
-            var pipeline = rd.ComputePipelineCreate(shader);
-            var computeList = rd.ComputeListBegin();
+            Rid pipeline = rd.ComputePipelineCreate(shader);
+            long computeList = rd.ComputeListBegin();
             rd.ComputeListBindComputePipeline(computeList, pipeline);
             rd.ComputeListBindUniformSet(computeList, uniformSet, 0);
             int threadsPerGroup = 32;
@@ -157,15 +283,21 @@ public partial class TerrainGeneration : Node3D
             pathImg = Image.CreateFromData(image.GetWidth(), image.GetHeight(), false, Image.Format.Rgf, byteData);
             image = pathImg;
             imageFormat = RenderingDevice.DataFormat.R32G32Sfloat;
+
+            rd.FreeRid(shader);
+            rd.FreeRid(sampler);
+            rd.FreeRid(inputTex);
+            rd.FreeRid(output_tex);
+            rd.FreeRid(imageDimensionsBuffer);
+            //rd.FreeRid(uniformSet); //we dont free these apparently
+            //rd.FreeRid(pipeline);
         }
         return pathImg;
     }
 
-    public Image GPUGeneratePath(Image noiseImage, int x_axis, int y_axis, int offsetX, int offsetY, Vector3[] points)
+    public Image GPUGeneratePath(RenderingDevice rd, Image noiseImage, int x_axis, int y_axis, int offsetX, int offsetY, Vector3[] points)
     {
-        var rd = RenderingServer.CreateLocalRenderingDevice();
-        RDShaderFile blendShaderFile = GD.Load<RDShaderFile>("res://shaders/terrain/pathbuilder.glsl");
-        RDShaderSpirV blendShaderBytecode = blendShaderFile.GetSpirV();
+        RDShaderSpirV blendShaderBytecode = pathBuilderShaderFile.GetSpirV();
         Rid blendShader = rd.ShaderCreateFromSpirV(blendShaderBytecode);
 
         //Setup Noise Image
@@ -262,22 +394,24 @@ public partial class TerrainGeneration : Node3D
         rd.Submit();
         rd.Sync();
 
+        //rd.FreeRid(blenduniformSet); //for some reason this is invalid to free?
+        //rd.FreeRid(blendpipeline);  //for some reason this is invalid to free?
+
+        //Get Data
+        var blendbyteData = rd.TextureGetData(blendOutputTex, 0);
+        Image final_img = Image.CreateFromData(x_axis, y_axis, false, Image.Format.Rgf, blendbyteData);
+
         rd.FreeRid(blendShader);
         rd.FreeRid(noiseSampler);
         rd.FreeRid(noiseTex);
         rd.FreeRid(pointsBuffer);
         rd.FreeRid(blendOutputTex);
         rd.FreeRid(imageDimensionsBuffer);
-        rd.FreeRid(blenduniformSet);
-        rd.FreeRid(blendpipeline);
 
-        //Get Data
-        var blendbyteData = rd.TextureGetData(blendOutputTex, 0);
-        Image final_img = Image.CreateFromData(x_axis, y_axis, false, Image.Format.Rgf, blendbyteData);
         return final_img;
     }
 
-    public Image GenerateTerrain(int offsetX, int offsetY, int x_axis, int y_axis)
+    public Image GenerateTerrain(RenderingDevice rd, int offsetX, int offsetY, int x_axis, int y_axis)
 	{
         //move offset back by 10 and add 20 extra pixels to discard after blurring
         //that way we have a ring of extra pixels so we can calculate blur
@@ -332,57 +466,38 @@ public partial class TerrainGeneration : Node3D
         Image pathImg = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
         path.BakeInterval = 0.1f;
         Vector3[] localPath = path.GetBakedPoints();
-        pathImg = GPUGeneratePath(noiseImage, x_axis, y_axis, offsetX, offsetY, localPath);
+        pathImg = GPUGeneratePath(rd, noiseImage, x_axis, y_axis, offsetX, offsetY, localPath);
         // Run the blur shader
-        pathImg = ApplyGassianAndBoxBlur(pathImg, RenderingDevice.DataFormat.R32G32Sfloat);
+        pathImg = ApplyGassianAndBoxBlur(rd, pathImg, RenderingDevice.DataFormat.R32G32Sfloat);
 
         //THIS LOOKS CONFUSING but its because we adjust x_axis and y_axis at the top of this function to make passing it easier
 
         return pathImg;
     }
-    TerrainChunk[,] innerChunks = new TerrainChunk[10,10];
-    int indexI = 0;
-    int indexJ = 0;
-    public void AddTerrain(bool wantGrass)
+    public void AddTerrain(RenderingDevice rd, bool wantGrass, (int,int) chunkRequest)
     {
-        Stopwatch stopwatch = Stopwatch.StartNew();
-        int x_axis = 512;//16000; //if you change these a lot of shaders need re-coded maybe?
-        int y_axis = 512;//6000; //if you change these a lot of shaders need re-coded maybe?
+        int x_axis = 512; //if you change these a lot of code may need changed I tried to make it generic?
+        int y_axis = 512; //if you change these a lot of code may need changed I tried to make it generic?
         float heightScale = 400.0f;
 
-        //we declare the nav map here so it is shared for all the chunks
-        navMap = NavigationServer3D.MapCreate();
-        NavigationServer3D.MapSetUp(navMap, Vector3.Up);
-        NavigationServer3D.MapSetActive(navMap, true);
+        terrainChunks.TryUpdate(chunkRequest, AddTerrainChunk(rd, chunkRequest, x_axis, y_axis, heightScale, wantGrass), null);
 
-        for (int i = indexI; i < indexI+1; i++)
-        {
-            for(int j = 0; j < 3; j++)
-            {
-                AddTerrainChunk(i, j, x_axis, y_axis, heightScale, wantGrass);
-            }
-        }
-
-        GD.Print($"Time elapsed: {stopwatch.Elapsed}");
-
-        //runtime_nav_baker.Set("enabled", true);
-        GD.Print($"Terrrain Full Time elapsed: {stopwatch.Elapsed}");
-        indexI += 1;
+        renderingDevices.Enqueue(rd);
     }
 
-    private void AddTerrainChunk(int i, int j, int x_axis, int y_axis, float heightScale, bool wantGrass)
+    private TerrainChunk AddTerrainChunk(RenderingDevice rd, (int,int) chunkRequest, int x_axis, int y_axis, float heightScale, bool wantGrass)
     {
-        int offsetX = i * x_axis - i;
-        int offsetY = j * y_axis - j;
+        int offsetX = chunkRequest.Item1 * x_axis - chunkRequest.Item1;
+        int offsetY = chunkRequest.Item2 * y_axis - chunkRequest.Item2;
         Stopwatch sw = Stopwatch.StartNew();
-        Image paddedImg = GenerateTerrain(offsetX, offsetY, x_axis, y_axis);
+        Image paddedImg = GenerateTerrain(rd, offsetX, offsetY, x_axis, y_axis);
         sw.Restart();
         Image mapImage = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
         mapImage.BlitRect(paddedImg, new Rect2I(16, 16, x_axis + 16, y_axis + 16), new Vector2I(0, 0));
         //Image mapImage = Image.LoadFromFile("C:\\Users\\jeffe\\test_images\\noise_test.png");
-        TerrainChunk terrainChunk = new TerrainChunk(mapImage, paddedImg, heightScale, x_axis, y_axis, offsetX, offsetY, wantGrass);
-        innerChunks[i, j] = terrainChunk;
+        TerrainChunk terrainChunk = new TerrainChunk(mapImage, paddedImg, heightScale, x_axis, y_axis, offsetX, offsetY, wantGrass, this, blendShaderFile, grassShader, rock, grass, road, rockNormal, grassNormal, terrainShader);
         CallDeferred(Node3D.MethodName.AddChild, (terrainChunk));
+        return terrainChunk;
     }
 
     public void SetShaderStuff()

@@ -9,8 +9,6 @@ using System.Threading;
 
 public partial class TerrainChunk : Node3D
 {
-    Rid staticBody = new Rid();
-    StandardMaterial3D temp = GD.Load<StandardMaterial3D>("res://assets/materials/M_rock30.tres");
     ImageTexture heightMapTexture;
     CompressedTexture2D rock;
     CompressedTexture2D grass;
@@ -18,6 +16,8 @@ public partial class TerrainChunk : Node3D
 
     CompressedTexture2D rockNormal;
     CompressedTexture2D grassNormal;
+
+    Shader terrainShader;
 
     Image mapImage;
     Image paddedImg;
@@ -28,8 +28,23 @@ public partial class TerrainChunk : Node3D
     int offsetY;
     bool wantGrass;
     GrassMeshMaker myGrassMeshMaker;
+    TerrainGeneration parent;
+    RDShaderFile blendShaderFile;
+    Shader grassShader;
 
-    public TerrainChunk(Image mapImage, Image paddedImg, float heightScale, int x_axis, int y_axis, int offsetX, int offsetY, bool wantGrass)
+
+    Rid shape;
+    Rid staticBody;
+    Rid mesh;
+    Rid instance;
+    Rid materialShader;
+    Rid terrainMaterial;
+
+    Rid region;
+
+    bool cleaningUp = false;
+
+    public TerrainChunk(Image mapImage, Image paddedImg, float heightScale, int x_axis, int y_axis, int offsetX, int offsetY, bool wantGrass, TerrainGeneration parent, RDShaderFile blendShaderFile, Shader grassShader, CompressedTexture2D rock, CompressedTexture2D grass, CompressedTexture2D road, CompressedTexture2D rockNormal, CompressedTexture2D grassNormal, Shader terrainShader)
 	{
         this.mapImage = mapImage;
         this.paddedImg = paddedImg;
@@ -39,9 +54,19 @@ public partial class TerrainChunk : Node3D
         this.offsetX = offsetX;
         this.offsetY = offsetY;
         this.wantGrass = wantGrass;
-	}
+        this.parent = parent;
+        this.blendShaderFile = blendShaderFile;
+        this.grassShader = grassShader;
+        this.rock = rock;
+        this.grass = grass;
+        this.road = road;
+        this.rockNormal = rockNormal;
+        this.grassNormal = grassNormal;
+        this.terrainShader = terrainShader;
+    }
     public override void _Ready()
     {
+        Stopwatch sw = Stopwatch.StartNew();
         Thread setupColliderThread = new Thread(() => BuildCollision(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX - 0.5f, 0.0f, offsetY - 0.5f)));
         setupColliderThread.Start();
         //BuildCollision(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX - 0.5f, 0.0f, offsetY - 0.5f)); //TODO kinda weird that we adjust by 0.5 here
@@ -60,9 +85,14 @@ public partial class TerrainChunk : Node3D
             myGrassMeshMaker = new GrassMeshMaker();
             AddChild(myGrassMeshMaker);
             //grassMeshMakerNode.AddChild(myGrassManager);
-            Thread setupGrassThread = new Thread(() => myGrassMeshMaker.SetupGrass(paddedImg, offsetX, offsetY, x_axis, y_axis, null, null));
+            Thread setupGrassThread = new Thread(() => myGrassMeshMaker.SetupGrass(paddedImg, offsetX, offsetY, x_axis, y_axis, null, null, this, parent, blendShaderFile, grassShader));
             setupGrassThread.Start();
             //myGrassManager.SetupGrass(paddedImg, offsetX, offsetY, x_axis, y_axis, null, null);
+        }
+
+        if (sw.ElapsedMilliseconds > 4)
+        {
+            GD.Print($"Full Chunk Ready Time elapsed: {sw.ElapsedMilliseconds}");
         }
     }
     float[] mapData;
@@ -103,7 +133,10 @@ public partial class TerrainChunk : Node3D
         shape_data["heights"] = mapData;
         shape_data["min_height"] = minHeight;
         shape_data["max_height"] = maxHeight;
-        CallDeferred(TerrainChunk.MethodName.DeployCollision, shape_data, xform);
+        if (cleaningUp == false)
+        {
+            CallDeferred(TerrainChunk.MethodName.DeployCollision, shape_data, xform);
+        }
     }
     public bool DeployCollision(Dictionary shape_data, Transform3D xform)
 	{
@@ -112,26 +145,27 @@ public partial class TerrainChunk : Node3D
         PhysicsServer3D.BodySetMode(staticBody, PhysicsServer3D.BodyMode.Static);
         PhysicsServer3D.BodySetSpace(staticBody, GetWorld3D().Space);
         PhysicsServer3D.BodyAttachObjectInstanceId(staticBody, GetInstanceId());
-        Rid shape = PhysicsServer3D.HeightmapShapeCreate();
-      
+        shape = PhysicsServer3D.HeightmapShapeCreate();
         PhysicsServer3D.ShapeSetData(shape, shape_data);
-        PhysicsServer3D.BodyAddShape(staticBody, shape, xform);
         PhysicsServer3D.BodySetCollisionMask(staticBody, 1);
         PhysicsServer3D.BodySetCollisionLayer(staticBody, 1);
         PhysicsServer3D.BodySetCollisionPriority(staticBody, 1);
-        GD.Print("Deploy Collision: " + sw.ElapsedMilliseconds);
 
+        
+        parent.queuedPhysicsShapes.Enqueue((staticBody, shape, xform));
+        //this line takes 99% of deploy time and can spike to 150ms (randomly?)
+        //PhysicsServer3D.BodyAddShape(staticBody, shape, xform);
         return true;
     }
 
     public bool BuildDebugCollision(Image heightMap, float heightScale, int width, int depth, Vector3 globalPosition)
     {
-        GD.Print("Building debug collision. Disable this mode for releases");
+        //GD.Print("Building debug collision. Disable this mode for releases");
         StaticBody3D _debugStaticBody = new StaticBody3D();
         _debugStaticBody.Name = "StaticBody3D";
         AddChild(_debugStaticBody);
 
-        Rid shape = PhysicsServer3D.HeightmapShapeCreate();
+        shape = PhysicsServer3D.HeightmapShapeCreate();
         float[] mapData = new float[width * depth];
 
         float minHeight = float.MaxValue;
@@ -170,20 +204,6 @@ public partial class TerrainChunk : Node3D
         _debugStaticBody.CollisionPriority = 1;
 
         return true;
-    }
-
-    public bool DestroyCollision()
-    {
-        if (staticBody.IsValid)
-        {
-            GD.Print("Freeing physics body");
-            Rid shape = PhysicsServer3D.BodyGetShape(staticBody, 0);
-            PhysicsServer3D.FreeRid(shape);
-            PhysicsServer3D.FreeRid(staticBody);
-            staticBody = new Rid();
-            return true;
-        }
-        return false;
     }
 
     public bool BuildNavigationMesh(Image heightMap, float heightScale, int width, int depth, Vector3 globalPosition, Rid navMap)
@@ -236,7 +256,7 @@ public partial class TerrainChunk : Node3D
         // Bake the navigation mesh
         //NavigationServer3D.BakeFromSourceGeometryData(navigationMesh, sourceGeometry); //NO POLYGONS GUH
 
-        Rid region = NavigationServer3D.RegionCreate();
+        region = NavigationServer3D.RegionCreate();
         NavigationServer3D.RegionSetTransform(region, new Transform3D(Basis.Identity, globalPosition));
         NavigationServer3D.RegionSetMap(region, navMap);
 
@@ -294,43 +314,42 @@ public partial class TerrainChunk : Node3D
 
         heightMapTexture = ImageTexture.CreateFromImage(heightMap);
 
-        CallDeferred(TerrainChunk.MethodName.DeployMesh, arrays, p_aabb, globalPosition);
-    }
-    public bool DeployMesh(Godot.Collections.Array arrays, Aabb p_aabb, Vector3 globalPosition)
-    {
-        Stopwatch sw = Stopwatch.StartNew();
-
         // Create the mesh
-        Rid mesh = RenderingServer.MeshCreate();
+        mesh = RenderingServer.MeshCreate();
         RenderingServer.MeshAddSurfaceFromArrays(mesh, RenderingServer.PrimitiveType.Triangles, arrays);
         // Set the custom AABB
         RenderingServer.MeshSetCustomAabb(mesh, p_aabb);
 
-        Rid instance = RenderingServer.InstanceCreate2(mesh, GetWorld3D().Scenario);
-
+        if (cleaningUp == false)
+        {
+            //Callable callable = Callable.From(() => DeployMesh(arrays, p_aabb, globalPosition));
+            //RenderingServer.CallOnRenderThread(callable);
+            CallDeferred(TerrainChunk.MethodName.DeployMesh, arrays, p_aabb, globalPosition);
+            //DeployMesh(arrays, p_aabb, globalPosition);
+        }
+    }
+    public bool DeployMesh(Godot.Collections.Array arrays, Aabb p_aabb, Vector3 globalPosition)
+    {
+        Stopwatch sw = Stopwatch.StartNew();
+        instance = RenderingServer.InstanceCreate2(mesh, GetWorld3D().Scenario);
+        GD.Print("After Instance Create: " + sw.ElapsedMilliseconds);
         // Set the transform
         Transform3D xform = new Transform3D(Basis.Identity, globalPosition);
+
         RenderingServer.InstanceSetTransform(instance, xform);
-
+        Stopwatch sw2 = Stopwatch.StartNew();
         ShaderMaterial terrainMat = new ShaderMaterial();
-        Shader terrainShader = GD.Load<Shader>("res://shaders/terrain/terrainChunk.gdshader");
         terrainMat.Shader = terrainShader;
-
+        GD.Print("Midway Mesh: " + sw.ElapsedMilliseconds);
         // Create a RID for the material and set its shader
-        Rid materialShader = RenderingServer.ShaderCreate();
+        materialShader = RenderingServer.ShaderCreate();
         RenderingServer.ShaderSetCode(materialShader, terrainMat.Shader.Code);
 
-        Rid terrainMaterial = RenderingServer.MaterialCreate();
+        terrainMaterial = RenderingServer.MaterialCreate();
         RenderingServer.MaterialSetParam(terrainMaterial, "texture_repeat", false);//TODO this doesnt work, there has to be a way to change wrapping behavior for texture sampling
         RenderingServer.MaterialSetShader(terrainMaterial, materialShader);
 
         // Set the shader parameters
-        rock = ResourceLoader.Load<CompressedTexture2D>("res://.godot/imported/rock030_alb_ht.png-c841db18b37aa5c942943cffad123dc2.bptc.ctex");
-        grass = ResourceLoader.Load<CompressedTexture2D>("res://.godot/imported/ground037_alb_ht.png-587e922b9c8fcab3f2d4050ac005b844.bptc.ctex");
-        road = ResourceLoader.Load<CompressedTexture2D>("res://.godot/imported/asphalt_04_diff_1k.png-6fb6a69fb7bdad4149863435ba87c518.bptc.ctex");
-
-        rockNormal = ResourceLoader.Load<CompressedTexture2D>("res://.godot/imported/rock030_nrm_rgh.png-f372ae26829f66919317068d636f6985.bptc.ctex");
-        grassNormal = ResourceLoader.Load<CompressedTexture2D>("res://.godot/imported/ground037_nrm_rgh.png-6815d522079724ff9e191de06a20875a.bptc.ctex");
 
         RenderingServer.MaterialSetParam(terrainMaterial, "heightMap", heightMapTexture.GetRid());
         RenderingServer.MaterialSetParam(terrainMaterial, "rockTexture", rock.GetRid());
@@ -343,9 +362,37 @@ public partial class TerrainChunk : Node3D
 
         RenderingServer.InstanceGeometrySetMaterialOverride(instance, terrainMaterial);
         //RenderingServer.MeshSurfaceSetMaterial(mesh, 0, terrainMaterial);
-        GD.Print("RenderServer Mesh: " + sw.ElapsedMilliseconds);
-
+        GD.Print("Deploy Mesh: " + sw.ElapsedMilliseconds);
 
         return true;
+    }
+
+    public void CleanUp()
+    {
+        cleaningUp = true;
+
+        if(shape.IsValid)
+        {
+            PhysicsServer3D.FreeRid(shape);
+        }
+        if (staticBody.IsValid)
+        {
+            PhysicsServer3D.FreeRid(staticBody);
+        }
+        RenderingServer.FreeRid(mesh);
+        RenderingServer.FreeRid(instance);
+        RenderingServer.FreeRid(materialShader);
+        RenderingServer.FreeRid(terrainMaterial);
+
+        if(region.IsValid)
+        {
+            NavigationServer3D.FreeRid(region);
+        }
+
+        if (myGrassMeshMaker != null)
+        {
+            myGrassMeshMaker.CleanUp();
+        }
+        //this.QueueFree();
     }
 }
