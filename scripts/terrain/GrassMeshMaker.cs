@@ -40,7 +40,7 @@ public partial class GrassMeshMaker : Node3D
     Rid computeClumpShader;
 
     private volatile bool _abortRun = false;
-    Queue<(Rid, Rid, Rid, Rid)> freeChunks = new Queue<(Rid, Rid, Rid, Rid)>();
+    ConcurrentQueue<(Rid, Rid, Rid, Rid)> freeChunks = new ConcurrentQueue<(Rid, Rid, Rid, Rid)>();
     ConcurrentQueue<(float[], float, int, Vector3, Mesh, int, int, int)> readyDataChunks = new ConcurrentQueue<(float[], float, int, Vector3, Mesh, int, int, int)>();
 
     ConcurrentDictionary<(int, int), (Rid, Rid, Rid, Rid)> activeChunkDictionary = new ConcurrentDictionary<(int, int), (Rid, Rid, Rid, Rid)>();
@@ -123,42 +123,30 @@ public partial class GrassMeshMaker : Node3D
     public override void _Process(double delta)
     {
         Stopwatch sw4 = Stopwatch.StartNew();
-        Stopwatch sw2 = new Stopwatch();
         Stopwatch sw3 = new Stopwatch();
         int i = 0;
         if (renderingDeviceAcquired && grassReady)
         {
-            sw2.Start();
-            if (readyDataChunks.Count != 0)
+            if(freeChunks.Count == 0)
             {
-                Stopwatch sw = Stopwatch.StartNew();
-                while (readyDataChunks.Count != 0 && sw.ElapsedMilliseconds < 2)
+                freeChunks.Enqueue(InitializeFullRIDClump());
+            }
+            else if (readyDataChunks.Count != 0)
+            {
+                if (readyDataChunks.Count != 0)
                 {
                     i++;
                     (float[], float, int, Vector3, Mesh, int, int, int) readyDataChunk;
                     if(readyDataChunks.TryDequeue(out readyDataChunk))
                     {
-                        if (freeChunks.Count == 0)
+                        (Rid, Rid, Rid, Rid) chunkRids;
+                        if(freeChunks.TryDequeue(out chunkRids))
                         {
-                            Stopwatch sw6 = Stopwatch.StartNew();
-                            i += 100;//add an extra i because this can take a bit
-                            freeChunks.Enqueue(InitializeFullRIDClump());
-                            if (sw6.ElapsedMilliseconds > 4)
-                            {
-                                GD.Print("InitializeFullRIDClump elapse: " + sw6.ElapsedMilliseconds);
-                            }
-                        }
-                        (Rid, Rid, Rid, Rid) chunkRids = freeChunks.Dequeue();
-                        Stopwatch sw7 = Stopwatch.StartNew();
-                        RecycleAndAddComputeClumpData(chunkRids.Item1, chunkRids.Item2, chunkRids.Item3, chunkRids.Item4, readyDataChunk.Item1, readyDataChunk.Item2, readyDataChunk.Item3, readyDataChunk.Item4, readyDataChunk.Item5, readyDataChunk.Item6, readyDataChunk.Item7, readyDataChunk.Item8);
-                        if (sw7.ElapsedMilliseconds > 4)
-                        {
-                            GD.Print("InitializeFullRIDClump elapse: " + sw7.ElapsedMilliseconds);
+                            RecycleAndAddComputeClumpData(chunkRids.Item1, chunkRids.Item2, chunkRids.Item3, chunkRids.Item4, readyDataChunk.Item1, readyDataChunk.Item2, readyDataChunk.Item3, readyDataChunk.Item4, readyDataChunk.Item5, readyDataChunk.Item6, readyDataChunk.Item7, readyDataChunk.Item8);
                         }
                     }
                 }
             }
-            sw2.Stop();
         }
         else if (!renderingDeviceAcquired && !setupThreadRunning)
         {
@@ -172,8 +160,6 @@ public partial class GrassMeshMaker : Node3D
 
         if(sw4.ElapsedMilliseconds > 4)
         {
-            GD.Print($"RecycleAndAddComputeClumpData elapse: {sw2.ElapsedMilliseconds}");
-            GD.Print($"Get RenderingDevice and Launch Thread elapse: {sw3.ElapsedMilliseconds}");
             GD.Print($"Full Grass Process Time elapsed: {sw4.ElapsedMilliseconds}");
         }
     }
@@ -579,6 +565,8 @@ public partial class GrassMeshMaker : Node3D
     {
         Rid grassChunk = RenderingServer.MultimeshCreate();
         Rid instance = RenderingServer.InstanceCreate2(grassChunk, this.GetWorld3D().Scenario);
+        RenderingServer.InstanceSetBase(instance, grassChunk);//PICKUP HERE TODO
+        RenderingServer.InstanceSetBase(instance, new Rid());
         RenderingServer.InstanceGeometrySetCastShadowsSetting(instance, RenderingServer.ShadowCastingSetting.Off);
         if (myLOD == 0)
         {

@@ -25,11 +25,21 @@ public partial class TerrainGeneration : Node3D
     RDShaderFile blendShaderFile;
     Shader grassShader;
 
+    //we use -5,-5 so it will update on spawn seems lazy idk
     private (int, int) currentChunk = (-5, -5);
-    private ConcurrentQueue<(int,int)> chuckRequests = new ConcurrentQueue<(int,int)>();    
+
+    //queue of terrainchunks we need to create
+    private ConcurrentQueue<(int,int)> chuckRequests = new ConcurrentQueue<(int,int)>();
+
+    //dictionary of all the terrain chunks we have created
     private ConcurrentDictionary<(int, int), TerrainChunk> terrainChunks = new ConcurrentDictionary<(int, int), TerrainChunk>();
 
+    //offloading the physics additions from all chunks to be handeled here
     public ConcurrentQueue<(Rid, Rid, Transform3D)> queuedPhysicsShapes = new ConcurrentQueue<(Rid, Rid, Transform3D)>();
+
+    //queue of free grass chunks to be used by grassmeshmakers
+    bool wantGrass = true;
+
 
     CompressedTexture2D rock = ResourceLoader.Load<CompressedTexture2D>("res://.godot/imported/rock030_alb_ht.png-c841db18b37aa5c942943cffad123dc2.bptc.ctex");
     CompressedTexture2D grass = ResourceLoader.Load<CompressedTexture2D>("res://.godot/imported/ground037_alb_ht.png-587e922b9c8fcab3f2d4050ac005b844.bptc.ctex");
@@ -66,13 +76,21 @@ public partial class TerrainGeneration : Node3D
         navMap = NavigationServer3D.MapCreate();
         NavigationServer3D.MapSetUp(navMap, Vector3.Up);
         NavigationServer3D.MapSetActive(navMap, true);
+
+        //grass stuff
+        if (wantGrass)
+        {
+
+        }
     }
     public override void _PhysicsProcess(double delta)
     {
         (Rid, Rid, Transform3D) physicsShape;
+        Stopwatch sw = Stopwatch.StartNew();
         if(queuedPhysicsShapes.TryDequeue(out physicsShape))
         {
             PhysicsServer3D.BodyAddShape(physicsShape.Item1, physicsShape.Item2, physicsShape.Item3);
+            GD.Print("Add Shape" + sw.ElapsedMilliseconds);
         }
     }
     public override void _Process(double delta)
@@ -141,7 +159,6 @@ public partial class TerrainGeneration : Node3D
             {
                 if(renderingDevices.TryDequeue(out RenderingDevice rd))
                 {
-                    bool wantGrass = true;
                     Thread addTerrainThread = new Thread(() => AddTerrain(rd, wantGrass, requestedChunk));
                     addTerrainThread.Start();
                 }
