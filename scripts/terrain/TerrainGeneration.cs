@@ -30,7 +30,7 @@ public partial class TerrainGeneration : Node3D
 
     //queue of terrainchunks we need to create
     private ConcurrentQueue<(int,int)> chuckRequests = new ConcurrentQueue<(int,int)>();
-    private ConcurrentQueue<(int, int)> lowLODChuckRequests = new ConcurrentQueue<(int, int)>();
+    private ConcurrentQueue<(int, int, int)> lowLODChuckRequests = new ConcurrentQueue<(int, int, int)>();
 
     //dictionary of all the terrain chunks we have created
     private ConcurrentDictionary<(int, int), TerrainChunk> terrainChunks = new ConcurrentDictionary<(int, int), TerrainChunk>();
@@ -155,19 +155,46 @@ public partial class TerrainGeneration : Node3D
                         }
                     }
                 }
-                //Update the 10x10 grid of lowLOD chunks around the player
-                for (int x = playerChunkX - 10; x <= playerChunkX + 10; x++)
+                // Update the outer 4x4 grid of lowLOD chunks around the player
+                for (int x = playerChunkX - 5; x <= playerChunkX + 5; x++)
                 {
-                    for (int y = playerChunkY - 10; y <= playerChunkY + 10; y++)
+                    for (int y = playerChunkY - 5; y <= playerChunkY + 5; y++)
                     {
+                        // Skip the inner 3x3 grid
+                        if (x >= playerChunkX - 1 && x <= playerChunkX + 1 && y >= playerChunkY - 1 && y <= playerChunkY + 1)
+                        {
+                            continue;
+                        }
+
                         (int, int) chunk = (x, y);
                         if (!lowLODTerrainChunks.ContainsKey(chunk))
                         {
                             lowLODTerrainChunks.TryAdd(chunk, null);
-                            lowLODChuckRequests.Enqueue(chunk);
+                            lowLODChuckRequests.Enqueue((chunk.Item1, chunk.Item2, 16));
                         }
                     }
                 }
+
+                // Update the outer-outer 10x10 grid of lowLOD chunks around the player
+                for (int x = playerChunkX - 14; x <= playerChunkX + 14; x++)
+                {
+                    for (int y = playerChunkY - 14; y <= playerChunkY + 14; y++)
+                    {
+                        // Skip the inner 9x9 grid
+                        if (x >= playerChunkX - 5 && x <= playerChunkX + 5 && y >= playerChunkY - 5 && y <= playerChunkY + 5)
+                        {
+                            continue;
+                        }
+
+                        (int, int) chunk = (x, y);
+                        if (!lowLODTerrainChunks.ContainsKey(chunk))
+                        {
+                            lowLODTerrainChunks.TryAdd(chunk, null);
+                            lowLODChuckRequests.Enqueue((chunk.Item1, chunk.Item2, 32));
+                        }
+                    }
+                }
+
                 sw3.Stop();
                 sw1.Start();
                 // Remove chunks that are no longer needed.
@@ -186,7 +213,7 @@ public partial class TerrainGeneration : Node3D
             {
                 if(renderingDevices.TryDequeue(out RenderingDevice rd))
                 {
-                    Thread addTerrainThread = new Thread(() => AddTerrain(rd, wantGrass, 16, requestedChunk)); //higher the number LOWER THE QUALITY lol
+                    Thread addTerrainThread = new Thread(() => AddTerrain(rd, wantGrass, 4, requestedChunk)); //higher the number LOWER THE QUALITY lol
                     addTerrainThread.Start();
                 }
                 else
@@ -195,14 +222,14 @@ public partial class TerrainGeneration : Node3D
                 }
             }
         }
-        /*if (lowLODChuckRequests.Any() && renderingDevices.Any())
+        if (lowLODChuckRequests.Any() && renderingDevices.Any())
         {
-            (int, int) requestedChunk;
+            (int, int, int) requestedChunk;
             if (lowLODChuckRequests.TryDequeue(out requestedChunk))
             {
                 if (renderingDevices.TryDequeue(out RenderingDevice rd))
                 {
-                    Thread addTerrainThread = new Thread(() => AddTerrain(rd, false, 4, requestedChunk));
+                    Thread addTerrainThread = new Thread(() => AddTerrain(rd, false, requestedChunk.Item3, (requestedChunk.Item1, requestedChunk.Item2)));
                     addTerrainThread.Start();
                 }
                 else
@@ -210,7 +237,7 @@ public partial class TerrainGeneration : Node3D
                     lowLODChuckRequests.Enqueue(requestedChunk);
                 }
             }
-        }*/
+        }
         if (sw2.ElapsedMilliseconds > 4)
         {
             GD.Print($"Other STuff Time elapsed: {sw4.ElapsedMilliseconds}");
