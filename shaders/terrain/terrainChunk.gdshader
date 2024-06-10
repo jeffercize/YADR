@@ -6,7 +6,7 @@ uniform sampler2D grassTexture;
 uniform sampler2D roadTexture;
 uniform sampler2D rockNormalMap;
 uniform sampler2D grassNormalMap;
-uniform vec2 heightParams = vec2(1.0, 1.0);
+uniform vec2 heightParams = vec2(512.0, 512.0);
 uniform float heightScale = 1.0;
 
 varying float vSteepness;

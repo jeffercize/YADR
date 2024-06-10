@@ -73,7 +73,6 @@ public partial class GrassMeshMaker : Node3D
 
     public void CleanUp()
     {
-        
         cleaningUp = true;
         _abortRun = true;
         if (processGrassThread != null)
@@ -565,8 +564,8 @@ public partial class GrassMeshMaker : Node3D
     {
         Rid grassChunk = RenderingServer.MultimeshCreate();
         Rid instance = RenderingServer.InstanceCreate2(grassChunk, this.GetWorld3D().Scenario);
-        RenderingServer.InstanceSetBase(instance, grassChunk);//PICKUP HERE TODO
-        RenderingServer.InstanceSetBase(instance, new Rid());
+/*        RenderingServer.InstanceSetBase(instance, grassChunk);//PICKUP HERE TODO
+        RenderingServer.InstanceSetBase(instance, new Rid());*/
         RenderingServer.InstanceGeometrySetCastShadowsSetting(instance, RenderingServer.ShadowCastingSetting.Off);
         if (myLOD == 0)
         {

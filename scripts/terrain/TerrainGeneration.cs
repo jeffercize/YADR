@@ -30,15 +30,20 @@ public partial class TerrainGeneration : Node3D
 
     //queue of terrainchunks we need to create
     private ConcurrentQueue<(int,int)> chuckRequests = new ConcurrentQueue<(int,int)>();
+    private ConcurrentQueue<(int, int)> lowLODChuckRequests = new ConcurrentQueue<(int, int)>();
 
     //dictionary of all the terrain chunks we have created
     private ConcurrentDictionary<(int, int), TerrainChunk> terrainChunks = new ConcurrentDictionary<(int, int), TerrainChunk>();
+    private ConcurrentDictionary<(int, int), TerrainChunk> lowLODTerrainChunks = new ConcurrentDictionary<(int, int), TerrainChunk>();
+
 
     //offloading the physics additions from all chunks to be handeled here
     public ConcurrentQueue<(Rid, Rid, Transform3D)> queuedPhysicsShapes = new ConcurrentQueue<(Rid, Rid, Transform3D)>();
+    public ConcurrentQueue<TerrainChunk> queuedChunkShapes = new ConcurrentQueue<TerrainChunk>();
+
 
     //queue of free grass chunks to be used by grassmeshmakers
-    bool wantGrass = true;
+    bool wantGrass = false;
 
 
     CompressedTexture2D rock = ResourceLoader.Load<CompressedTexture2D>("res://.godot/imported/rock030_alb_ht.png-c841db18b37aa5c942943cffad123dc2.bptc.ctex");
@@ -85,12 +90,26 @@ public partial class TerrainGeneration : Node3D
     }
     public override void _PhysicsProcess(double delta)
     {
-        (Rid, Rid, Transform3D) physicsShape;
+        
         Stopwatch sw = Stopwatch.StartNew();
-        if(queuedPhysicsShapes.TryDequeue(out physicsShape))
+        (Rid, Rid, Transform3D) physicsShape;
+        TerrainChunk chunk;
+        if (queuedChunkShapes.TryDequeue(out chunk))
         {
-            PhysicsServer3D.BodyAddShape(physicsShape.Item1, physicsShape.Item2, physicsShape.Item3);
-            GD.Print("Add Shape" + sw.ElapsedMilliseconds);
+            chunk.DeployMesh();
+            GD.Print("Add Mesh" + sw.ElapsedMilliseconds);
+        }
+        else if(queuedPhysicsShapes.TryDequeue(out physicsShape))
+        {
+            if(physicsShape.Item1.IsValid && physicsShape.Item2.IsValid)
+            {
+                PhysicsServer3D.BodyAddShape(physicsShape.Item1, physicsShape.Item2, physicsShape.Item3);
+                GD.Print("Add Shape" + sw.ElapsedMilliseconds);
+            }
+        }
+        if(sw.ElapsedMilliseconds > 4)
+        {
+            GD.Print($"Physics Process Time elapsed: {sw.ElapsedMilliseconds}");
         }
     }
     public override void _Process(double delta)
@@ -111,24 +130,17 @@ public partial class TerrainGeneration : Node3D
         int playerChunkX = (int)Math.Floor((playerPosition.X / 512));
         int playerChunkY = (int)Math.Floor((playerPosition.Z / 512));
 
-        int buffer = 10;
-
-        // Calculate the player's position within the current chunk
-        float playerPositionInChunkX = playerPosition.X % 512;
-        float playerPositionInChunkY = playerPosition.Z % 512;
 
         sw4.Stop();
         // Only update the current chunk if the player is outside the buffer zone
-        if (playerPositionInChunkX > buffer && playerPositionInChunkX < 512 - buffer &&
-            playerPositionInChunkY > buffer && playerPositionInChunkY < 512 - buffer ||
-            Math.Abs(playerChunkX - currentChunk.Item1) > 1 || Math.Abs(playerChunkY - currentChunk.Item2) > 1)
+        if (Math.Abs(playerChunkX - currentChunk.Item1) > 0 || Math.Abs(playerChunkY - currentChunk.Item2) > 0)
         {
             (int, int) prevChunk = currentChunk;
             currentChunk = (playerChunkX, playerChunkY);
             if(currentChunk.Item1 != prevChunk.Item1 || currentChunk.Item2 != prevChunk.Item2)
             {
                 sw3.Start();
-                // Request a 3x3 grid of chunks around the player.
+                // Request a 3x3 grid of highLOD chunks around the player.
                 for (int x = playerChunkX - 1; x <= playerChunkX + 1; x++)
                 {
                     for (int y = playerChunkY - 1; y <= playerChunkY + 1; y++)
@@ -143,9 +155,24 @@ public partial class TerrainGeneration : Node3D
                         }
                     }
                 }
+                //Update the 10x10 grid of lowLOD chunks around the player
+                for (int x = playerChunkX - 10; x <= playerChunkX + 10; x++)
+                {
+                    for (int y = playerChunkY - 10; y <= playerChunkY + 10; y++)
+                    {
+                        (int, int) chunk = (x, y);
+                        if (!lowLODTerrainChunks.ContainsKey(chunk))
+                        {
+                            lowLODTerrainChunks.TryAdd(chunk, null);
+                            lowLODChuckRequests.Enqueue(chunk);
+                        }
+                    }
+                }
                 sw3.Stop();
                 sw1.Start();
                 // Remove chunks that are no longer needed.
+                Thread removeLowLODChunksThread = new Thread(() => RemoveLowLODChunks(playerChunkX, playerChunkY));
+                removeLowLODChunksThread.Start();
                 Thread removeChunksThread = new Thread(() => RemoveChunks(playerChunkX, playerChunkY));
                 removeChunksThread.Start();
                 sw1.Stop();
@@ -159,7 +186,7 @@ public partial class TerrainGeneration : Node3D
             {
                 if(renderingDevices.TryDequeue(out RenderingDevice rd))
                 {
-                    Thread addTerrainThread = new Thread(() => AddTerrain(rd, wantGrass, requestedChunk));
+                    Thread addTerrainThread = new Thread(() => AddTerrain(rd, wantGrass, 16, requestedChunk)); //higher the number LOWER THE QUALITY lol
                     addTerrainThread.Start();
                 }
                 else
@@ -168,7 +195,23 @@ public partial class TerrainGeneration : Node3D
                 }
             }
         }
-        if(sw2.ElapsedMilliseconds > 4)
+        /*if (lowLODChuckRequests.Any() && renderingDevices.Any())
+        {
+            (int, int) requestedChunk;
+            if (lowLODChuckRequests.TryDequeue(out requestedChunk))
+            {
+                if (renderingDevices.TryDequeue(out RenderingDevice rd))
+                {
+                    Thread addTerrainThread = new Thread(() => AddTerrain(rd, false, 4, requestedChunk));
+                    addTerrainThread.Start();
+                }
+                else
+                {
+                    lowLODChuckRequests.Enqueue(requestedChunk);
+                }
+            }
+        }*/
+        if (sw2.ElapsedMilliseconds > 4)
         {
             GD.Print($"Other STuff Time elapsed: {sw4.ElapsedMilliseconds}");
             GD.Print($"Add Chunks Time elapsed: {sw3.ElapsedMilliseconds}");
@@ -189,6 +232,23 @@ public partial class TerrainGeneration : Node3D
         foreach ((int, int) chunk in terrainChunks.Keys)
         {
             if (Math.Abs(chunk.Item1 - playerChunkX) > 1 || Math.Abs(chunk.Item2 - playerChunkY) > 1)
+            {
+                TerrainChunk temp;
+                terrainChunks.TryGetValue(chunk, out temp);
+                if (temp != null)
+                {
+                    terrainChunks.TryRemove(chunk, out temp);
+                    temp.CleanUp();
+                }
+            }
+        }
+    }
+
+    private void RemoveLowLODChunks(int playerChunkX, int playerChunkY)
+    {
+        foreach ((int, int) chunk in lowLODTerrainChunks.Keys)
+        {
+            if (Math.Abs(chunk.Item1 - playerChunkX) > 10 || Math.Abs(chunk.Item2 - playerChunkY) > 10)
             {
                 TerrainChunk temp;
                 terrainChunks.TryGetValue(chunk, out temp);
@@ -459,7 +519,7 @@ public partial class TerrainGeneration : Node3D
                 noiseImage.SetPixel(i, j, new Color(noiseValue, 0, 0, 0));
             }
         }
-        noiseImage.SavePng("C:\\Users\\jeffe\\test_images\\noise_test"+"("+ offsetX + "," + offsetY + ")"+ ".png");
+        //noiseImage.SavePng("C:\\Users\\jeffe\\test_images\\noise_test"+"("+ offsetX + "," + offsetY + ")"+ ".png");
 
 		Curve3D path = new Curve3D();
                 path.AddPoint(new Vector3(300, 0, 1.0f));
@@ -491,31 +551,31 @@ public partial class TerrainGeneration : Node3D
 
         return pathImg;
     }
-    public void AddTerrain(RenderingDevice rd, bool wantGrass, (int,int) chunkRequest)
+    public void AddTerrain(RenderingDevice rd, bool wantGrass, int quality, (int,int) chunkRequest)
     {
-        int x_axis = 512; //if you change these a lot of code may need changed I tried to make it generic?
-        int y_axis = 512; //if you change these a lot of code may need changed I tried to make it generic?
+        int x_axis = 512; //if you change these a lot of code may need changed?
+        int y_axis = 512; //if you change these a lot of code may need changed?
         float heightScale = 400.0f;
 
-        terrainChunks.TryUpdate(chunkRequest, AddTerrainChunk(rd, chunkRequest, x_axis, y_axis, heightScale, wantGrass), null);
+        terrainChunks.TryUpdate(chunkRequest, AddTerrainChunk(rd, chunkRequest, x_axis, y_axis, heightScale, wantGrass, quality), null);
 
         renderingDevices.Enqueue(rd);
     }
 
-    private TerrainChunk AddTerrainChunk(RenderingDevice rd, (int,int) chunkRequest, int x_axis, int y_axis, float heightScale, bool wantGrass)
+    private TerrainChunk AddTerrainChunk(RenderingDevice rd, (int,int) chunkRequest, int x_axis, int y_axis, float heightScale, bool wantGrass, int quality)
     {
-        int offsetX = chunkRequest.Item1 * x_axis - chunkRequest.Item1;
-        int offsetY = chunkRequest.Item2 * y_axis - chunkRequest.Item2;
-        Stopwatch sw = Stopwatch.StartNew();
+        int offsetX = chunkRequest.Item1 * x_axis - (chunkRequest.Item1 * quality);
+        int offsetY = chunkRequest.Item2 * y_axis - (chunkRequest.Item2 * quality);
         Image paddedImg = GenerateTerrain(rd, offsetX, offsetY, x_axis, y_axis);
-        sw.Restart();
         Image mapImage = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
         mapImage.BlitRect(paddedImg, new Rect2I(16, 16, x_axis + 16, y_axis + 16), new Vector2I(0, 0));
         //Image mapImage = Image.LoadFromFile("C:\\Users\\jeffe\\test_images\\noise_test.png");
-        TerrainChunk terrainChunk = new TerrainChunk(mapImage, paddedImg, heightScale, x_axis, y_axis, offsetX, offsetY, wantGrass, this, blendShaderFile, grassShader, rock, grass, road, rockNormal, grassNormal, terrainShader);
+        TerrainChunk terrainChunk = new TerrainChunk(mapImage, paddedImg, heightScale, x_axis, y_axis, offsetX, offsetY, wantGrass, quality, this, blendShaderFile, grassShader, rock, grass, road, rockNormal, grassNormal, terrainShader);
         CallDeferred(Node3D.MethodName.AddChild, (terrainChunk));
         return terrainChunk;
     }
+
+
 
     public void SetShaderStuff()
     {
