@@ -149,14 +149,14 @@ public partial class Client : Node
         {
             foreach (Command command in reliablePacket.Commands)
             {
-                NetworkCommandReceived.Invoke(command.Command_, command.Sender);
+                NetworkCommandReceived?.Invoke(command.Command_, command.Sender);
             }
         }
         if (reliablePacket.ChatMessages.Count > 0)
         {
             foreach (Chat chatMessage in reliablePacket.ChatMessages)
             {
-                ChatMessageReceived.Invoke(chatMessage.Message, chatMessage.Sender);
+                ChatMessageReceived?.Invoke(chatMessage.Message, chatMessage.Sender);
             }
         }
         if (reliablePacket.PlayerJoined.Count > 0)
@@ -164,7 +164,7 @@ public partial class Client : Node
             foreach (ulong playerID in reliablePacket.PlayerJoined)
             {
                 peers.Add(playerID);
-                PlayerJoined.Invoke(playerID);
+                PlayerJoined?.Invoke(playerID);
             }
         }
         if (reliablePacket.PlayerLeft.Count > 0)
@@ -172,13 +172,13 @@ public partial class Client : Node
             foreach (ulong playerID in reliablePacket.PlayerLeft)
             {
                 peers.Remove(playerID);
-                PlayerLeft.Invoke(playerID);
+                PlayerLeft?.Invoke(playerID);
             }
         }
         if (reliablePacket.PlayerList.Count > 0)
         {
             peers = reliablePacket.PlayerList.ToList();
-            PlayerListUpdate.Invoke(reliablePacket.PlayerList.ToList());
+            PlayerListUpdate?.Invoke(reliablePacket.PlayerList.ToList());
         }
     }
 

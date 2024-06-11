@@ -198,6 +198,7 @@ public partial class Server : Node
                 }
                 break;
             case ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_Connected:
+                CatchUpNewJoiner(conn);
                 clients.Add(conn, new ConnectionData(conn,getConnectionRemoteID(conn),false));
                 clientLookup.Add(getConnectionRemoteID(conn), conn);
                 SteamNetworkingSockets.ConfigureConnectionLanes(conn, 2, null, null);
@@ -279,6 +280,32 @@ public partial class Server : Node
         {
             SendSteamMessage(c, outgoingReliablePacket, 1, NetworkManager.k_nSteamNetworkingSend_ReliableNoNagle);
         }
+    }
+
+    public void SendPlayerLeftMessage(ulong playerID)
+    {
+        ReliablePacket outgoingReliablePacket = new ReliablePacket();
+        outgoingReliablePacket.Tick = Global.getTick();
+        outgoingReliablePacket.Timestamp = Time.GetUnixTimeFromSystem();
+        outgoingReliablePacket.PlayerLeft.Add(playerID);
+        foreach (HSteamNetConnection c in clients.Keys)
+        {
+            SendSteamMessage(c, outgoingReliablePacket, 1, NetworkManager.k_nSteamNetworkingSend_ReliableNoNagle);
+        }
+    }
+
+    public void CatchUpNewJoiner(HSteamNetConnection newJoiner)
+    {
+        ReliablePacket outgoingReliablePacket = new ReliablePacket();
+        outgoingReliablePacket.Tick = Global.getTick();
+        outgoingReliablePacket.Timestamp = Time.GetUnixTimeFromSystem();
+
+        foreach (ConnectionData c in clients.Values)
+        {
+            outgoingReliablePacket.PlayerJoined.Add(c.clientID);
+        }
+
+        SendSteamMessage(newJoiner, outgoingReliablePacket, 1, NetworkManager.k_nSteamNetworkingSend_ReliableNoNagle);
     }
 
 

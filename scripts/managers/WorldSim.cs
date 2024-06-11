@@ -168,11 +168,11 @@ public partial class WorldSim : Node3D
         player.spawned = true;
         if (player.clientID == Global.clientID)
         {
-            clientManagedObjects.Add(player.entityID, player);
+//            clientManagedObjects.Add(player.entityID, player);
         }
         else
         {
-            serverManagedObjects.Add(player.entityID, player);
+      //      serverManagedObjects.Add(player.entityID, player);
         }
     }
 
