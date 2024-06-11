@@ -55,7 +55,7 @@ public partial class WorldSim : Node3D
         {
             if (player.spawned)
             {
-                player.Tick(inputs[player.clientID],delta);
+                 player.Tick(inputs[player.clientID],delta);
                 player.lastFrameInput = inputs[player.clientID];
             }
         }

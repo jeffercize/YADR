@@ -198,17 +198,19 @@ public partial class Server : Node
                 }
                 break;
             case ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_Connected:
+                SendPlayerJoinedMessage(getConnectionRemoteID(conn));
                 CatchUpNewJoiner(conn);
                 clients.Add(conn, new ConnectionData(conn,getConnectionRemoteID(conn),false));
                 clientLookup.Add(getConnectionRemoteID(conn), conn);
                 SteamNetworkingSockets.ConfigureConnectionLanes(conn, 2, null, null);
-                SendPlayerJoinedMessage(getConnectionRemoteID(conn));
+
                 Global.NetworkManager.networkDebugLog("Connection from ID: " + @event.m_info.m_identityRemote.GetSteamID64() + " complete!");
                 break;
             case ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_ClosedByPeer:
                 clients.Remove(conn);
                 clientLookup.Remove(getConnectionRemoteID(conn));
                 SteamNetworkingSockets.CloseConnection(conn, 0, "Connection closed by peer.", true);
+                SendPlayerLeftMessage(getConnectionRemoteID(conn));
                 Global.NetworkManager.networkDebugLog("Connection from ID: " + @event.m_info.m_identityRemote.GetSteamID64() + " closed by peer.");
                 break;
             default:
@@ -278,6 +280,7 @@ public partial class Server : Node
         outgoingReliablePacket.PlayerJoined.Add(playerID);
         foreach (HSteamNetConnection c in clients.Keys)
         {
+
             SendSteamMessage(c, outgoingReliablePacket, 1, NetworkManager.k_nSteamNetworkingSend_ReliableNoNagle);
         }
     }
@@ -299,7 +302,7 @@ public partial class Server : Node
         ReliablePacket outgoingReliablePacket = new ReliablePacket();
         outgoingReliablePacket.Tick = Global.getTick();
         outgoingReliablePacket.Timestamp = Time.GetUnixTimeFromSystem();
-
+        outgoingReliablePacket.PlayerJoined.Add(Global.clientID);
         foreach (ConnectionData c in clients.Values)
         {
             outgoingReliablePacket.PlayerJoined.Add(c.clientID);
