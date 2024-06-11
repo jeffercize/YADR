@@ -41,7 +41,7 @@ public partial class InputManager : Node
         {
             if (@event.IsActionPressed(action))
             {
-                Global.debugLog("Action Pressed: " + action);
+                //Global.debugLog("Action Pressed: " + action);
                 if (localInput.Actions.ContainsKey(action))
                 {
                    localInput.Actions[action] = true;
@@ -54,7 +54,7 @@ public partial class InputManager : Node
             }
             else if (@event.IsActionReleased(action))
             {
-                Global.debugLog("Action Released: " + action);
+                //Global.debugLog("Action Released: " + action);
                 if (localInput.Actions.ContainsKey(action))
                 {
                     localInput.Actions[action] = false;

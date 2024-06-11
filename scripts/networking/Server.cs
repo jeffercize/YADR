@@ -201,6 +201,7 @@ public partial class Server : Node
                 clients.Add(conn, new ConnectionData(conn,getConnectionRemoteID(conn),false));
                 clientLookup.Add(getConnectionRemoteID(conn), conn);
                 SteamNetworkingSockets.ConfigureConnectionLanes(conn, 2, null, null);
+                SendPlayerJoinedMessage(getConnectionRemoteID(conn));
                 Global.NetworkManager.networkDebugLog("Connection from ID: " + @event.m_info.m_identityRemote.GetSteamID64() + " complete!");
                 break;
             case ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_ClosedByPeer:
@@ -266,6 +267,20 @@ public partial class Server : Node
     }
 
     /////////////////////////////////////// Utility Functions /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+    public void SendPlayerJoinedMessage(ulong playerID)
+    {
+        ReliablePacket outgoingReliablePacket = new ReliablePacket();
+        outgoingReliablePacket.Tick = Global.getTick();
+        outgoingReliablePacket.Timestamp = Time.GetUnixTimeFromSystem();
+        outgoingReliablePacket.PlayerJoined.Add(playerID);
+        foreach (HSteamNetConnection c in clients.Keys)
+        {
+            SendSteamMessage(c, outgoingReliablePacket, 1, NetworkManager.k_nSteamNetworkingSend_ReliableNoNagle);
+        }
+    }
+
 
     /// <summary>
     /// Checks if the sender has permission to execute the command.
