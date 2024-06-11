@@ -164,6 +164,7 @@ public partial class Client : Node
             foreach (ulong playerID in reliablePacket.PlayerJoined)
             {
                 peers.Add(playerID);
+                Global.debugLog("Adding new peer on server: " + playerID);
                 PlayerJoined?.Invoke(playerID);
             }
         }
