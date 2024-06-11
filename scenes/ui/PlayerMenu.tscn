@@ -32,6 +32,7 @@ offset_right = 946.0
 offset_bottom = -9.0
 grow_vertical = 2
 mouse_filter = 0
+current_tab = 0
 use_hidden_tabs_for_min_size = true
 
 [node name="playerEquipment" type="Control" parent="LeftTabs"]

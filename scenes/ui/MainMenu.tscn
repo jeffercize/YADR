@@ -166,7 +166,6 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 item_count = 1
 popup/item_0/text = "debugMap"
-popup/item_0/id = 0
 
 [node name="ServerPortLabel" type="Label" parent="MPDebugPanel/HostPanel/GridContainer"]
 layout_mode = 2

@@ -27,8 +27,8 @@ public partial class Main : Node
         {
             Global.debugLog("Setting Steam Vars");
             Global.instance.platform = Global.PLATFORM.STEAM;
-            Global.instance.clientID = (ulong)SteamUser.GetSteamID();
-            Global.instance.clientName = SteamFriends.GetPersonaName();
+            Global.clientID = (ulong)SteamUser.GetSteamID();
+            Global.clientName = SteamFriends.GetPersonaName();
         }
 
     }

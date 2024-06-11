@@ -31,7 +31,7 @@ public partial class MainMenu : Control
         GetNode<AudioStreamPlayer>("/root/main/uisfx").Play();
         GetNode<AudioStreamPlayer>("/root/main/music").Stop();
         //Global.NetworkManager.startServer();
-        Global.NetworkManager.client.outgoingFramePacket.Commands.Add(new Command { Command_ = "startgame" });
+        Global.NetworkManager.client.SendCommandToServer("startgame");
 
 
 

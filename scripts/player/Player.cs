@@ -11,12 +11,11 @@ public partial class Player : Character
     //Core properties of Player
     public Equipment equipment;
     public Inventory inventory;
-    public PlayerInput input;
     public ulong clientID = 0;
     public bool spawned = false;
     public bool isMe = false;
     //Movement Vars
-    public Vector3 newVelocity = Vector3.Zero;
+
     public float gravity = ProjectSettings.GetSetting("physics/3d/default_gravity").AsSingle();
 
     const float maxSpeed = 5.0f;
@@ -57,7 +56,7 @@ public partial class Player : Character
     public bool jumpMomentumCancel = true;
     public bool canJump = true;
     public bool inAir = false;
-
+    public bool jumpButtonReady = true;
 
     //Camera
     public Node3D pov;
@@ -91,6 +90,8 @@ public partial class Player : Character
     public Vector3 leftGunOriginPos;
     public float leftGunOriginRecoilRotation;
 
+    public PlayerInput lastFrameInput = new PlayerInput();
+
 
 
     public override void _Ready()
@@ -110,11 +111,11 @@ public partial class Player : Character
         leftHoldPointOriginPos = leftHoldPoint.Position;
         rightHoldPointOriginPos = rightHoldPoint.Position;
 
-        //InputManager.InputEvent += onInputEvent;
+ 
         Equipment.equipMessage += onEquip;
         Equipment.unequipMessage += onUnequip;
 
-        Global.debugLog("Testing to see if this player is me. PlayerID: " + clientID + " VS. my globalID: " + Global.instance.clientID);
+        Global.debugLog("Testing to see if this player is me. PlayerID: " + clientID + " VS. my globalID: " + Global.clientID);
         if (Global.instance.isMe(clientID))
         {
             isMe = true;
@@ -125,40 +126,136 @@ public partial class Player : Character
             Global.UIManager.connectToPlayer(this);
             Input.MouseMode = Input.MouseModeEnum.Captured;
             Global.InputManager.SetProcessInput(true);
-            input = Global.InputManager.frameInput;
         }
+    }
+
+
+    public void Tick(PlayerInput input, double delta)
+    {
+        if (!isMe)
+        {
+            HandleLookingDirection(input, delta);
+        }
+
+        HandleMovementDirection(input, delta);
+
+        HandleActions(input, delta);
+
+        handleJumpingAndFalling(input, delta);
+
+        MoveAndSlide();
+    }
+
+
+    public PlayerInput PredictInput(PlayerInput input, double delta)
+    {
+        PlayerInput predictedInput = new PlayerInput();
+        predictedInput.MovementDirection = input.MovementDirection;
+        predictedInput.LookDirection = input.LookDirection;
+        foreach (string action in input.Actions.Keys)
+        {
+            predictedInput.Actions.Add(action, input.Actions[action]);
+        }
+        return predictedInput;
+    }
+
+    private void HandleActions(PlayerInput input, double delta)
+    {
+        foreach (string action in input.Actions.Keys)
+        {
+            switch (action)
+            {
+                case "Jump":
+                    if (input.Actions[action])
+                    {
+                        if (jumpButtonReady)
+                        {
+                            onJumpPressed();
+                        }
+                        jumpButtonReady = false;
+                    }
+                    else
+                    {
+                        jumpButtonReady = true;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    private void HandleMovementDirection(PlayerInput input, double delta)
+    {
+        Vector3 newVelocity = Velocity;
+
+        //Collect our current Input direction (drop the Y piece), and multiply it by our Transform Basis, rotating it so that forward input becomes forward in the direction we are facing
+        Vector3 dir = Transform.Basis * new Vector3(input.MovementDirection.Y * maxSpeedX, 0, input.MovementDirection.X * maxSpeedZ);
+
+        //Create our desired vector, the direction we're going at max speed
+        Vector3 targetVec = new Vector3(dir.X, 0, dir.Z);
+
+        //Set the velocity
+        newVelocity.X = targetVec.X;
+        newVelocity.Z = targetVec.Z;
+
+        Velocity = newVelocity;
+    }
+
+    private void HandleLookingDirection(PlayerInput input, double delta)
+    {
+        pov.Rotation = new Vector3((float)Mathf.Clamp(Global.InputManager.localInput.LookDirection.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
+        Rotation = new Vector3(0, Global.InputManager.localInput.LookDirection.X * (float)delta, 0);
+        Global.InputManager.localInput.LookDelta.X = 0;
+        Global.InputManager.localInput.LookDelta.Y = 0;
+    }
+
+
+    private void handleJumpingAndFalling(PlayerInput remoteInput, double delta)
+    {
+        Vector3 newVelocity = Velocity;
+        //Lets get the Y component sorted - gravity and jumping
+        if (!IsOnFloor())
+        {
+            if (inAir == false)
+            {
+                inAir = true;
+            }
+            //Gravity
+            newVelocity.Y -= gravity * (float)delta;
+
+            //If we walked off an edge (not jumping) and we are outside the coyote timer, we lose a jump
+            if (jumping == false)
+            {
+                //Increment timer for how long since we left the ground
+                if (coyoteTimer <= coyoteMax)
+                {
+                    coyoteTimer += 1;
+                }
+
+                //Lose a jump if at max
+                if (coyoteTimer == coyoteMax)
+                {
+                    jumps -= 1;
+                }
+
+            }
+        }
+        //On floor, reset everything
         else
         {
-            input = new PlayerInput();
+            //inAir is a latch to help resolve frame perfect input issues
+            if (inAir)
+            {
+                inAir = false;
+                coyoteTimer = 0;
+                jumps = maxJumps;
+                jumping = false;
+            }
+
         }
-
+        Velocity = newVelocity;
     }
-    /*
-    private void onNetworkPlayerStatePositionEvent(PlayerStatePositionMessage message)
-    {
-        if (isMe) { return; }
-        if (message.PlayerIdentity.SteamID == (long)clientID)
-        {
-            Vector3 newPos = new();
-            newPos.X = message.Position.X;
-            newPos.Y = message.Position.Y;
-            newPos.Z = message.Position.Z;
-            this.GlobalPosition = newPos;
-        }
-
-    }
-
-    private void onNetworkInputLookDirectionEvent(InputLookDirectionMessage message)
-    {
-        if (isMe) { return; }
-        //Global.debugLog("Player direction set by networking:  X: " + message.Direction.X + " Y: " + message.Direction.Y);
-        pov.Rotation = new Vector3(message.Direction.X, 0, 0);
-
-        //Rotates the entire player (camera is child, so it comes along) on Y (left/right)
-        Rotation = new Vector3(0, message.Direction.Y, 0);
-    
-    }*/
-
     private void onUnequip(Equipment equipment, string slotName, Item item)
     {
         throw new NotImplementedException();
@@ -168,26 +265,14 @@ public partial class Player : Character
     {
         throw new NotImplementedException();
     }
-    /*
-    private void onInputEvent(ulong clientID, ActionMessage actionMessage)
-    {
-        if (clientID==this.clientID && actionMessage != null)
-        {
-            if (actionMessage.ActionType == ActionType.Jump && actionMessage.ActionState == ActionState.Pressed)
-            {
-                onJump();
-            }
-        }
-    }*/
 
-    public void ForceSyncState(Player state)
+    public void onJumpReleased()
     {
 
     }
-
-
-    public void onJump()
+    public void onJumpPressed()
     {
+        Vector3 newVelocity = Velocity;
         if (jumps > 0)
         {
             jumping = true;
@@ -201,23 +286,29 @@ public partial class Player : Character
 
             newVelocity += jumpVelocity;
         }
+        Velocity = newVelocity;
     }
     //
     //CAMERA SHIT////////////////////////////////////////////////
     public override void _Process(double delta)
     {
-
         if (isMe)
         {
-            //Rotates the camera on X (Up/Down) and clamps so it doesnt go too far.
-            pov.Rotation = new Vector3((float)Mathf.Clamp(pov.Rotation.X - input.LookDelta.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
-
-            //Rotates the entire player (camera is child, so it comes along) on Y (left/right)
-            Rotation = new Vector3(0, Rotation.Y - input.LookDelta.X * (float)delta, 0);
-            input.LookDelta = new Vec2() { X = 0, Y = 0 };
-            //ClientInputHandler.CreateAndSendInputLookDirectionMessage(Global.instance.clientID, new Vector3(pov.Rotation.X, Rotation.Y, 0));
+            pov.Rotation = new Vector3((float)Mathf.Clamp(pov.Rotation.X - Global.InputManager.localInput.LookDelta.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
+            Rotation = new Vector3(0, Rotation.Y - Global.InputManager.localInput.LookDelta.X * (float)delta, 0);
+            Global.InputManager.localInput.LookDelta.X = 0;
+            Global.InputManager.localInput.LookDelta.Y = 0;
         }
-        // debugPointer();
+    }
+
+
+
+    //MOVEMENT SHIT ///////////////////////////////////////////////
+    public override void _PhysicsProcess(double delta)
+    {
+        //Tick(Global.InputManager.frameInput, delta);
+        //lastFrameInput = Global.InputManager.frameInput.Clone();
+
 
         if (leftHeldItem != Item.NONE)
         {
@@ -265,92 +356,19 @@ public partial class Player : Character
         }
     }
 
-
-    double PlayerStateSyncTimer = 1f;
-    double PlayerStateSyncCounter = 0f;
-
-    //MOVEMENT SHIT ///////////////////////////////////////////////
-    public override void _PhysicsProcess(double delta)
+    internal NetworkMessages.Inventory GetInventory()
     {
-        handleInputDirection(delta);
-        handleJumpingAndFalling(delta);
-        if (!isMe)
-        {
-            handleLookingDirection(delta);
-        }
-
-
-        //Upate our vector and shoot it off to the physics engine
-        Velocity = newVelocity;
-        MoveAndSlide();
-
-        //Velocity is updated by the physics engine at this point, store it to modify next frame.
-        newVelocity = Velocity;
+        return new NetworkMessages.Inventory();
     }
 
-    private void handleLookingDirection(double delta)
+    internal NetworkMessages.Equipment GetEquipment()
     {
-        pov.Rotation = new Vector3((float)Mathf.Clamp(pov.Rotation.X - input.LookDelta.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
-        //Rotates the entire player (camera is child, so it comes along) on Y (left/right)
-        Rotation = new Vector3(0, Rotation.Y - input.LookDelta.X * (float)delta, 0);
-        input.LookDelta = new Vec2();
+        return new NetworkMessages.Equipment();
     }
 
-    private void handleJumpingAndFalling(double delta)
+    internal PlayerHealth GetHealth()
     {
-        //Lets get the Y component sorted - gravity and jumping
-        if (!IsOnFloor())
-        {
-            if (inAir == false)
-            {
-                inAir = true;
-            }
-            //Gravity
-            newVelocity.Y -= gravity * (float)delta;
-
-            //If we walked off an edge (not jumping) and we are outside the coyote timer, we lose a jump
-            if (jumping == false)
-            {
-                //Increment timer for how long since we left the ground
-                if (coyoteTimer <= coyoteMax)
-                {
-                    coyoteTimer += 1;
-                }
-
-                //Lose a jump if at max
-                if (coyoteTimer == coyoteMax)
-                {
-                    jumps -= 1;
-                }
-
-            }
-        }
-        //On floor, reset everything
-        else
-        {
-            //inAir is a latch to help resolve frame perfect input issues
-            if (inAir)
-            {
-                inAir = false;
-                coyoteTimer = 0;
-                jumps = maxJumps;
-                jumping = false;
-            }
-
-        }
-    }
-
-    private void handleInputDirection(double delta)
-    {
-        //Collect our current Input direction (drop the Y piece), and multiply it by our Transform Basis, rotating it so that forward input becomes forward in the direction we are facing
-        Vector3 dir = Transform.Basis * new Vector3(input.MovementDirection.Y * maxSpeedX, 0, input.MovementDirection.X * maxSpeedZ);
-
-        //Create our desired vector, the direction we're going at max speed
-        Vector3 targetVec = new Vector3(dir.X, 0, dir.Z);
-
-        //Set the velocity
-        newVelocity.X = targetVec.X;
-        newVelocity.Z = targetVec.Z;
+        return new PlayerHealth();
     }
 }
 

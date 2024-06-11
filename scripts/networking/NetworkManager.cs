@@ -67,6 +67,7 @@ public partial class NetworkManager : Node
         SteamNetworkingIdentity remoteIdentity = new();
         CreateSocketPair(out localConnection, out remoteConnection, false, ref localIdentity, ref remoteIdentity);
         client = new Client(remoteConnection);
+        client.isServer = true;
         AddChild(client);
         server = new Server(localConnection);
         AddChild(server);
@@ -146,17 +147,7 @@ public partial class NetworkManager : Node
         }
     }
 
-    public static ulong getConnectionRemoteID(HSteamNetConnection remote)
-    {
-        SteamNetworkingSockets.GetConnectionInfo(remote, out SteamNetConnectionInfo_t info);
-        return info.m_identityRemote.GetSteamID64();
-    }
 
-    public static ESteamNetworkingConnectionState GetConnectionState(HSteamNetConnection conn)
-    {
-        SteamNetworkingSockets.GetConnectionInfo(conn, out SteamNetConnectionInfo_t info);
-        return info.m_eState;
-    }
 
     /// <summary>
     /// Joins to a server using an IP address. This will only connect to a server hosted using non-steam UDP
@@ -181,38 +172,18 @@ public partial class NetworkManager : Node
         isActive = true;
     }
 
+
+
+    /////////////////////////////////////// Utility Functions /////////////////////////////////////////////////////////////////////////////////////////
+   
     public void networkDebugLog(string msg)
     {
         if (Global.enableLogging)
         {
-            Global.debugLog("[netID:" + Global.instance.clientID + "] " + msg);
+            Global.debugLog("[netID:" + Global.clientID + "] " + msg);
         }
-
     }
-
-    /// <summary>
-    /// Dereferences a pointer to an array of bytes.
-    /// </summary>
-    /// <param name="ptr">Pointer to dereference</param>
-    /// <param name="cbSize">The number of bytes to read, make sure to get this right</param>
-    /// <returns>a raw array of bytes of length cbSize from pointer ptr</returns>
-    public static byte[] IntPtrToBytes(IntPtr ptr, int cbSize)
-    {
-        byte[] retval = new byte[cbSize];
-        Marshal.Copy(ptr, retval, 0, cbSize);
-        return retval;
-    }
-
-
-
-    /// <summary>
-    /// Sends a message using the SteamNetworkingSockets library. In theory, this should be agnostic to steam vs non-steam networking.
-    /// </summary>
-    /// <param name="type"></param>
-    /// <param name="target"></param>
-    /// <param name="data"></param>
-    /// <param name="sendFlags"></param>
-    /// <returns></returns>
+   
     public static bool SendSteamMessage(HSteamNetConnection target, IMessage message, ushort lane = 0, int sendFlags = k_nSteamNetworkingSend_ReliableNoNagle)
     {
         var msgPtrsToSend = new IntPtr[] { IntPtr.Zero };
@@ -251,17 +222,41 @@ public partial class NetworkManager : Node
 
     }
 
+    public static byte[] IntPtrToBytes(IntPtr ptr, int cbSize)
+    {
+        byte[] retval = new byte[cbSize];
+        Marshal.Copy(ptr, retval, 0, cbSize);
+        return retval;
+    }
+
+
+    public static ulong AbsoluteDifference(ulong value1, ulong value2)
+    {
+        return value1 > value2 ? value1 - value2 : value2 - value1;
+    }
+
+    public static ulong getConnectionRemoteID(HSteamNetConnection remote)
+    {
+        SteamNetworkingSockets.GetConnectionInfo(remote, out SteamNetConnectionInfo_t info);
+        return info.m_identityRemote.GetSteamID64();
+    }
+    public static ESteamNetworkingConnectionState GetConnectionState(HSteamNetConnection conn)
+    {
+        SteamNetworkingSockets.GetConnectionInfo(conn, out SteamNetConnectionInfo_t info);
+        return info.m_eState;
+    }
+
+
     internal Chat ChatMessageConstructor(string text)
     {
-        Identity identity = new Identity();
-        identity.Name = Global.instance.clientName;
-        identity.SteamID = (ulong)Global.instance.clientID;
 
         Chat chat = new Chat();
-        chat.Sender = identity;
+        chat.Sender = Global.clientID;
         chat.Message = text;
 
         return chat;
     }
+
+
 }
 

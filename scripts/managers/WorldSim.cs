@@ -18,60 +18,78 @@ public partial class WorldSim : Node3D
     public Node3D currentScene;
     public ulong missedPackets = 0;
 
-    public Dictionary<ulong, INetworkManagedEntity> serverManagedObjects;
-    public Dictionary<ulong, INetworkManagedEntity> clientManagedObjects;
+    public Dictionary<ulong, INetworkableEntity> serverManagedObjects;
+    public Dictionary<ulong, INetworkableEntity> clientManagedObjects;
 
     public Dictionary<ulong, Player> players = new();
+    public Dictionary<ulong, PlayerInput> inputs = new();
+
+    public Dictionary<ulong, List<FramePacket>> PacketBuffer = new();
+
+
     public Player Self;
+
+    public RandomNumberGenerator rng = new RandomNumberGenerator();
+    public ulong idSequenceNumber = 0;
 
     // Called when the node enters the scene tree for the first time.
     public override void _Ready()
     {
+        rng.Seed = 12345;
+        PacketBuffer[0] = new List<FramePacket>();
     }
 
     // Called every frame. 'delta' is the elapsed time since the previous frame.
     public override void _PhysicsProcess(double delta)
     {
-
+        tick++;
+        PacketBuffer[tick] = new List<FramePacket>();
+        
         if (tick % 300 == 0)
         {
             Global.debugLog("Tick: " + tick);
+            Global.debugLog(Global.NetworkManager.client.totalBandwidth.ToString());
         }
 
-        Global.debugLog("Sending off inputs for tick: " + tick);
-
-        if (Global.NetworkManager.client.framePacketBuffer.TryGetValue(tick - rollbackTicks, out FramePacket packet))
+        foreach (Player player in players.Values)
         {
-            Global.debugLog("Found packet at tick: " + (tick - rollbackTicks));
-            Global.NetworkManager.client.framePacketBuffer.Remove(tick - rollbackTicks);
-            foreach (PlayerInput input in packet.Inputs)
+            if (player.spawned)
             {
-                if (players.TryGetValue(input.ClientID.SteamID, out Player player))
+                player.Tick(inputs[player.clientID],delta);
+                player.lastFrameInput = inputs[player.clientID];
+            }
+        }
+
+        if (Global.NetworkManager.isHost)
+        {
+            foreach (Server.ConnectionData c in Global.NetworkManager.server.clients.Values)
+            {
+                foreach (Player player in players.Values)
                 {
-                    if (input.ClientID.SteamID == Global.instance.clientID)
-                    {
-                        continue;
-                    }
-                    player.input =input;
+                    PlayerState state = new();
+                    state.ClientID = player.clientID;
+                    state.PhysicsObject = player.GetState();
+                    state.Playerhealth = player.GetHealth();
+                    state.Equipment = player.GetEquipment();
+                    state.Inventory = player.GetInventory();
+                    c.nextFramePacket.States.Add(state);
                 }
+                foreach (PlayerInput input in inputs.Values)
+                {
+                    c.nextFramePacket.Inputs.Add(input);
+                }
+
             }
-        }
-        else
-        {
-            if (tick == 0)
-            {
-                tick++;
-                return;
-            }
-            missedPackets++;
-            Global.debugLog("Missed a packet at tick: " + (tick - rollbackTicks) + " Total dropped: " + missedPackets + " Percent Dropped: " + (float)missedPackets / (float)tick);
+
 
         }
 
-        tick++;
     }
 
-
+    public override void _Process(double delta)
+    {
+        inputs[Global.clientID] = Global.InputManager.localInput;
+    }
 
     public bool loadScene(string uri)
     {
@@ -124,7 +142,8 @@ public partial class WorldSim : Node3D
     {
         Global.debugLog("Registering player: " + player.clientID);
         players.Add(player.clientID, player);
-        if (player.clientID == Global.instance.clientID)
+        player.entityID = idSequenceNumber++;
+        if (player.clientID == Global.clientID)
         {
             Self = player;
             Global.debugLog("Registered local player");
@@ -147,6 +166,14 @@ public partial class WorldSim : Node3D
         AddChild(player);
         player.GlobalPosition = GlobalPosition;
         player.spawned = true;
+        if (player.clientID == Global.clientID)
+        {
+            clientManagedObjects.Add(player.entityID, player);
+        }
+        else
+        {
+            serverManagedObjects.Add(player.entityID, player);
+        }
     }
 
     public void DespawnPlayer(Player player)
@@ -164,9 +191,27 @@ public partial class WorldSim : Node3D
         foreach (Player player in players.Values)
         {
             SpawnPlayer(player, offset);
+            offset.Y += 10;
         }
     }
 
+    internal void ApplyFramePacket(FramePacket framePacket)
+    {
+        foreach (PlayerInput input in framePacket.Inputs)
+        {
+            if (input.ClientID!=Global.clientID)
+            {
+                inputs[input.ClientID] = input;
+            }
+        }
+        foreach (PlayerState state in framePacket.States)
+        {
+            if (state.ClientID != Global.clientID)
+            {
+                players[state.ClientID].LerpToState(state.PhysicsObject.Position, state.PhysicsObject.Rotation, state.PhysicsObject.Scale, state.PhysicsObject.LinearVelocity, state.PhysicsObject.AngularVelocity);
+            }
+        }
+    }
 }
 
 

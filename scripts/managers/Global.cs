@@ -2,6 +2,7 @@ using Godot;
 using NetworkMessages;
 using Steamworks;
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 public partial class Global : Node
@@ -66,12 +67,12 @@ public partial class Global : Node
     /// <summary>
     /// A numerical ID for the client. Should be unique.
     /// </summary>
-    public ulong clientID;
+    public static ulong clientID;
 
     /// <summary>
     /// Text name for this client. Probably breaks if using esoteric fonts, weird unicode stuff, or right to left languages.
     /// </summary>
-    public string clientName;
+    public static string clientName;
 
     // This is technically the first non-engine code that is ran in the entire game. The Steam singleton onready goes first but it shouldnt do anything.
     public override void _Ready()
@@ -83,7 +84,7 @@ public partial class Global : Node
         AudioManager = GetNode<AudioManager>("../main/AudioManager");
         InputManager = GetNode<InputManager>("../main/InputManager");
         SteamManager = GetNode<SteamManager>("../SteamManager");
-
+        Client.NetworkCommandReceived += StartGame;
     }
 
     /// <summary>
@@ -103,16 +104,35 @@ public partial class Global : Node
     /// <summary>
     /// Starts the game by creating a new instance of the WorldSim node and adding it as a child.
     /// </summary>
-    public void StartGame()
+    public void StartGame(string command, ulong id)
     {
+        if (!command.Equals("startgame"))
+        {
+            return;
+        }
+
         worldSim = new WorldSim();
         GetNode<Main>("../main").AddChild(worldSim);
         UIManager.clearUI();
         worldSim.loadScene("res://scenes/debug.tscn");
+
         worldSim.RegisterPlayer(worldSim.CreateNewPlayer(clientID));
+        foreach (ulong peer in NetworkManager.client.peers)
+        {
+            worldSim.RegisterPlayer(worldSim.CreateNewPlayer(peer));
+        }
         worldSim.SpawnAll();
     }
 
+    public static Vector3 Vec3ToVector3(Vec3 vec)
+    {
+        return new Vector3(vec.X, vec.Y, vec.Z);
+    }
+
+    public static Vec3 Vector3ToVec3(Vector3 vec)
+    {
+        return new Vec3() { X = vec.X, Y = vec.Y, Z = vec.Z };
+    }
 
     public static ulong getTick()
     {
@@ -205,36 +225,8 @@ public partial class Global : Node
     /// <returns>True if the client ID matches, false otherwise.</returns>
     internal bool isMe(ulong clientID)
     {
-        return clientID == this.clientID;
+        return clientID == Global.clientID;
     }
 
-    /// <summary>
-    /// Checks if the given client ID matches the client ID of this instance.
-    /// </summary>
-    /// <param name="clientID">The client ID to compare.</param>
-    /// <returns>True if the client ID matches, false otherwise.</returns>
-    internal bool isMe(long clientID)
-    {
-        return (ulong)clientID == this.clientID;
-    }
 
-    /// <summary>
-    /// Checks if the given client ID matches the client ID of this instance.
-    /// </summary>
-    /// <param name="clientID">The client ID to compare.</param>
-    /// <returns>True if the client ID matches, false otherwise.</returns>
-    internal bool isMe(CSteamID clientID)
-    {
-        return (ulong)clientID == this.clientID;
-    }
-
-    /// <summary>
-    /// Checks if the given identity matches the client ID of this instance.
-    /// </summary>
-    /// <param name="identity">The identity to compare.</param>
-    /// <returns>True if the identity matches, false otherwise.</returns>
-    internal bool isMe(Identity identity)
-    {
-        return (ulong)identity.SteamID == this.clientID;
-    }
 }

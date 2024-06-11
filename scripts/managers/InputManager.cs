@@ -1,93 +1,70 @@
 using Godot;
 using NetworkMessages;
 using System;
-using Action = NetworkMessages.Action;
+using System.Collections.Generic;
 
 public partial class InputManager : Node
 {
     public float mouseSens = .1f;
-    public PlayerInput frameInput = new PlayerInput();
 
-    public override void _PhysicsProcess(double delta)
-    {
-        if (Global.NetworkManager.client!=null)
-        {
-            Global.NetworkManager.client.outgoingFramePacket.Inputs.Add(frameInput.Clone());
-        }
-        
-    }
+    public PlayerInput localInput = new PlayerInput();
 
-    public override void _Process(double delta)
-    {
-        
-    }
+    public delegate void InputActionEventHandler(StringName action,bool pressed);
+    public event InputActionEventHandler InputActionEvent;
 
     public override void _Ready()
     {
         SetProcessInput(false);
+        localInput.MovementDirection = new Vec2() { X = 0, Y = 0 };
+        localInput.LookDelta = new Vec2() { X = 0, Y = 0 };
+        localInput.LookDirection = new Vec2() { X = 0, Y = 0};
+        localInput.ClientID = Global.clientID;
     }
 
 
     public override void _Input(InputEvent @event)
     {
-        checkMouse(@event);
-        checkControllerAxis(@event);
-        checkDirectionKeys(@event);
-        foreach(ActionType action in Enum.GetValues(typeof(ActionType)))
+        if (@event is InputEventMouseMotion mouse && Input.MouseMode == Input.MouseModeEnum.Captured)
         {
-            checkAction(@event, action);
+            Vector2 mouseDelta = (mouse.ScreenRelative * mouseSens);
+            localInput.LookDelta = new Vec2() { X = mouseDelta.X, Y = mouseDelta.Y };
+            localInput.LookDirection = new Vec2() { X = localInput.LookDirection.X - mouseDelta.X, Y = localInput.LookDirection.Y - mouseDelta.Y };
         }
-    }
 
-    public override void _UnhandledInput(InputEvent @event)
-    {
-
-    }
-
-    private void checkDirectionKeys(InputEvent @event)
-    {
         if (@event.IsAction("moveForward") || @event.IsAction("moveBackward") || @event.IsAction("moveLeft") || @event.IsAction("moveRight"))
         {
-            Vector2 dir = Input.GetVector("moveForward", "moveBackward", "moveLeft", "moveRight");
-            frameInput.MovementDirection = new Vec2() { X = dir.X, Y= dir.Y };
+            Vector2 movementDirection = Input.GetVector("moveForward", "moveBackward", "moveLeft", "moveRight");
+            localInput.MovementDirection = new Vec2() { X = movementDirection.X, Y = movementDirection.Y };
         }
 
-    }
-
-    private void checkAction(InputEvent @event, ActionType action)
-    {
-        string actionName = Enum.GetName(typeof(ActionType), action);
-
-        if (@event.IsAction(actionName))
+        foreach (StringName action in InputMap.GetActions())
         {
-            if (@event.IsActionPressed(actionName))
+            if (@event.IsActionPressed(action))
             {
-                Global.debugLog(actionName + " Pressed.");
-                frameInput.Actions.Add(new Action() { ActionType = action, ActionState = ActionState.Pressed });
-
+                Global.debugLog("Action Pressed: " + action);
+                if (localInput.Actions.ContainsKey(action))
+                {
+                   localInput.Actions[action] = true;
+                }
+                else
+                {
+                    localInput.Actions.Add(action, true);
+                }
+                InputActionEvent?.Invoke(action, true);
             }
-            else if (@event.IsActionReleased(actionName))
+            else if (@event.IsActionReleased(action))
             {
-                Global.debugLog(actionName + " Released.");
-                frameInput.Actions.Add(new Action() { ActionType = action, ActionState = ActionState.Released });
+                Global.debugLog("Action Released: " + action);
+                if (localInput.Actions.ContainsKey(action))
+                {
+                    localInput.Actions[action] = false;
+                }
+                else
+                {
+                    localInput.Actions.Add(action, false);
+                }
+                InputActionEvent?.Invoke(action, false);
             }
         }
     }
-    private void checkMouse(InputEvent @event)
-    {
-
-        if (@event is InputEventMouseMotion mouse && Input.MouseMode==Input.MouseModeEnum.Captured)
-        {
-            Vector2 mouseDelta = (mouse.Relative * mouseSens);
-            frameInput.LookDelta = new Vec2() { X = mouseDelta.X, Y = mouseDelta.Y } ;
-        }
-    }
-
-    private void checkControllerAxis(InputEvent @event)
-    {
-        //throw new NotImplementedException();
-    }
-
-
-    
 }

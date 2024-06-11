@@ -8,12 +8,22 @@ message FramePacket
 
 	optional double timestamp = 3;
 
-	repeated Chat chatMessages = 4;
-	repeated Command commands = 5;
-
 	repeated PlayerInput inputs = 6;
 	repeated PlayerState states = 7;
 	
+	optional uint64 sequence = 99;
+}
+
+message ReliablePacket
+{
+	uint64 tick = 1;
+	uint64 sender = 2;
+
+	optional double timestamp = 3;
+
+	repeated Chat chatMessages = 4;
+	repeated Command commands = 5;
+
 	repeated uint64 playerList = 90;
 	repeated uint64 playerLeft = 91;
 	repeated uint64 playerJoined = 92;
@@ -24,13 +34,14 @@ message FramePacket
 
 message Chat
 {
-	Identity sender = 1;
+	uint64 sender = 1;
 	string message = 2;
 }
 
 message Command
 {
 	string command = 1;
+	uint64 sender = 4;
 	string param = 2;
 	repeated string extraParams = 3;
 }
@@ -47,7 +58,7 @@ message GameObject
 
 message PlayerState 
 {
-	Identity identity = 5;
+	uint64 clientID = 5;
 	Inventory inventory = 1;
 	Equipment equipment = 2;
 	PlayerHealth playerhealth = 3;
@@ -111,11 +122,11 @@ message WorldState
 
 message PlayerInput
 {
-	Identity clientID = 4;
-	repeated Action actions = 1;
-	Vec2 movementDirection = 2;
+	uint64 clientID = 4;
+	map<string,bool> actions = 1;
+	optional Vec2 movementDirection = 2;
 	optional Vec2 lookDelta = 5;
-	Vec3 lookDirection = 3;
+	optional Vec2 lookDirection = 3;
 }
 message Vec2
 {
@@ -127,12 +138,6 @@ message Vec3
 	float X = 1;
 	float Y = 2;
 	float Z = 3;
-}
-
-message Action
-{
-	ActionType actionType = 1;
-	ActionState actionState = 2;
 }
 
 enum BodyPart
@@ -147,38 +152,8 @@ enum BodyPart
 	None = 7;
 	General = 8;
 }
-enum ActionType 
-{
-	Jump = 0;
-	Sprint = 1;
-	Crouch = 2;
-	Prone = 3;
-	Walk = 4;
-	LeanLeft = 5;
-	LeanRight = 6;
 
-	OpenInventory = 20;
-	Interact = 21;
 
-	Fire = 30;
-	Aim = 31;
-	Scope = 32;
-	Reload = 33;
-}
-enum ActionState {
-	released = 0;
-	pressed = 1;
-}
-
-message Identity 
-{
-	string name = 1;
-	oneof identity 
-	{
-		uint64 steamID = 2;
-		int64 ipAddress = 3;
-	}
-}
 
 message PhysicsObject
 {
