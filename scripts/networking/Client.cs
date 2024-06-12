@@ -144,6 +144,7 @@ public partial class Client : Node
 
     private void onSteamNetConnectionStatusChange(SteamNetConnectionStatusChangedCallback_t param)
     {
+        SteamNetworkingSockets.ConfigureConnectionLanes(connectionToServer, 2, null, null);
         Global.NetworkManager.networkDebugLog("Client - connection status change. New status: " + param.m_info.m_eState);
     }
 

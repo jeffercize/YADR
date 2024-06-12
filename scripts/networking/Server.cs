@@ -202,6 +202,11 @@ public partial class Server : Node
 
 
                 Global.NetworkManager.networkDebugLog("Server - Connection from ID: " + @event.m_info.m_identityRemote.GetSteamID64() + " complete!");
+                clients.Add(conn, new ConnectionData { connection = conn, clientID = @event.m_info.m_identityRemote.GetSteamID64(), mostRecentTick = 0, sequence = 0, isServer = false });
+                clientLookup.Add(@event.m_info.m_identityRemote.GetSteamID64(), conn);
+                BroadcastChatMessage("Player " + @event.m_info.m_identityRemote.GetSteamID64() + " has joined the game.");
+                SendPlayerJoinedMessage(@event.m_info.m_identityRemote.GetSteamID64());
+                CatchUpNewJoiner(conn);
                 break;
             case ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_ClosedByPeer:
                 clients.Remove(conn);
@@ -267,7 +272,18 @@ public partial class Server : Node
     }
 
     /////////////////////////////////////// Utility Functions /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+    public void BroadcastChatMessage(string chatMessage)
+    {
+        ReliablePacket outgoingReliablePacket = new ReliablePacket();
+        outgoingReliablePacket.Tick = Global.getTick();
+        outgoingReliablePacket.Timestamp = Time.GetUnixTimeFromSystem();
+        Chat chat = new() { Message = "SERVER: "+chatMessage, Sender = Global.clientID };
+        outgoingReliablePacket.ChatMessages.Add(chat);
+        foreach (HSteamNetConnection c in clients.Keys)
+        {
+            SendSteamMessage(c, outgoingReliablePacket, 1, NetworkManager.k_nSteamNetworkingSend_ReliableNoNagle);
+        }
+    }   
 
     public void SendPlayerJoinedMessage(ulong playerID)
     {
