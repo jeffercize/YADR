@@ -186,7 +186,7 @@ public partial class Server : Node
     /// <param name="event">The SteamNetConnectionStatusChangedCallback event.</param>
     private void onSteamNetConnectionStatusChange(SteamNetConnectionStatusChangedCallback_t @event)
     {
-
+     
         HSteamNetConnection conn = @event.m_hConn;
         switch (@event.m_info.m_eState)
         {
@@ -194,27 +194,24 @@ public partial class Server : Node
                 if (acceptAllConnections)
                 {
                     SteamNetworkingSockets.AcceptConnection(conn);
-                    Global.NetworkManager.networkDebugLog("Accepting external connection from ID: " + @event.m_info.m_identityRemote.GetSteamID64());
+                    Global.NetworkManager.networkDebugLog("Server - Accepting external connection from ID: " + @event.m_info.m_identityRemote.GetSteamID64());
+
                 }
                 break;
             case ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_Connected:
-                SendPlayerJoinedMessage(getConnectionRemoteID(conn));
-                CatchUpNewJoiner(conn);
-                clients.Add(conn, new ConnectionData(conn,getConnectionRemoteID(conn),false));
-                clientLookup.Add(getConnectionRemoteID(conn), conn);
-                SteamNetworkingSockets.ConfigureConnectionLanes(conn, 2, null, null);
 
-                Global.NetworkManager.networkDebugLog("Connection from ID: " + @event.m_info.m_identityRemote.GetSteamID64() + " complete!");
+
+                Global.NetworkManager.networkDebugLog("Server - Connection from ID: " + @event.m_info.m_identityRemote.GetSteamID64() + " complete!");
                 break;
             case ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_ClosedByPeer:
                 clients.Remove(conn);
                 clientLookup.Remove(getConnectionRemoteID(conn));
                 SteamNetworkingSockets.CloseConnection(conn, 0, "Connection closed by peer.", true);
                 SendPlayerLeftMessage(getConnectionRemoteID(conn));
-                Global.NetworkManager.networkDebugLog("Connection from ID: " + @event.m_info.m_identityRemote.GetSteamID64() + " closed by peer.");
+                Global.NetworkManager.networkDebugLog("Server - Connection from ID: " + @event.m_info.m_identityRemote.GetSteamID64() + " closed by peer.");
                 break;
             default:
-                Global.NetworkManager.networkDebugLog("Connection from ID: " + @event.m_info.m_identityRemote.GetSteamID64() + " in unknown state: " + @event.m_info.m_eState);
+                Global.NetworkManager.networkDebugLog("Server - Connection from ID: " + @event.m_info.m_identityRemote.GetSteamID64() + " in unknown state: " + @event.m_info.m_eState);
                 break;
         }
     }
@@ -299,15 +296,17 @@ public partial class Server : Node
 
     public void CatchUpNewJoiner(HSteamNetConnection newJoiner)
     {
+        Global.debugLog("Catchup New Joiner: " + clients[newJoiner].clientID);
         ReliablePacket outgoingReliablePacket = new ReliablePacket();
         outgoingReliablePacket.Tick = Global.getTick();
         outgoingReliablePacket.Timestamp = Time.GetUnixTimeFromSystem();
-        outgoingReliablePacket.PlayerJoined.Add(Global.clientID);
+        //outgoingReliablePacket.PlayerJoined.Add(Global.clientID);
         foreach (ConnectionData c in clients.Values)
         {
+            if (c.connection == newJoiner) { continue; }
+            Global.debugLog("   Fake player join for catchup:" + c.clientID);
             outgoingReliablePacket.PlayerJoined.Add(c.clientID);
         }
-
         SendSteamMessage(newJoiner, outgoingReliablePacket, 1, NetworkManager.k_nSteamNetworkingSend_ReliableNoNagle);
     }
 

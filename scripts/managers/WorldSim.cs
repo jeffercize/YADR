@@ -53,7 +53,7 @@ public partial class WorldSim : Node3D
 
         foreach (Player player in players.Values)
         {
-            if (player.spawned)
+            if (player.spawned && inputs.ContainsKey(player.clientID))
             {
                  player.Tick(inputs[player.clientID],delta);
                 player.lastFrameInput = inputs[player.clientID];

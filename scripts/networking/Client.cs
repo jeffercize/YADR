@@ -78,6 +78,7 @@ public partial class Client : Node
     {
         this.connectionToServer = connectionToServer;
         serverID = NetworkManager.getConnectionRemoteID(connectionToServer);
+        SteamNetworkingSockets.ConfigureConnectionLanes(connectionToServer, 2, null, null);
     }
 
     /// <summary>
@@ -89,7 +90,10 @@ public partial class Client : Node
     public override void _Ready()
     {
         //Hooks up the connection status change event to a function
-        SteamNetConnectionStatusChange = Callback<SteamNetConnectionStatusChangedCallback_t>.Create(onSteamNetConnectionStatusChange);
+
+            SteamNetConnectionStatusChange = Callback<SteamNetConnectionStatusChangedCallback_t>.Create(onSteamNetConnectionStatusChange);
+        
+
         SteamNetworkingSockets.ConfigureConnectionLanes(connectionToServer, 2, null, null);
     }
 
@@ -207,6 +211,7 @@ public partial class Client : Node
 
     public void SendCommandToServer(string command, string param = "")
     {
+        Global.debugLog("Client - Sending command message to server");
         ReliablePacket reliablePacket = new ReliablePacket();
         reliablePacket.Sender = Global.clientID;
         reliablePacket.Tick = Global.getTick();
@@ -217,7 +222,7 @@ public partial class Client : Node
 
     public void SendChatToServer(string message)
     {
-
+        Global.debugLog("Client - Sending chat message to server");
        ReliablePacket reliablePacket = new ReliablePacket();
         reliablePacket.Sender = Global.clientID;
         reliablePacket.Tick = Global.getTick();
