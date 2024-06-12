@@ -42,6 +42,7 @@ enabled=PackedStringArray("res://addons/terrain_3d/plugin.cfg")
 
 [filesystem]
 
+import/fbx2gltf/enabled=false
 import/blender/enabled=false
 import/fbx/enabled=false
 
