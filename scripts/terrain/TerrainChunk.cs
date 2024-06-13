@@ -75,10 +75,9 @@ public partial class TerrainChunk : Node3D
         Stopwatch sw = Stopwatch.StartNew();
         //Thread setupColliderThread = new Thread(() => BuildCollision(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX - 0.5f, 0.0f, offsetY - 0.5f)));
         //setupColliderThread.Start();
-        //BuildDebugCollision(paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX, 0.0f, offsetY)); //TODO kinda weird that we adjust by 0.5 here
-        Image meshImage = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
-        meshImage.BlitRect(paddedImg, new Rect2I(16, 16, x_axis + 16, y_axis + 16), new Vector2I(0, 0));
-        setupMeshThread = new Thread(() => BuildMesh(meshImage, heightScale, x_axis, y_axis, new Vector3(offsetX, 0.0f, offsetY), quality));
+        //BuildDebugCollision(paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX*2.0f, 0.0f, offsetY*2.0f), quality); //TODO kinda weird that we adjust by 0.5 here
+
+        setupMeshThread = new Thread(() => BuildMesh(paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX*4.0f, 0.0f, offsetY*4.0f), quality));
         setupMeshThread.Start();                                  
         //BuildMesh(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX, 0.0f, offsetY));
 
@@ -105,7 +104,7 @@ public partial class TerrainChunk : Node3D
 
     public void PrepForFree()
     {
-        RenderingServer.InstanceSetVisible(instance, false);
+        //RenderingServer.InstanceSetVisible(instance, false);
     }
 
     public void RebuildChunk(Image mapImage, Image paddedImg, int x_axis, int y_axis, int offsetX, int offsetY)
@@ -137,7 +136,7 @@ public partial class TerrainChunk : Node3D
                 GD.Print("yo the mesh isnt even deployed");
             }
         }
-        Thread rebuildMeshThread = new Thread(() => RebuildMesh(new Vector3(offsetX, 0.0f, offsetY)));
+        Thread rebuildMeshThread = new Thread(() => RebuildMesh(new Vector3(offsetX*4.0f, 0.0f, offsetY*4.0f)));
         rebuildMeshThread.Start();
         
 
@@ -223,7 +222,7 @@ public partial class TerrainChunk : Node3D
         return true;
     }
 
-    public bool BuildDebugCollision(Image heightMap, float heightScale, int width, int depth, Vector3 globalPosition, int resolution=2)
+    public bool BuildDebugCollision(Image heightMap, float heightScale, int width, int depth, Vector3 globalPosition, int resolution)
     {
         //GD.Print("Building debug collision. Disable this mode for releases");
         StaticBody3D _debugStaticBody = new StaticBody3D();
@@ -231,17 +230,7 @@ public partial class TerrainChunk : Node3D
         AddChild(_debugStaticBody);
 
         shape = PhysicsServer3D.HeightmapShapeCreate();
-        Image temp = new Image();
-        //heightMap.SavePng("C:\\Users\\jeffe\\test_images\\nopadding_collision_image" + "(" + globalPosition.X + "," + globalPosition.Z + ")" + ".png");
-        temp.CopyFrom(heightMap); //trying padded image
-        temp.Resize((temp.GetWidth()/resolution)+1, (temp.GetHeight()/resolution)+1, Image.Interpolation.Bilinear);//maybe switch to nearest
-        Image mapImage = Image.Create(width/resolution+1, depth/resolution+1, false, Image.Format.Rgf);
-        mapImage.BlitRect(temp, new Rect2I(16/resolution, 16/resolution, width/resolution+1, depth/resolution+1), new Vector2I(0, 0));
-        mapImage.BlitRect(paddedImg, new Rect2I(16, 16, x_axis + 16, y_axis + 16), new Vector2I(0, 0));
-        //temp.SavePng("C:\\Users\\jeffe\\test_images\\padded_collision_image" + "(" + globalPosition.X + "," + globalPosition.Z + ")" + ".png");
-        mapImage.SavePng("C:\\Users\\jeffe\\test_images\\collision_image" + "(" + globalPosition.X + "," + globalPosition.Z + ")" + ".png");
-        width = mapImage.GetWidth();
-        depth = mapImage.GetHeight();
+
         float[] mapData = new float[width * depth];
 
         float minHeight = float.MaxValue;
@@ -252,7 +241,7 @@ public partial class TerrainChunk : Node3D
             for (int j = depth - 1; j >= 0; j--)
             {
                 int index = i * depth + (depth - 1 - j);
-                mapData[index] = mapImage.GetPixel(i, j).R * heightScale;
+                mapData[index] = heightMap.GetPixel(i+16, j+16).R * heightScale; //+16 because we are using the padded image
                 if (mapData[index] < minHeight)
                 {
                     minHeight = mapData[index];
@@ -353,8 +342,8 @@ public partial class TerrainChunk : Node3D
         int originalDepth = depth;
         myGlobalPosition = globalPosition;
         // Create an array for the vertices
-        width = width / resolution + 1;
-        depth = depth / resolution + 1;
+        width = (width / resolution) + 1;
+        depth = (depth / resolution) + 1;
         Vector3[] p_vertices = new Vector3[width * depth];
 
         // Populate the vertices array
@@ -363,7 +352,7 @@ public partial class TerrainChunk : Node3D
             for (int j = 0; j < depth; j++)
             {
                 int index = i * width + j;
-                p_vertices[index] = new Vector3(i * resolution, 0.0f, j * resolution);
+                p_vertices[index] = new Vector3(i * resolution * 4, 0.0f, j * resolution * 4);
             }
         }
 
@@ -386,7 +375,7 @@ public partial class TerrainChunk : Node3D
         }
 
         // Create the AABB
-        Aabb p_aabb = new Aabb(new Vector3(0, -2000.0f, 0), new Vector3(width*resolution, 4000.0f, depth*resolution)); // Adjust the height as needed
+        Aabb p_aabb = new Aabb(new Vector3(0, -2000.0f, 0), new Vector3(width*resolution*4, 4000.0f, depth*resolution*4)); // Adjust the height as needed
 
         // Create an array for the mesh data
         Godot.Collections.Array arrays = new Godot.Collections.Array();
@@ -421,10 +410,10 @@ public partial class TerrainChunk : Node3D
         Transform3D xform = new Transform3D(Basis.Identity, myGlobalPosition);
 
         RenderingServer.InstanceSetTransform(instance, xform);
-        if(quality > 2)
+/*        if(quality >= 8)
         {
-            RenderingServer.InstanceGeometrySetVisibilityRange(instance, 1000.0f, 4000.0f, 50.0f, 50.0f, RenderingServer.VisibilityRangeFadeMode.Self);
-        }
+            RenderingServer.InstanceGeometrySetVisibilityRange(instance, 3600.0f, 0.0f, 500.0f, 0.0f, RenderingServer.VisibilityRangeFadeMode.Self);
+        }*/
         ShaderMaterial terrainMat = new ShaderMaterial();
         terrainMat.Shader = terrainShader;
         // Create a RID for the material and set its shader
@@ -452,7 +441,8 @@ public partial class TerrainChunk : Node3D
     public void RebuildMesh(Vector3 globalPosition)
     {
         //RenderingServer.InstanceSetVisible(instance, false);
-        heightMapTexture = ImageTexture.CreateFromImage(mapImage);
+        heightMapTexture = ImageTexture.CreateFromImage(paddedImg);
+        RenderingServer.MaterialSetParam(terrainMaterial, "heightParams", new Vector2(heightMapTexture.GetWidth(), heightMapTexture.GetHeight()));
         RenderingServer.MaterialSetParam(terrainMaterial, "heightMap", heightMapTexture.GetRid());
         Transform3D xform = new Transform3D(Basis.Identity, globalPosition);
         RenderingServer.InstanceSetTransform(instance, xform);

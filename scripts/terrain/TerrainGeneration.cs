@@ -11,6 +11,10 @@ using System.Runtime.CompilerServices;
 
 public partial class TerrainGeneration : Node3D
 {
+    int x_axis = 512; //the size of the image generated not the terrain
+    int y_axis = 512;//the size of the image generated not the terrain
+    float heightScale = 800.0f; //height modifier
+
     CharacterBody3D player;
     Rid navMap;
     float totalTime = 0.0f;
@@ -25,12 +29,12 @@ public partial class TerrainGeneration : Node3D
     RDShaderFile blendShaderFile;
     Shader grassShader;
 
-    //we use -5,-5 so it will update on spawn seems lazy idk
-    private (int, int) currentChunk = (-5, -5);
+    //we use -5000000,-5000000 so it will update on spawn seems lazy idk
+    private (int, int) currentChunk = (-5000000, -5000000);
 
     //queue of terrainchunks we need to create
     private ConcurrentQueue<(int,int)> chuckRequests = new ConcurrentQueue<(int,int)>();
-    private ConcurrentQueue<(int, int)> midLODChuckRequests = new ConcurrentQueue<(int, int)>();
+    private ConcurrentQueue<(int, int)> midLODChunkRequests = new ConcurrentQueue<(int, int)>();
     private ConcurrentQueue<(int, int)> lowLODChuckRequests = new ConcurrentQueue<(int, int)>();
 
     //queue of free terrain chunks to be used by the terrain generation
@@ -47,6 +51,9 @@ public partial class TerrainGeneration : Node3D
 
     //dictionary for the heightmap
     public ConcurrentDictionary<(int, int), Image> paddedHeightMaps = new ConcurrentDictionary<(int, int), Image>();
+
+    //dictionary for the regions to track if paddedHeightMaps has the region loaded
+    public ConcurrentDictionary<(int, int), bool> regionLoaded = new ConcurrentDictionary<(int, int), bool>();
 
     //offloading the physics additions from all chunks to be handeled here
     public ConcurrentQueue<(Rid, Rid, Transform3D)> queuedPhysicsShapes = new ConcurrentQueue<(Rid, Rid, Transform3D)>();
@@ -66,7 +73,7 @@ public partial class TerrainGeneration : Node3D
 
     Shader terrainShader = GD.Load<Shader>("res://shaders/terrain/terrainChunk.gdshader");
 
-    int highQuality = 2;
+    int highQuality = 4;
     int midQuality = 16;
     int lowQuality = 32;
 
@@ -102,6 +109,8 @@ public partial class TerrainGeneration : Node3D
         {
 
         }
+        Thread generateRegionThread = new Thread(() => GenerateRegions());
+        generateRegionThread.Start();
     }
     public override void _PhysicsProcess(double delta)
     {
@@ -129,6 +138,7 @@ public partial class TerrainGeneration : Node3D
     }
     public override void _Process(double delta)
     {
+
         Stopwatch sw2 = Stopwatch.StartNew();
         // Called every frame. Delta is time since the last frame
         // Update game logic here.
@@ -138,10 +148,16 @@ public partial class TerrainGeneration : Node3D
         Vector3 playerPosition = player.GlobalTransform.Origin;
 
         // Calculate the player's current chunk
-        int playerChunkX = (int)Math.Floor((playerPosition.X / 512));
-        int playerChunkY = (int)Math.Floor((playerPosition.Z / 512));
+        int playerChunkX = (int)Math.Floor((playerPosition.X / 2048));
+        int playerChunkY = (int)Math.Floor((playerPosition.Z / 2048));
+
+        //generate new regions heightmaps and other processing if the player is getting close enough to them
+        int playerRegionX = (playerChunkX / 16);
+        int playerRegionY = (playerChunkY / 16);
 
 
+
+        return;
 
         // Only update the current chunk if the player is outside the buffer zone
         if (Math.Abs(playerChunkX - currentChunk.Item1) > 0 || Math.Abs(playerChunkY - currentChunk.Item2) > 0)
@@ -170,17 +186,17 @@ public partial class TerrainGeneration : Node3D
                 {
                     for (int y = playerChunkY - 5; y <= playerChunkY + 5; y++)
                     {
-/*                        // Skip the inner 3x3 grid (OR DONT BECAUSE IT SUCKS JUST FADE IT)
+                        // Skip the inner 3x3 grid (OR DONT BECAUSE IT SUCKS JUST FADE IT)
                         if (x >= playerChunkX - 1 && x <= playerChunkX + 1 && y >= playerChunkY - 1 && y <= playerChunkY + 1)
                         {
                             continue;
-                        }*/
+                        }
 
                         (int, int) chunk = (x, y);
                         if (!midLODTerrainChunks.ContainsKey(chunk))
                         {
                             midLODTerrainChunks.TryAdd(chunk, null);
-                            midLODChuckRequests.Enqueue((chunk.Item1, chunk.Item2));
+                            midLODChunkRequests.Enqueue((chunk.Item1, chunk.Item2));
                         }
                     }
                 }
@@ -247,10 +263,10 @@ public partial class TerrainGeneration : Node3D
                 }
             }
         }
-        if (midLODChuckRequests.Any() && renderingDevices.Any())
+        if (midLODChunkRequests.Any() && renderingDevices.Any())
         {
             (int, int) requestedChunk;
-            if (midLODChuckRequests.TryDequeue(out requestedChunk))
+            if (midLODChunkRequests.TryDequeue(out requestedChunk))
             {
                 TerrainChunk tempChunk;
                 if (freeMidLODChunks.TryDequeue(out tempChunk))
@@ -269,7 +285,7 @@ public partial class TerrainGeneration : Node3D
                 }
                 else
                 {
-                    midLODChuckRequests.Enqueue(requestedChunk);
+                    midLODChunkRequests.Enqueue(requestedChunk);
                 }
             }
         }
@@ -303,6 +319,30 @@ public partial class TerrainGeneration : Node3D
         {
             GD.Print($"Full Process Time elapsed: {sw2.ElapsedMilliseconds}");
         }
+
+/*        if (Input.IsKeyPressed(Key.K)) // Check if K key is pressed
+        {
+            GD.Print("Player Location:" + playerChunkX + " " + playerChunkY);
+            GD.Print("midLODChunkRequests:");
+            foreach (var request in midLODChunkRequests)
+            {
+                GD.Print(request);
+            }
+
+            GD.Print("midLODTerrainChunks (sorted by keys):");
+            // Sort the ConcurrentDictionary by keys using LINQ
+            var sortedChunks = midLODTerrainChunks.OrderBy(kvp => kvp.Key);
+            foreach (var kvp in sortedChunks)
+            {
+                GD.Print($"Key: {kvp.Key}, Value: {kvp.Value}");
+            }
+
+            GD.Print("freeMidLODChunks:");
+            foreach (var chunk in freeMidLODChunks)
+            {
+                GD.Print(chunk);
+            }
+        }*/
     }
 
 
@@ -369,6 +409,7 @@ public partial class TerrainGeneration : Node3D
                     if (lowLODTerrainChunks.TryRemove(chunk, out temp))
                     {
                         freeLowLODChunks.Enqueue(temp);
+                        temp.PrepForFree();
                         //temp.CleanUp();
                     }
                 }
@@ -467,7 +508,10 @@ public partial class TerrainGeneration : Node3D
             rd.ComputeListEnd();
 
             // Submit to GPU and wait for sync
+            GD.Print("Submit Blur Noise Job");
             rd.Submit();
+            int waitTime = 3000;
+            Thread.Sleep(waitTime);
             rd.Sync();
 
             //Get Data
@@ -487,8 +531,52 @@ public partial class TerrainGeneration : Node3D
         return pathImg;
     }
 
-    public Image GPUGeneratePath(RenderingDevice rd, Image noiseImage, int x_axis, int y_axis, int offsetX, int offsetY, Vector3[] points)
-    {
+    public Image GPUGeneratePath(RenderingDevice rd, Image noiseImage, int offsetX, int offsetY, int x_axis, int y_axis, Vector3[] points)
+    { 
+
+        //TODO this is the shit that is broken idk :) if we just loop over all points then its fine but of course that is terrible
+        int gridSize = 512;
+        // Calculate the bounds for cell IDs based on the specified rectangular region
+        int minX = offsetX / gridSize;
+        int maxX = (offsetX + x_axis) / gridSize;
+        int minY = offsetY / gridSize;
+        int maxY = (offsetY + y_axis) / gridSize;
+        int totalCellsX = (maxX - minX + 1);
+        int totalCellsY = (maxY - minY + 1);
+        int totalCells = totalCellsX * totalCellsY;
+
+        // Initialize with the correct size based on grid dimensions
+        (int StartIndex, int Count)[] cellIndexAndCountArray = new (int, int)[totalCells];
+        List<Vector3> pointsList = new List<Vector3>();
+
+        // Initialize all counts to 0
+        for (int i = 0; i < cellIndexAndCountArray.Length; i++)
+        {
+            cellIndexAndCountArray[i] = (0, 0);
+        }
+
+        foreach (Vector3 point in points)
+        {
+            int cellX = (int)Math.Floor(point.X / gridSize);
+            int cellY = (int)Math.Floor(point.Y / gridSize);
+            int cellIndex = cellX + cellY * totalCellsX;
+
+            if (cellX >= 0 && cellX < totalCellsX && cellY >= 0 && cellY < totalCellsY)
+            {
+                if (cellIndexAndCountArray[cellIndex].Count == 0)
+                {
+                    cellIndexAndCountArray[cellIndex].StartIndex = pointsList.Count;
+                }
+                cellIndexAndCountArray[cellIndex].Count++;
+                pointsList.Add(point);
+            }
+        }
+
+        // Convert pointsList to an array
+        Vector3[] pointsArray = pointsList.ToArray();
+
+        //setup compute shader
+
         RDShaderSpirV blendShaderBytecode = pathBuilderShaderFile.GetSpirV();
         Rid blendShader = rd.ShaderCreateFromSpirV(blendShaderBytecode);
 
@@ -514,20 +602,6 @@ public partial class TerrainGeneration : Node3D
         noiseSamplerUniform.AddId(noiseTex);
 
         //Setup Path Array
-        byte[] pointsBytes = new byte[points.Length * sizeof(float) * 3];
-        for (int i = 0; i < points.Length; i++)
-        {
-            Buffer.BlockCopy(BitConverter.GetBytes(points[i].X), 0, pointsBytes, (i * sizeof(float) * 3), sizeof(float));
-            Buffer.BlockCopy(BitConverter.GetBytes(points[i].Y), 0, pointsBytes, (i * sizeof(float) * 3) + sizeof(float), sizeof(float));
-            Buffer.BlockCopy(BitConverter.GetBytes(points[i].Z), 0, pointsBytes, (i * sizeof(float) * 3) + 2 * sizeof(float), sizeof(float));
-        }
-        Rid pointsBuffer = rd.StorageBufferCreate((uint)pointsBytes.Length, pointsBytes);
-        var pathUniform = new RDUniform
-        {
-            UniformType = RenderingDevice.UniformType.StorageBuffer,
-            Binding = 1
-        };
-        pathUniform.AddId(pointsBuffer);
 
 
         //Setup Output Image 
@@ -546,7 +620,7 @@ public partial class TerrainGeneration : Node3D
         Rid blendOutputTex = rd.TextureCreate(blendfmt, blendview, blendTempData);
         RDUniform blendOutputTexUniform = new RDUniform();
         blendOutputTexUniform.UniformType = RenderingDevice.UniformType.Image;
-        blendOutputTexUniform.Binding = 2;
+        blendOutputTexUniform.Binding = 1;
         blendOutputTexUniform.AddId(blendOutputTex);
 
         // Setup ImageDimensionsUniform
@@ -558,17 +632,61 @@ public partial class TerrainGeneration : Node3D
         Buffer.BlockCopy(BitConverter.GetBytes(offsetX), 0, imageDimensionsBytes, sizeof(int)*2, sizeof(int));
         Buffer.BlockCopy(BitConverter.GetBytes(offsetY), 0, imageDimensionsBytes, sizeof(int)*3, sizeof(int));
 
+
         Rid imageDimensionsBuffer = rd.StorageBufferCreate((uint)imageDimensionsBytes.Length, imageDimensionsBytes);
 
         RDUniform imageDimensionsUniform = new RDUniform()
         {
             UniformType = RenderingDevice.UniformType.StorageBuffer,
-            Binding = 3
+            Binding = 2
         };
         imageDimensionsUniform.AddId(imageDimensionsBuffer);
 
+        List<byte> cellIndexBytesList = new List<byte>();
+        foreach (var cell in cellIndexAndCountArray)
+        {
+            cellIndexBytesList.AddRange(BitConverter.GetBytes(cell.StartIndex));
+            cellIndexBytesList.AddRange(BitConverter.GetBytes(cell.Count));
+        }
+        byte[] cellIndexBytes = cellIndexBytesList.ToArray();
+
+        // Create buffer for cellIndexArray
+        Rid cellIndexBuffer = rd.StorageBufferCreate((uint)cellIndexBytes.Length, cellIndexBytes);
+
+        // Create uniform for the buffer
+        var cellIndexUniform = new RDUniform
+        {
+            UniformType = RenderingDevice.UniformType.StorageBuffer,
+            Binding = 3 // Assuming the next available binding index
+        };
+        cellIndexUniform.AddId(cellIndexBuffer);
+
+        // Calculate the size of the buffer needed
+        int bufferSize = points.Length * sizeof(float) * 3; // 3 floats per Vector3, 4 bytes per float
+
+        // Create a byte array to hold the points data
+        byte[] pointsBytes = new byte[bufferSize];
+
+        // Fill the byte array with the points data
+        for (int i = 0; i < points.Length; i++)
+        {
+            Buffer.BlockCopy(BitConverter.GetBytes(points[i].X), 0, pointsBytes, i * sizeof(float) * 3, sizeof(float));
+            Buffer.BlockCopy(BitConverter.GetBytes(points[i].Y), 0, pointsBytes, i * sizeof(float) * 3 + sizeof(float), sizeof(float));
+            Buffer.BlockCopy(BitConverter.GetBytes(points[i].Z), 0, pointsBytes, i * sizeof(float) * 3 + 2 * sizeof(float), sizeof(float));
+        }
+
+        // Create the storage buffer with the points data
+        Rid pointsBuffer = rd.StorageBufferCreate((uint)bufferSize, pointsBytes);
+
+        var pointsArrayUniform = new RDUniform
+        {
+            UniformType = RenderingDevice.UniformType.StorageBuffer,
+            Binding = 4 // Assuming the next available binding index
+        };
+        pointsArrayUniform.AddId(pointsBuffer);
+
         //create the uniformSet
-        Rid blenduniformSet = rd.UniformSetCreate(new Array<RDUniform> { noiseSamplerUniform, pathUniform, blendOutputTexUniform, imageDimensionsUniform }, blendShader, 0);
+        Rid blenduniformSet = rd.UniformSetCreate(new Array<RDUniform> { noiseSamplerUniform, blendOutputTexUniform, imageDimensionsUniform, pointsArrayUniform, cellIndexUniform }, blendShader, 0);
 
         // Create a compute pipeline
         Rid blendpipeline = rd.ComputePipelineCreate(blendShader);
@@ -583,7 +701,10 @@ public partial class TerrainGeneration : Node3D
         rd.ComputeListEnd();
 
         // Submit to GPU and wait for sync
+        GD.Print("Submit Generate Path Job");
         rd.Submit();
+        int waitTime = 3000;
+        Thread.Sleep(waitTime);
         rd.Sync();
 
         //rd.FreeRid(blenduniformSet); //for some reason this is invalid to free?
@@ -636,47 +757,95 @@ public partial class TerrainGeneration : Node3D
         }
         //noiseImage.SavePng("C:\\Users\\jeffe\\test_images\\noise_test"+"("+ offsetX + "," + offsetY + ")"+ ".png");
 
-		Curve3D path = new Curve3D();
-                path.AddPoint(new Vector3(300, 0, 1.0f));
-                path.AddPoint(new Vector3(300, 750, 0.9f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-                path.AddPoint(new Vector3(400, 500, 0.8f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-                path.AddPoint(new Vector3(500, 750, 0.7f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-                path.AddPoint(new Vector3(600, 500, 0.6f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-                path.AddPoint(new Vector3(700, 750, 0.5f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-                path.AddPoint(new Vector3(800, 500, 0.4f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-                path.AddPoint(new Vector3(900, 750, 0.3f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-                path.AddPoint(new Vector3(1000, 500, 0.2f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-                path.AddPoint(new Vector3(1100, 750, 0.1f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-                path.AddPoint(new Vector3(600, 3000, 0.11f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
-                path.AddPoint(new Vector3(2600, 1000, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
-                path.AddPoint(new Vector3(2600, 3500, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
-                path.AddPoint(new Vector3(4600, 1200, 0.10f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
-                path.AddPoint(new Vector3(6600, 3500, 0.33f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
-                path.AddPoint(new Vector3(7600, 1500, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
-                path.AddPoint(new Vector3(8192, 2048, 0.0f));
+        Curve3D path = new Curve3D();
+        path.AddPoint(new Vector3(300, 0, 1.0f));
+        path.AddPoint(new Vector3(300, 750, 0.9f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(400, 500, 0.8f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(500, 750, 0.7f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(600, 500, 0.6f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(700, 750, 0.5f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(800, 500, 0.4f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(900, 750, 0.3f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(1000, 500, 0.2f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(1100, 750, 0.1f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(600, 3000, 0.11f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(2600, 1000, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(2600, 3500, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(4600, 1200, 0.10f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(6600, 3500, 0.33f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(7600, 1500, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        path.AddPoint(new Vector3(12192, 2048, 0.0f));
 
         Image pathImg = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
         path.BakeInterval = 0.1f;
         Vector3[] localPath = path.GetBakedPoints();
-        pathImg = GPUGeneratePath(rd, noiseImage, x_axis, y_axis, offsetX, offsetY, localPath);
+        pathImg = GPUGeneratePath(rd, noiseImage, offsetX, offsetY, x_axis, y_axis, localPath);
         // Run the blur shader
         pathImg = ApplyGassianAndBoxBlur(rd, pathImg, RenderingDevice.DataFormat.R32G32Sfloat);
 
-        //THIS LOOKS CONFUSING but its because we adjust x_axis and y_axis at the top of this function to make passing it easier
-
         return pathImg;
     }
+    private void GenerateRegions()
+    {
+        // Get the player's global position
+        Vector3 playerPosition = player.GlobalTransform.Origin;
+        // Calculate the player's current chunk
+        int playerChunkX = (int)Math.Floor((playerPosition.X / 2048));
+        int playerChunkY = (int)Math.Floor((playerPosition.Z / 2048));
 
+        //generate new regions heightmaps and other processing if the player is getting close enough to them
+        int regionSize = 4;
+        int playerRegionX = (playerChunkX / regionSize);
+        int playerRegionY = (playerChunkY / regionSize);
+
+        for (int i = 0; i < 2; i++)
+        {
+            for (int j = 0; j < 2; j++)
+            {
+                if (!regionLoaded.TryGetValue((playerRegionX + i, playerChunkY + j), out bool hasRegion))
+                {
+                    GD.Print(playerRegionX + i + " " + playerChunkY + j);
+                    if (renderingDevices.Any())
+                    {
+                        if (renderingDevices.TryDequeue(out RenderingDevice rd))
+                        {
+                            regionLoaded.TryAdd((playerRegionX + i, playerChunkY + j), false);
+                            GenerateRegion(rd, playerRegionX + i, playerChunkY + j, x_axis, y_axis, regionSize);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    private void GenerateRegion(RenderingDevice rd, int regionX, int regionY, int x_axis, int y_axis, int regionSize)
+    {
+        //each region is regionsize by regionsize chunks
+        GD.Print(regionX * regionSize * x_axis + " " + regionY * regionSize * y_axis + " " + x_axis * regionSize + " " + y_axis * regionSize);
+        Image regionImg = GenerateTerrain(rd, regionX * regionSize * x_axis, regionY * regionSize * y_axis, x_axis * regionSize, y_axis* regionSize);
+        regionImg.SavePng("C:\\Users\\jeffe\\test_images\\region(" + regionX + "," + regionY + ").png");
+        for (int i = 0; i < regionSize; i++)
+        {
+            for (int j = 0; j < regionSize; j++)
+            {
+                int chunkX = regionX + i;
+                int chunkY = regionY + j;
+                int offsetX = chunkX * x_axis;
+                int offsetY = chunkY * y_axis;
+                Image paddedImg = Image.Create(x_axis + 32, y_axis + 32, false, Image.Format.Rgf);
+                paddedImg.BlitRect(regionImg, new Rect2I(offsetX, offsetY, x_axis + 32, y_axis + 32), new Vector2I(0, 0));
+                paddedHeightMaps.TryAdd((chunkX, chunkY), paddedImg);
+            }
+        }
+        regionLoaded.TryUpdate((regionX, regionY), true, false);
+        renderingDevices.Enqueue(rd);
+    }
     private void UpdateTerrainChunk(RenderingDevice rd, TerrainChunk myTerrainChunk, int quality, (int, int) chunkRequest)
     {
-        int x_axis = 512; //if you change these a lot of code may need changed?
-        int y_axis = 512; //if you change these a lot of code may need changed?
-        float heightScale = 400.0f;
         int offsetX = chunkRequest.Item1 * x_axis;// - (chunkRequest.Item1 * quality);
         int offsetY = chunkRequest.Item2 * y_axis;// - (chunkRequest.Item2 * quality);
 
         Image paddedImg;
-        if (false && paddedHeightMaps.TryGetValue(chunkRequest, out paddedImg))
+        if (paddedHeightMaps.TryGetValue(chunkRequest, out paddedImg))
         {
             //GD.Print("we found the heightmap in the dictionary");
             renderingDevices.Enqueue(rd);
@@ -686,6 +855,8 @@ public partial class TerrainGeneration : Node3D
         }
         else
         {
+            GD.Print("OBSOLETE SHOULD NOT BE CALLED");  //we generate region ahead of time and should be loaded into paddedHeightMaps ahead of time
+            return;
             paddedImg = GenerateTerrain(rd, offsetX, offsetY, x_axis, y_axis);
             renderingDevices.Enqueue(rd);
             paddedHeightMaps.TryAdd(chunkRequest, paddedImg);
@@ -714,9 +885,6 @@ public partial class TerrainGeneration : Node3D
 
     public void AddTerrain(RenderingDevice rd, bool wantGrass, int quality, (int,int) chunkRequest)
     {
-        int x_axis = 512; //if you change these a lot of code may need changed?
-        int y_axis = 512; //if you change these a lot of code may need changed?
-        float heightScale = 400.0f;
 
         terrainChunks.TryUpdate(chunkRequest, AddTerrainChunk(rd, chunkRequest, x_axis, y_axis, heightScale, wantGrass, quality), null);
 
@@ -724,10 +892,6 @@ public partial class TerrainGeneration : Node3D
     }
     public void AddMidTerrain(RenderingDevice rd, bool wantGrass, int quality, (int, int) chunkRequest)
     {
-        int x_axis = 512; //if you change these a lot of code may need changed?
-        int y_axis = 512; //if you change these a lot of code may need changed?
-        float heightScale = 400.0f;
-
         midLODTerrainChunks.TryUpdate(chunkRequest, AddTerrainChunk(rd, chunkRequest, x_axis, y_axis, heightScale, wantGrass, quality), null);
 
         renderingDevices.Enqueue(rd);
@@ -736,7 +900,7 @@ public partial class TerrainGeneration : Node3D
     {
         int x_axis = 512; //if you change these a lot of code may need changed?
         int y_axis = 512; //if you change these a lot of code may need changed?
-        float heightScale = 400.0f;
+        float heightScale = 800.0f;
 
         lowLODTerrainChunks.TryUpdate(chunkRequest, AddTerrainChunk(rd, chunkRequest, x_axis, y_axis, heightScale, wantGrass, quality), null);
 
@@ -749,7 +913,7 @@ public partial class TerrainGeneration : Node3D
         int offsetX = chunkRequest.Item1 * x_axis;// - (chunkRequest.Item1 * quality);
         int offsetY = chunkRequest.Item2 * y_axis;// - (chunkRequest.Item2 * quality);
         Image paddedImg;
-        if (false && paddedHeightMaps.TryGetValue(chunkRequest, out paddedImg))
+        if (paddedHeightMaps.TryGetValue(chunkRequest, out paddedImg))
         {
             Image mapImage = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
             mapImage.BlitRect(paddedImg, new Rect2I(16, 16, x_axis + 16, y_axis + 16), new Vector2I(0, 0));
@@ -759,6 +923,8 @@ public partial class TerrainGeneration : Node3D
         }
         else
         {
+            GD.Print("OBSOLETE SHOULD NOT BE CALLED"); //we generate region ahead of time and should be loaded into paddedHeightMaps ahead of time
+            return null;
             paddedImg = GenerateTerrain(rd, offsetX, offsetY, x_axis, y_axis);
             paddedHeightMaps.TryAdd(chunkRequest, paddedImg);
             Image mapImage = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
