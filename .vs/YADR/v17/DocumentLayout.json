@@ -1,12 +1,339 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\jeffe\\Desktop\\YADR\\",
-  "Documents": [],
+  "WorkspaceRootPath": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|c:\\users\\steph\\onedrive\\documents\\godot\\projects\\yadr\\scripts\\networking\\networkpeer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|solutionrelative:scripts\\networking\\networkpeer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|c:\\users\\steph\\onedrive\\documents\\godot\\projects\\yadr\\scripts\\ui\\mpdebugpanel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|solutionrelative:scripts\\ui\\mpdebugpanel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|c:\\users\\steph\\onedrive\\documents\\godot\\projects\\yadr\\scripts\\ui\\mpdebugstatuspanel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|solutionrelative:scripts\\ui\\mpdebugstatuspanel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\steph\\OneDrive\\Documents\\godot\\Steamworks.NET-master\\com.rlabrecque.steamworks.net\\Runtime\\types\\SteamNetworkingTypes\\SteamNetworkingMessage_t.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|c:\\users\\steph\\onedrive\\documents\\godot\\projects\\yadr\\scripts\\managers\\global.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|solutionrelative:scripts\\managers\\global.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|c:\\users\\steph\\onedrive\\documents\\godot\\projects\\yadr\\scripts\\managers\\steammanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|solutionrelative:scripts\\managers\\steammanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|c:\\users\\steph\\onedrive\\documents\\godot\\projects\\yadr\\scripts\\ui\\mainmenu.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|solutionrelative:scripts\\ui\\mainmenu.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|c:\\users\\steph\\onedrive\\documents\\godot\\projects\\yadr\\scripts\\managers\\uimanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|solutionrelative:scripts\\managers\\uimanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|c:\\users\\steph\\onedrive\\documents\\godot\\projects\\yadr\\scripts\\player\\character.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|solutionrelative:scripts\\player\\character.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|c:\\users\\steph\\onedrive\\documents\\godot\\projects\\yadr\\scripts\\npc\\enemy.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|solutionrelative:scripts\\npc\\enemy.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|c:\\users\\steph\\onedrive\\documents\\godot\\projects\\yadr\\scripts\\player\\player.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|solutionrelative:scripts\\player\\player.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|c:\\users\\steph\\onedrive\\documents\\godot\\projects\\yadr\\scripts\\networking\\proto\\networkingproto.proto||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|solutionrelative:scripts\\networking\\proto\\networkingproto.proto||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|c:\\users\\steph\\onedrive\\documents\\godot\\projects\\yadr\\scripts\\networking\\proto\\networkingproto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|solutionrelative:scripts\\networking\\proto\\networkingproto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|c:\\users\\steph\\onedrive\\documents\\godot\\projects\\yadr\\scripts\\managers\\inputmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|solutionrelative:scripts\\managers\\inputmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|c:\\users\\steph\\onedrive\\documents\\godot\\projects\\yadr\\addons\\imgui-godot\\imguigodot\\internal\\backendnet.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|solutionrelative:addons\\imgui-godot\\imguigodot\\internal\\backendnet.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|c:\\users\\steph\\onedrive\\documents\\godot\\projects\\yadr\\scripts\\player\\equipment.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|solutionrelative:scripts\\player\\equipment.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|c:\\users\\steph\\onedrive\\documents\\godot\\projects\\yadr\\scripts\\main.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|solutionrelative:scripts\\main.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|c:\\users\\steph\\onedrive\\documents\\godot\\projects\\yadr\\scripts\\managers\\audiomanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|solutionrelative:scripts\\managers\\audiomanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|c:\\users\\steph\\onedrive\\documents\\godot\\projects\\yadr\\scripts\\player\\inventory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DD1857F6-ACF8-42C3-A4B5-1BDCD271370B}|YADR.csproj|solutionrelative:scripts\\player\\inventory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
       "VerticalTabListWidth": 256,
-      "DocumentGroups": []
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 6,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{40ea2e6b-2121-4bb8-a43e-c83c04b51041}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "SteamNetworkingMessage_t.cs",
+              "DocumentMoniker": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\Steamworks.NET-master\\com.rlabrecque.steamworks.net\\Runtime\\types\\SteamNetworkingTypes\\SteamNetworkingMessage_t.cs",
+              "RelativeDocumentMoniker": "..\\..\\Steamworks.NET-master\\com.rlabrecque.steamworks.net\\Runtime\\types\\SteamNetworkingTypes\\SteamNetworkingMessage_t.cs",
+              "ToolTip": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\Steamworks.NET-master\\com.rlabrecque.steamworks.net\\Runtime\\types\\SteamNetworkingTypes\\SteamNetworkingMessage_t.cs",
+              "RelativeToolTip": "..\\..\\Steamworks.NET-master\\com.rlabrecque.steamworks.net\\Runtime\\types\\SteamNetworkingTypes\\SteamNetworkingMessage_t.cs",
+              "ViewState": "AQIAAEwAAAAAAAAAAAD4v2kAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-06-14T13:41:35.431Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "Enemy.cs",
+              "DocumentMoniker": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\npc\\Enemy.cs",
+              "RelativeDocumentMoniker": "scripts\\npc\\Enemy.cs",
+              "ToolTip": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\npc\\Enemy.cs",
+              "RelativeToolTip": "scripts\\npc\\Enemy.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-06-14T13:30:59.888Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "NetworkingProto.proto",
+              "DocumentMoniker": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\networking\\proto\\NetworkingProto.proto",
+              "RelativeDocumentMoniker": "scripts\\networking\\proto\\NetworkingProto.proto",
+              "ToolTip": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\networking\\proto\\NetworkingProto.proto",
+              "RelativeToolTip": "scripts\\networking\\proto\\NetworkingProto.proto",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAABIAAAAcAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003853|",
+              "WhenOpened": "2024-06-13T16:36:14.562Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "NetworkingProto.cs",
+              "DocumentMoniker": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\networking\\proto\\NetworkingProto.cs",
+              "RelativeDocumentMoniker": "scripts\\networking\\proto\\NetworkingProto.cs",
+              "ToolTip": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\networking\\proto\\NetworkingProto.cs",
+              "RelativeToolTip": "scripts\\networking\\proto\\NetworkingProto.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-06-13T16:36:04.937Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "SteamManager.cs",
+              "DocumentMoniker": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\managers\\SteamManager.cs",
+              "RelativeDocumentMoniker": "scripts\\managers\\SteamManager.cs",
+              "ToolTip": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\managers\\SteamManager.cs",
+              "RelativeToolTip": "scripts\\managers\\SteamManager.cs",
+              "ViewState": "AQIAAB0AAAAAAAAAAAAwwDYAAAAJAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-06-13T15:37:45.619Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "NetworkPeer.cs",
+              "DocumentMoniker": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\networking\\NetworkPeer.cs",
+              "RelativeDocumentMoniker": "scripts\\networking\\NetworkPeer.cs",
+              "ToolTip": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\networking\\NetworkPeer.cs",
+              "RelativeToolTip": "scripts\\networking\\NetworkPeer.cs",
+              "ViewState": "AQIAADEAAAAAAAAAAAAgwEQAAAAJAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-06-13T15:37:21.858Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "BackendNet.cs",
+              "DocumentMoniker": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\addons\\imgui-godot\\ImGuiGodot\\Internal\\BackendNet.cs",
+              "RelativeDocumentMoniker": "addons\\imgui-godot\\ImGuiGodot\\Internal\\BackendNet.cs",
+              "ToolTip": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\addons\\imgui-godot\\ImGuiGodot\\Internal\\BackendNet.cs",
+              "RelativeToolTip": "addons\\imgui-godot\\ImGuiGodot\\Internal\\BackendNet.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAkAAAArAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-06-13T15:21:13.559Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "AudioManager.cs",
+              "DocumentMoniker": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\managers\\AudioManager.cs",
+              "RelativeDocumentMoniker": "scripts\\managers\\AudioManager.cs",
+              "ToolTip": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\managers\\AudioManager.cs",
+              "RelativeToolTip": "scripts\\managers\\AudioManager.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-06-08T17:01:56.483Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "MPDebugPanel.cs",
+              "DocumentMoniker": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\ui\\MPDebugPanel.cs",
+              "RelativeDocumentMoniker": "scripts\\ui\\MPDebugPanel.cs",
+              "ToolTip": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\ui\\MPDebugPanel.cs",
+              "RelativeToolTip": "scripts\\ui\\MPDebugPanel.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAABMAAAAKAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-06-08T17:00:54.112Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "MPDebugStatusPanel.cs",
+              "DocumentMoniker": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\ui\\MPDebugStatusPanel.cs",
+              "RelativeDocumentMoniker": "scripts\\ui\\MPDebugStatusPanel.cs",
+              "ToolTip": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\ui\\MPDebugStatusPanel.cs",
+              "RelativeToolTip": "scripts\\ui\\MPDebugStatusPanel.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAACMAAAAIAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-06-08T16:59:27.335Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "Main.cs",
+              "DocumentMoniker": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\Main.cs",
+              "RelativeDocumentMoniker": "scripts\\Main.cs",
+              "ToolTip": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\Main.cs",
+              "RelativeToolTip": "scripts\\Main.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAB4AAAASAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-06-08T16:55:50.919Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "Equipment.cs",
+              "DocumentMoniker": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\player\\Equipment.cs",
+              "RelativeDocumentMoniker": "scripts\\player\\Equipment.cs",
+              "ToolTip": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\player\\Equipment.cs",
+              "RelativeToolTip": "scripts\\player\\Equipment.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAxwAAAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-06-08T16:03:10.264Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "Inventory.cs",
+              "DocumentMoniker": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\player\\Inventory.cs",
+              "RelativeDocumentMoniker": "scripts\\player\\Inventory.cs",
+              "ToolTip": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\player\\Inventory.cs",
+              "RelativeToolTip": "scripts\\player\\Inventory.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAxwAAAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-06-04T14:03:17.256Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "Character.cs",
+              "DocumentMoniker": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\player\\Character.cs",
+              "RelativeDocumentMoniker": "scripts\\player\\Character.cs",
+              "ToolTip": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\player\\Character.cs",
+              "RelativeToolTip": "scripts\\player\\Character.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAkAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-06-01T15:53:25.228Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "MainMenu.cs",
+              "DocumentMoniker": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\ui\\MainMenu.cs",
+              "RelativeDocumentMoniker": "scripts\\ui\\MainMenu.cs",
+              "ToolTip": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\ui\\MainMenu.cs",
+              "RelativeToolTip": "scripts\\ui\\MainMenu.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAC0AAAAIAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-06-01T15:45:15.836Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "UIManager.cs",
+              "DocumentMoniker": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\managers\\UIManager.cs",
+              "RelativeDocumentMoniker": "scripts\\managers\\UIManager.cs",
+              "ToolTip": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\managers\\UIManager.cs",
+              "RelativeToolTip": "scripts\\managers\\UIManager.cs",
+              "ViewState": "AQIAAC8AAAAAAAAAAAAIwEkAAAANAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-06-01T15:44:41.307Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "InputManager.cs",
+              "DocumentMoniker": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\managers\\InputManager.cs",
+              "RelativeDocumentMoniker": "scripts\\managers\\InputManager.cs",
+              "ToolTip": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\managers\\InputManager.cs",
+              "RelativeToolTip": "scripts\\managers\\InputManager.cs",
+              "ViewState": "AQIAAAMAAAAAAAAAAAAAACsAAAASAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-06-01T15:07:20.907Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "Player.cs",
+              "DocumentMoniker": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\player\\Player.cs",
+              "RelativeDocumentMoniker": "scripts\\player\\Player.cs",
+              "ToolTip": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\player\\Player.cs",
+              "RelativeToolTip": "scripts\\player\\Player.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAC8BAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-06-01T15:01:53.824Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Global.cs",
+              "DocumentMoniker": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\managers\\Global.cs",
+              "RelativeDocumentMoniker": "scripts\\managers\\Global.cs",
+              "ToolTip": "C:\\Users\\steph\\OneDrive\\Documents\\godot\\projects\\YADR\\scripts\\managers\\Global.cs",
+              "RelativeToolTip": "scripts\\managers\\Global.cs",
+              "ViewState": "AQIAADoAAAAAAAAAAAAgwF8AAAAMAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-06-01T14:57:16.641Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
     }
   ]
 }
