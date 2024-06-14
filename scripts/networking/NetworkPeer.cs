@@ -98,29 +98,6 @@ public partial class NetworkPeer : Node
             default:
                 break;
         }
-        SteamNetworkingIdentity identity = new SteamNetworkingIdentity();
-        identity.SetSteamID64(handshake.Sender);
-        if (!remotePeers.Contains(identity))
-        {
-            Global.debugLog("Adding primary peer: " + handshake.Sender);
-            remotePeers.Add(identity);
-        }
-
-        foreach (ulong id in handshake.Peers)
-        {
-            if (id == Global.clientID)
-            {
-                continue;
-            }
-            identity = new SteamNetworkingIdentity();
-            identity.SetSteamID64(id);
-            if (!remotePeers.Contains(identity))
-            {
-                Global.debugLog("Adding secondary peer: " + id);
-                remotePeers.Add(identity);
-            }
-
-        }
     }
 
     private void OnMessageRequest(SteamNetworkingMessagesSessionRequest_t param)
