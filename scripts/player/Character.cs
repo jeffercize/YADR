@@ -1,13 +1,13 @@
 ﻿using Godot;
 using NetworkMessages;
 
-public partial class Character : CharacterBody3D, INetworkableWorldObject
+public partial class Character : CharacterBody3D
 {
     public ulong entityID { get; set; }
 
     public void AssignEntityID()
     {
-        this.entityID = Global.worldSim.idSequenceNumber++;
+
     }
 
     public PhysicsObject GetState()

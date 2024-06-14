@@ -66,6 +66,13 @@ public partial class SteamManager : Node
         Global.debugLog("[STEAM] " + msg);
     }
 
+    public static SteamNetworkingIdentity GetSelfIdentity()
+    {
+        SteamNetworkingIdentity id = new SteamNetworkingIdentity();
+        SteamNetworkingSockets.GetIdentity(out id);
+        return id;
+    }
+
     //In theory this should trigger whenever SteamManager gets removed from the SceneTree, which, in theory, should only happen when the game closes.
     public override void _ExitTree()
     {

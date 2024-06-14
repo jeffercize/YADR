@@ -1,35 +1,23 @@
 ﻿syntax = "proto3";
 package NetworkMessages;
 
-message FramePacket
+message State
 {
 	uint64 tick = 1;
 	uint64 sender = 2;
-
 	optional double timestamp = 3;
 
 	repeated PlayerInput inputs = 6;
 	repeated PlayerState states = 7;
-	
-	optional uint64 sequence = 99;
 }
 
-message ReliablePacket
+message Handshake
 {
 	uint64 tick = 1;
 	uint64 sender = 2;
-
 	optional double timestamp = 3;
-
-	repeated Chat chatMessages = 4;
-	repeated Command commands = 5;
-
-	repeated uint64 playerList = 90;
-	repeated uint64 playerLeft = 91;
-	repeated uint64 playerJoined = 92;
-
-	optional uint64 sequence = 99;
-
+	optional string status = 5;
+	repeated uint64 peers = 4;
 }
 
 message Chat
@@ -41,9 +29,8 @@ message Chat
 message Command
 {
 	string command = 1;
-	uint64 sender = 4;
-	string param = 2;
-	repeated string extraParams = 3;
+	uint64 sender = 3;
+	repeated string params = 2;
 }
 
 message GameObject

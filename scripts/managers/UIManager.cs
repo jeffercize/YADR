@@ -71,7 +71,7 @@ public partial class UIManager : Control
         {
             Item temp = dragItem;
             dragItem = Item.NONE;
-            Global.worldSim.AddChild(temp);
+           // Global.worldSim.AddChild(temp);
             Vector3 pos = new Vector3(player.GlobalPosition.X, player.GlobalPosition.Y, player.GlobalPosition.Z);
             pos -= player.GlobalBasis.Z.Normalized();
             pos.Y += 1;

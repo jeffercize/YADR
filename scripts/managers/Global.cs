@@ -19,7 +19,7 @@ public partial class Global : Node
     /// <summary>
     /// Stores a reference to the NetworkManager node, grabbed from the main scene when Global is autoloaded. All networking is handled thru this node. NOTE: THIS INCLUDES SINGLEPLAYER (virtual server).
     /// </summary>
-    public static NetworkManager NetworkManager;
+    public static NetworkPeer NetworkPeer;
 
     /// <summary>
     /// Stores a reference to the InputManager node, grabbed from the main scene when Global is autoloaded.
@@ -37,10 +37,7 @@ public partial class Global : Node
     /// </summary>
     public static SteamManager SteamManager;
 
-    /// <summary>
-    /// Stores a reference to the WorldSim node, created when the world sim starts.
-    /// </summary>
-    public static WorldSim worldSim;
+
 
     /// <summary>
     /// If true, print debug logs to console during runtime.
@@ -80,11 +77,11 @@ public partial class Global : Node
         //Grab instances of our nodes from the main scene tree.
         instance = this;
         UIManager = GetNode<UIManager>("../main/UIManager");
-        NetworkManager = GetNode<NetworkManager>("../main/NetworkManager");
+        NetworkPeer = GetNode<NetworkPeer>("../main/NetworkPeer");
         AudioManager = GetNode<AudioManager>("../main/AudioManager");
         InputManager = GetNode<InputManager>("../main/InputManager");
         SteamManager = GetNode<SteamManager>("../SteamManager");
-        Client.NetworkCommandReceived += StartGame;
+
     }
 
     /// <summary>
@@ -106,22 +103,7 @@ public partial class Global : Node
     /// </summary>
     public void StartGame(string command, ulong id)
     {
-        if (!command.Equals("startgame"))
-        {
-            return;
-        }
 
-        worldSim = new WorldSim();
-        GetNode<Main>("../main").AddChild(worldSim);
-        UIManager.clearUI();
-        worldSim.loadScene("res://scenes/debug.tscn");
-
-        worldSim.RegisterPlayer(worldSim.CreateNewPlayer(clientID));
-        foreach (ulong peer in NetworkManager.client.peers)
-        {
-            worldSim.RegisterPlayer(worldSim.CreateNewPlayer(peer));
-        }
-        worldSim.SpawnAll();
     }
 
     public static Vector3 Vec3ToVector3(Vec3 vec)
@@ -136,11 +118,7 @@ public partial class Global : Node
 
     public static ulong getTick()
     {
-        if (worldSim != null)
-        {
-            return worldSim.tick;
-        }
-        else { return 0; }
+        return 0;
     }
 
     /// <summary>

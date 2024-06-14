@@ -31,7 +31,7 @@ public partial class MainMenu : Control
         GetNode<AudioStreamPlayer>("/root/main/uisfx").Play();
         GetNode<AudioStreamPlayer>("/root/main/music").Stop();
         //Global.NetworkManager.startServer();
-        Global.NetworkManager.client.SendCommandToServer("startgame");
+        //Global.NetworkManager.client.SendCommandToServer("startgame");
 
 
 
@@ -40,10 +40,10 @@ public partial class MainMenu : Control
 
     private void genPressed()
     {
-        Global.worldSim.loadScene("res://components/TerrainPlayer.tscn");
-        Global.worldSim.loadScene("res://scenes/TerrainGeneration.tscn");
-        TerrainGeneration terrainGenerated = (TerrainGeneration)Global.worldSim.currentScene;
-        terrainGenerated.AddTerrain(true);
+       // Global.worldSim.loadScene("res://components/TerrainPlayer.tscn");
+      //  Global.worldSim.loadScene("res://scenes/TerrainGeneration.tscn");
+       // TerrainGeneration terrainGenerated = (TerrainGeneration)Global.worldSim.currentScene;
+      //  terrainGenerated.AddTerrain(true);
         Global.UIManager.clearUI();
     }
 

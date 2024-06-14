@@ -17,14 +17,14 @@ public partial class MPDebugPanel : Panel
     public void onHostPressed()
     {
 
-        Global.NetworkManager.startServer();
+        //Global.NetworkManager.startServer();
     }
 
     public void onJoinPressed()
     {
         string id = GetNode<TextEdit>("JoinPanel/GridContainer/ServerIP").Text;
         string port = GetNode<TextEdit>("JoinPanel/GridContainer/ServerPort").Text;
-        Global.NetworkManager.joinGame(new CSteamID(ulong.Parse(id)));
+        Global.NetworkPeer.JoinToPeer(ulong.Parse(id));
 
     }
 }

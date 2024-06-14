@@ -24,84 +24,79 @@ namespace NetworkMessages {
     static NetworkingProtoReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "ChVOZXR3b3JraW5nUHJvdG8ucHJvdG8SD05ldHdvcmtNZXNzYWdlcyLRAQoL",
-            "RnJhbWVQYWNrZXQSDAoEdGljaxgBIAEoBBIOCgZzZW5kZXIYAiABKAQSFgoJ",
-            "dGltZXN0YW1wGAMgASgBSACIAQESLAoGaW5wdXRzGAYgAygLMhwuTmV0d29y",
-            "a01lc3NhZ2VzLlBsYXllcklucHV0EiwKBnN0YXRlcxgHIAMoCzIcLk5ldHdv",
-            "cmtNZXNzYWdlcy5QbGF5ZXJTdGF0ZRIVCghzZXF1ZW5jZRhjIAEoBEgBiAEB",
-            "QgwKCl90aW1lc3RhbXBCCwoJX3NlcXVlbmNlIo8CCg5SZWxpYWJsZVBhY2tl",
-            "dBIMCgR0aWNrGAEgASgEEg4KBnNlbmRlchgCIAEoBBIWCgl0aW1lc3RhbXAY",
-            "AyABKAFIAIgBARIrCgxjaGF0TWVzc2FnZXMYBCADKAsyFS5OZXR3b3JrTWVz",
-            "c2FnZXMuQ2hhdBIqCghjb21tYW5kcxgFIAMoCzIYLk5ldHdvcmtNZXNzYWdl",
-            "cy5Db21tYW5kEhIKCnBsYXllckxpc3QYWiADKAQSEgoKcGxheWVyTGVmdBhb",
-            "IAMoBBIUCgxwbGF5ZXJKb2luZWQYXCADKAQSFQoIc2VxdWVuY2UYYyABKARI",
-            "AYgBAUIMCgpfdGltZXN0YW1wQgsKCV9zZXF1ZW5jZSInCgRDaGF0Eg4KBnNl",
-            "bmRlchgBIAEoBBIPCgdtZXNzYWdlGAIgASgJIk4KB0NvbW1hbmQSDwoHY29t",
-            "bWFuZBgBIAEoCRIOCgZzZW5kZXIYBCABKAQSDQoFcGFyYW0YAiABKAkSEwoL",
-            "ZXh0cmFQYXJhbXMYAyADKAkiigIKCkdhbWVPYmplY3QSCgoCaWQYASABKAQS",
-            "JwoIcG9zaXRpb24YAiABKAsyFS5OZXR3b3JrTWVzc2FnZXMuVmVjMxInCghy",
-            "b3RhdGlvbhgDIAEoCzIVLk5ldHdvcmtNZXNzYWdlcy5WZWMzEg4KBmF0UmVz",
-            "dBgEIAEoCBIyCg5saW5lYXJWZWxvY2l0eRgFIAEoCzIVLk5ldHdvcmtNZXNz",
-            "YWdlcy5WZWMzSACIAQESMwoPYW5ndWxhclZlbG9jaXR5GAYgASgLMhUuTmV0",
-            "d29ya01lc3NhZ2VzLlZlYzNIAYgBAUIRCg9fbGluZWFyVmVsb2NpdHlCEgoQ",
-            "X2FuZ3VsYXJWZWxvY2l0eSKAAgoLUGxheWVyU3RhdGUSEAoIY2xpZW50SUQY",
-            "BSABKAQSLQoJaW52ZW50b3J5GAEgASgLMhouTmV0d29ya01lc3NhZ2VzLklu",
-            "dmVudG9yeRItCgllcXVpcG1lbnQYAiABKAsyGi5OZXR3b3JrTWVzc2FnZXMu",
-            "RXF1aXBtZW50EjMKDHBsYXllcmhlYWx0aBgDIAEoCzIdLk5ldHdvcmtNZXNz",
-            "YWdlcy5QbGF5ZXJIZWFsdGgSOgoNcGh5c2ljc09iamVjdBgEIAEoCzIeLk5l",
-            "dHdvcmtNZXNzYWdlcy5QaHlzaWNzT2JqZWN0SACIAQFCEAoOX3BoeXNpY3NP",
-            "YmplY3QiZAoJSW52ZW50b3J5EiQKBWl0ZW1zGAEgAygLMhUuTmV0d29ya01l",
-            "c3NhZ2VzLkl0ZW0SEwoLdG90YWxXZWlnaHQYAiABKAISDQoFc2l6ZVgYAyAB",
-            "KAQSDQoFc2l6ZVkYBCABKAQijgEKBEl0ZW0SCgoCaWQYASABKAQSDgoGd2Vp",
-            "Z2h0GAIgASgCEg4KBmhlaWdodBgDIAEoBBINCgV3aWR0aBgEIAEoBBIQCgh0",
-            "b3BMZWZ0WBgFIAEoBBIQCgh0b3BMZWZ0WRgGIAEoBBInCghjb250YWlucxgH",
-            "IAMoCzIVLk5ldHdvcmtNZXNzYWdlcy5JdGVtIs8BCglFcXVpcG1lbnQSJQoG",
-            "aGVsbWV0GAEgASgLMhUuTmV0d29ya01lc3NhZ2VzLkl0ZW0SIwoEYm9keRgC",
-            "IAEoCzIVLk5ldHdvcmtNZXNzYWdlcy5JdGVtEigKCXJpZ2h0SGFuZBgDIAEo",
-            "CzIVLk5ldHdvcmtNZXNzYWdlcy5JdGVtEicKCGxlZnRIYW5kGAQgASgLMhUu",
-            "TmV0d29ya01lc3NhZ2VzLkl0ZW0SIwoEYmFjaxgFIAEoCzIVLk5ldHdvcmtN",
-            "ZXNzYWdlcy5JdGVtItMBCgxQbGF5ZXJIZWFsdGgSDQoFbWF4SFAYASABKAIS",
-            "EQoJY3VycmVudEhQGAIgASgCEg4KBmhlYWRIUBgDIAEoAhIOCgZib2R5SFAY",
-            "BCABKAISEQoJbGVmdEFybUhQGAUgASgCEhIKCnJpZ2h0QXJtSFAYBiABKAIS",
-            "EQoJbGVmdExlZ0hQGAcgASgCEhMKC3JpZ2h0TGVmdEhQGAggASgCEjIKDGFm",
-            "ZmxpY2F0aW9ucxgJIAMoCzIcLk5ldHdvcmtNZXNzYWdlcy5BZmZsaWNhdGlv",
-            "biJNCgtBZmZsaWNhdGlvbhIQCghlZmZlY3RJRBgBIAEoBBIsCglhZmZlY3Rp",
-            "bmcYAiABKA4yGS5OZXR3b3JrTWVzc2FnZXMuQm9keVBhcnQiHQoKV29ybGRT",
-            "dGF0ZRIPCgdsZXZlbElEGAEgASgEItoCCgtQbGF5ZXJJbnB1dBIQCghjbGll",
-            "bnRJRBgEIAEoBBI6CgdhY3Rpb25zGAEgAygLMikuTmV0d29ya01lc3NhZ2Vz",
-            "LlBsYXllcklucHV0LkFjdGlvbnNFbnRyeRI1ChFtb3ZlbWVudERpcmVjdGlv",
-            "bhgCIAEoCzIVLk5ldHdvcmtNZXNzYWdlcy5WZWMySACIAQESLQoJbG9va0Rl",
-            "bHRhGAUgASgLMhUuTmV0d29ya01lc3NhZ2VzLlZlYzJIAYgBARIxCg1sb29r",
-            "RGlyZWN0aW9uGAMgASgLMhUuTmV0d29ya01lc3NhZ2VzLlZlYzJIAogBARou",
-            "CgxBY3Rpb25zRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgIOgI4",
-            "AUIUChJfbW92ZW1lbnREaXJlY3Rpb25CDAoKX2xvb2tEZWx0YUIQCg5fbG9v",
-            "a0RpcmVjdGlvbiIcCgRWZWMyEgkKAVgYASABKAISCQoBWRgCIAEoAiInCgRW",
-            "ZWMzEgkKAVgYASABKAISCQoBWRgCIAEoAhIJCgFaGAMgASgCIrICCg1QaHlz",
-            "aWNzT2JqZWN0EgoKAmlkGAYgASgEEicKCHBvc2l0aW9uGAEgASgLMhUuTmV0",
-            "d29ya01lc3NhZ2VzLlZlYzMSKQoFc2NhbGUYAiABKAsyFS5OZXR3b3JrTWVz",
-            "c2FnZXMuVmVjM0gAiAEBEicKCHJvdGF0aW9uGAMgASgLMhUuTmV0d29ya01l",
-            "c3NhZ2VzLlZlYzMSMgoObGluZWFyVmVsb2NpdHkYBCABKAsyFS5OZXR3b3Jr",
-            "TWVzc2FnZXMuVmVjM0gBiAEBEjMKD2FuZ3VsYXJWZWxvY2l0eRgFIAEoCzIV",
-            "Lk5ldHdvcmtNZXNzYWdlcy5WZWMzSAKIAQFCCAoGX3NjYWxlQhEKD19saW5l",
-            "YXJWZWxvY2l0eUISChBfYW5ndWxhclZlbG9jaXR5InMKA05QQxIKCgJpZBgB",
-            "IAEoBBISCgphdHRhY2hlZFRvGAIgASgEEjoKDXBoeXNpY3NPYmplY3QYAyAB",
-            "KAsyHi5OZXR3b3JrTWVzc2FnZXMuUGh5c2ljc09iamVjdEgAiAEBQhAKDl9w",
-            "aHlzaWNzT2JqZWN0InoKB1ZlaGljbGUSCgoCaWQYASABKAQSFQoNYXR0YWNo",
-            "ZWRDaGFycxgCIAMoBBI6Cg1waHlzaWNzT2JqZWN0GAMgASgLMh4uTmV0d29y",
-            "a01lc3NhZ2VzLlBoeXNpY3NPYmplY3RIAIgBAUIQCg5fcGh5c2ljc09iamVj",
-            "dCKRAQoKUHJvamVjdGlsZRIKCgJpZBgBIAEoBBIPCgdvd25lcklEGAIgASgE",
-            "EhgKEHByb2plY3RpbGVUeXBlSUQYAyABKAQSOgoNcGh5c2ljc09iamVjdBgE",
-            "IAEoCzIeLk5ldHdvcmtNZXNzYWdlcy5QaHlzaWNzT2JqZWN0SACIAQFCEAoO",
-            "X3BoeXNpY3NPYmplY3QqZgoIQm9keVBhcnQSCAoESGVhZBAAEggKBEJvZHkQ",
-            "ARIICgRMQXJtEAISCAoEUkFybRADEggKBExMZWcQBBIICgRSTGVnEAUSBwoD",
-            "QWxsEAYSCAoETm9uZRAHEgsKB0dlbmVyYWwQCGIGcHJvdG8z"));
+            "ChVOZXR3b3JraW5nUHJvdG8ucHJvdG8SD05ldHdvcmtNZXNzYWdlcyKnAQoF",
+            "U3RhdGUSDAoEdGljaxgBIAEoBBIOCgZzZW5kZXIYAiABKAQSFgoJdGltZXN0",
+            "YW1wGAMgASgBSACIAQESLAoGaW5wdXRzGAYgAygLMhwuTmV0d29ya01lc3Nh",
+            "Z2VzLlBsYXllcklucHV0EiwKBnN0YXRlcxgHIAMoCzIcLk5ldHdvcmtNZXNz",
+            "YWdlcy5QbGF5ZXJTdGF0ZUIMCgpfdGltZXN0YW1wIl4KCUhhbmRzaGFrZRIM",
+            "CgR0aWNrGAEgASgEEg4KBnNlbmRlchgCIAEoBBIWCgl0aW1lc3RhbXAYAyAB",
+            "KAFIAIgBARINCgVwZWVycxgEIAMoBEIMCgpfdGltZXN0YW1wIicKBENoYXQS",
+            "DgoGc2VuZGVyGAEgASgEEg8KB21lc3NhZ2UYAiABKAkiOgoHQ29tbWFuZBIP",
+            "Cgdjb21tYW5kGAEgASgJEg4KBnNlbmRlchgDIAEoBBIOCgZwYXJhbXMYAiAD",
+            "KAkiigIKCkdhbWVPYmplY3QSCgoCaWQYASABKAQSJwoIcG9zaXRpb24YAiAB",
+            "KAsyFS5OZXR3b3JrTWVzc2FnZXMuVmVjMxInCghyb3RhdGlvbhgDIAEoCzIV",
+            "Lk5ldHdvcmtNZXNzYWdlcy5WZWMzEg4KBmF0UmVzdBgEIAEoCBIyCg5saW5l",
+            "YXJWZWxvY2l0eRgFIAEoCzIVLk5ldHdvcmtNZXNzYWdlcy5WZWMzSACIAQES",
+            "MwoPYW5ndWxhclZlbG9jaXR5GAYgASgLMhUuTmV0d29ya01lc3NhZ2VzLlZl",
+            "YzNIAYgBAUIRCg9fbGluZWFyVmVsb2NpdHlCEgoQX2FuZ3VsYXJWZWxvY2l0",
+            "eSKAAgoLUGxheWVyU3RhdGUSEAoIY2xpZW50SUQYBSABKAQSLQoJaW52ZW50",
+            "b3J5GAEgASgLMhouTmV0d29ya01lc3NhZ2VzLkludmVudG9yeRItCgllcXVp",
+            "cG1lbnQYAiABKAsyGi5OZXR3b3JrTWVzc2FnZXMuRXF1aXBtZW50EjMKDHBs",
+            "YXllcmhlYWx0aBgDIAEoCzIdLk5ldHdvcmtNZXNzYWdlcy5QbGF5ZXJIZWFs",
+            "dGgSOgoNcGh5c2ljc09iamVjdBgEIAEoCzIeLk5ldHdvcmtNZXNzYWdlcy5Q",
+            "aHlzaWNzT2JqZWN0SACIAQFCEAoOX3BoeXNpY3NPYmplY3QiZAoJSW52ZW50",
+            "b3J5EiQKBWl0ZW1zGAEgAygLMhUuTmV0d29ya01lc3NhZ2VzLkl0ZW0SEwoL",
+            "dG90YWxXZWlnaHQYAiABKAISDQoFc2l6ZVgYAyABKAQSDQoFc2l6ZVkYBCAB",
+            "KAQijgEKBEl0ZW0SCgoCaWQYASABKAQSDgoGd2VpZ2h0GAIgASgCEg4KBmhl",
+            "aWdodBgDIAEoBBINCgV3aWR0aBgEIAEoBBIQCgh0b3BMZWZ0WBgFIAEoBBIQ",
+            "Cgh0b3BMZWZ0WRgGIAEoBBInCghjb250YWlucxgHIAMoCzIVLk5ldHdvcmtN",
+            "ZXNzYWdlcy5JdGVtIs8BCglFcXVpcG1lbnQSJQoGaGVsbWV0GAEgASgLMhUu",
+            "TmV0d29ya01lc3NhZ2VzLkl0ZW0SIwoEYm9keRgCIAEoCzIVLk5ldHdvcmtN",
+            "ZXNzYWdlcy5JdGVtEigKCXJpZ2h0SGFuZBgDIAEoCzIVLk5ldHdvcmtNZXNz",
+            "YWdlcy5JdGVtEicKCGxlZnRIYW5kGAQgASgLMhUuTmV0d29ya01lc3NhZ2Vz",
+            "Lkl0ZW0SIwoEYmFjaxgFIAEoCzIVLk5ldHdvcmtNZXNzYWdlcy5JdGVtItMB",
+            "CgxQbGF5ZXJIZWFsdGgSDQoFbWF4SFAYASABKAISEQoJY3VycmVudEhQGAIg",
+            "ASgCEg4KBmhlYWRIUBgDIAEoAhIOCgZib2R5SFAYBCABKAISEQoJbGVmdEFy",
+            "bUhQGAUgASgCEhIKCnJpZ2h0QXJtSFAYBiABKAISEQoJbGVmdExlZ0hQGAcg",
+            "ASgCEhMKC3JpZ2h0TGVmdEhQGAggASgCEjIKDGFmZmxpY2F0aW9ucxgJIAMo",
+            "CzIcLk5ldHdvcmtNZXNzYWdlcy5BZmZsaWNhdGlvbiJNCgtBZmZsaWNhdGlv",
+            "bhIQCghlZmZlY3RJRBgBIAEoBBIsCglhZmZlY3RpbmcYAiABKA4yGS5OZXR3",
+            "b3JrTWVzc2FnZXMuQm9keVBhcnQiHQoKV29ybGRTdGF0ZRIPCgdsZXZlbElE",
+            "GAEgASgEItoCCgtQbGF5ZXJJbnB1dBIQCghjbGllbnRJRBgEIAEoBBI6Cgdh",
+            "Y3Rpb25zGAEgAygLMikuTmV0d29ya01lc3NhZ2VzLlBsYXllcklucHV0LkFj",
+            "dGlvbnNFbnRyeRI1ChFtb3ZlbWVudERpcmVjdGlvbhgCIAEoCzIVLk5ldHdv",
+            "cmtNZXNzYWdlcy5WZWMySACIAQESLQoJbG9va0RlbHRhGAUgASgLMhUuTmV0",
+            "d29ya01lc3NhZ2VzLlZlYzJIAYgBARIxCg1sb29rRGlyZWN0aW9uGAMgASgL",
+            "MhUuTmV0d29ya01lc3NhZ2VzLlZlYzJIAogBARouCgxBY3Rpb25zRW50cnkS",
+            "CwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgIOgI4AUIUChJfbW92ZW1lbnRE",
+            "aXJlY3Rpb25CDAoKX2xvb2tEZWx0YUIQCg5fbG9va0RpcmVjdGlvbiIcCgRW",
+            "ZWMyEgkKAVgYASABKAISCQoBWRgCIAEoAiInCgRWZWMzEgkKAVgYASABKAIS",
+            "CQoBWRgCIAEoAhIJCgFaGAMgASgCIrICCg1QaHlzaWNzT2JqZWN0EgoKAmlk",
+            "GAYgASgEEicKCHBvc2l0aW9uGAEgASgLMhUuTmV0d29ya01lc3NhZ2VzLlZl",
+            "YzMSKQoFc2NhbGUYAiABKAsyFS5OZXR3b3JrTWVzc2FnZXMuVmVjM0gAiAEB",
+            "EicKCHJvdGF0aW9uGAMgASgLMhUuTmV0d29ya01lc3NhZ2VzLlZlYzMSMgoO",
+            "bGluZWFyVmVsb2NpdHkYBCABKAsyFS5OZXR3b3JrTWVzc2FnZXMuVmVjM0gB",
+            "iAEBEjMKD2FuZ3VsYXJWZWxvY2l0eRgFIAEoCzIVLk5ldHdvcmtNZXNzYWdl",
+            "cy5WZWMzSAKIAQFCCAoGX3NjYWxlQhEKD19saW5lYXJWZWxvY2l0eUISChBf",
+            "YW5ndWxhclZlbG9jaXR5InMKA05QQxIKCgJpZBgBIAEoBBISCgphdHRhY2hl",
+            "ZFRvGAIgASgEEjoKDXBoeXNpY3NPYmplY3QYAyABKAsyHi5OZXR3b3JrTWVz",
+            "c2FnZXMuUGh5c2ljc09iamVjdEgAiAEBQhAKDl9waHlzaWNzT2JqZWN0InoK",
+            "B1ZlaGljbGUSCgoCaWQYASABKAQSFQoNYXR0YWNoZWRDaGFycxgCIAMoBBI6",
+            "Cg1waHlzaWNzT2JqZWN0GAMgASgLMh4uTmV0d29ya01lc3NhZ2VzLlBoeXNp",
+            "Y3NPYmplY3RIAIgBAUIQCg5fcGh5c2ljc09iamVjdCKRAQoKUHJvamVjdGls",
+            "ZRIKCgJpZBgBIAEoBBIPCgdvd25lcklEGAIgASgEEhgKEHByb2plY3RpbGVU",
+            "eXBlSUQYAyABKAQSOgoNcGh5c2ljc09iamVjdBgEIAEoCzIeLk5ldHdvcmtN",
+            "ZXNzYWdlcy5QaHlzaWNzT2JqZWN0SACIAQFCEAoOX3BoeXNpY3NPYmplY3Qq",
+            "ZgoIQm9keVBhcnQSCAoESGVhZBAAEggKBEJvZHkQARIICgRMQXJtEAISCAoE",
+            "UkFybRADEggKBExMZWcQBBIICgRSTGVnEAUSBwoDQWxsEAYSCAoETm9uZRAH",
+            "EgsKB0dlbmVyYWwQCGIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::NetworkMessages.BodyPart), }, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.FramePacket), global::NetworkMessages.FramePacket.Parser, new[]{ "Tick", "Sender", "Timestamp", "Inputs", "States", "Sequence" }, new[]{ "Timestamp", "Sequence" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.ReliablePacket), global::NetworkMessages.ReliablePacket.Parser, new[]{ "Tick", "Sender", "Timestamp", "ChatMessages", "Commands", "PlayerList", "PlayerLeft", "PlayerJoined", "Sequence" }, new[]{ "Timestamp", "Sequence" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.State), global::NetworkMessages.State.Parser, new[]{ "Tick", "Sender", "Timestamp", "Inputs", "States" }, new[]{ "Timestamp" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.Handshake), global::NetworkMessages.Handshake.Parser, new[]{ "Tick", "Sender", "Timestamp", "Peers" }, new[]{ "Timestamp" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.Chat), global::NetworkMessages.Chat.Parser, new[]{ "Sender", "Message" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.Command), global::NetworkMessages.Command.Parser, new[]{ "Command_", "Sender", "Param", "ExtraParams" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.Command), global::NetworkMessages.Command.Parser, new[]{ "Command_", "Sender", "Params" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.GameObject), global::NetworkMessages.GameObject.Parser, new[]{ "Id", "Position", "Rotation", "AtRest", "LinearVelocity", "AngularVelocity" }, new[]{ "LinearVelocity", "AngularVelocity" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.PlayerState), global::NetworkMessages.PlayerState.Parser, new[]{ "ClientID", "Inventory", "Equipment", "Playerhealth", "PhysicsObject" }, new[]{ "PhysicsObject" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.Inventory), global::NetworkMessages.Inventory.Parser, new[]{ "Items", "TotalWeight", "SizeX", "SizeY" }, null, null, null, null),
@@ -140,17 +135,17 @@ namespace NetworkMessages {
   #region Messages
   [global::System.SerializableAttribute]
   [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
-  public sealed partial class FramePacket : pb::IMessage<FramePacket>
+  public sealed partial class State : pb::IMessage<State>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
   #endif
   {
-    private static readonly pb::MessageParser<FramePacket> _parser = new pb::MessageParser<FramePacket>(() => new FramePacket());
+    private static readonly pb::MessageParser<State> _parser = new pb::MessageParser<State>(() => new State());
     private pb::UnknownFieldSet _unknownFields;
     private int _hasBits0;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public static pb::MessageParser<FramePacket> Parser { get { return _parser; } }
+    public static pb::MessageParser<State> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -166,7 +161,7 @@ namespace NetworkMessages {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public FramePacket() {
+    public State() {
       OnConstruction();
     }
 
@@ -174,21 +169,20 @@ namespace NetworkMessages {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public FramePacket(FramePacket other) : this() {
+    public State(State other) : this() {
       _hasBits0 = other._hasBits0;
       tick_ = other.tick_;
       sender_ = other.sender_;
       timestamp_ = other.timestamp_;
       inputs_ = other.inputs_.Clone();
       states_ = other.states_.Clone();
-      sequence_ = other.sequence_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public FramePacket Clone() {
-      return new FramePacket(this);
+    public State Clone() {
+      return new State(this);
     }
 
     /// <summary>Field number for the "tick" field.</summary>
@@ -264,42 +258,15 @@ namespace NetworkMessages {
       get { return states_; }
     }
 
-    /// <summary>Field number for the "sequence" field.</summary>
-    public const int SequenceFieldNumber = 99;
-    private readonly static ulong SequenceDefaultValue = 0UL;
-
-    private ulong sequence_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public ulong Sequence {
-      get { if ((_hasBits0 & 2) != 0) { return sequence_; } else { return SequenceDefaultValue; } }
-      set {
-        _hasBits0 |= 2;
-        sequence_ = value;
-      }
-    }
-    /// <summary>Gets whether the "sequence" field is set</summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public bool HasSequence {
-      get { return (_hasBits0 & 2) != 0; }
-    }
-    /// <summary>Clears the value of the "sequence" field</summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void ClearSequence() {
-      _hasBits0 &= ~2;
-    }
-
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
-      return Equals(other as FramePacket);
+      return Equals(other as State);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public bool Equals(FramePacket other) {
+    public bool Equals(State other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
@@ -311,7 +278,6 @@ namespace NetworkMessages {
       if (!pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.Equals(Timestamp, other.Timestamp)) return false;
       if(!inputs_.Equals(other.inputs_)) return false;
       if(!states_.Equals(other.states_)) return false;
-      if (Sequence != other.Sequence) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -324,7 +290,6 @@ namespace NetworkMessages {
       if (HasTimestamp) hash ^= pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.GetHashCode(Timestamp);
       hash ^= inputs_.GetHashCode();
       hash ^= states_.GetHashCode();
-      if (HasSequence) hash ^= Sequence.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -357,10 +322,6 @@ namespace NetworkMessages {
       }
       inputs_.WriteTo(output, _repeated_inputs_codec);
       states_.WriteTo(output, _repeated_states_codec);
-      if (HasSequence) {
-        output.WriteRawTag(152, 6);
-        output.WriteUInt64(Sequence);
-      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -385,10 +346,6 @@ namespace NetworkMessages {
       }
       inputs_.WriteTo(ref output, _repeated_inputs_codec);
       states_.WriteTo(ref output, _repeated_states_codec);
-      if (HasSequence) {
-        output.WriteRawTag(152, 6);
-        output.WriteUInt64(Sequence);
-      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -410,9 +367,6 @@ namespace NetworkMessages {
       }
       size += inputs_.CalculateSize(_repeated_inputs_codec);
       size += states_.CalculateSize(_repeated_states_codec);
-      if (HasSequence) {
-        size += 2 + pb::CodedOutputStream.ComputeUInt64Size(Sequence);
-      }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -421,7 +375,7 @@ namespace NetworkMessages {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void MergeFrom(FramePacket other) {
+    public void MergeFrom(State other) {
       if (other == null) {
         return;
       }
@@ -436,9 +390,6 @@ namespace NetworkMessages {
       }
       inputs_.Add(other.inputs_);
       states_.Add(other.states_);
-      if (other.HasSequence) {
-        Sequence = other.Sequence;
-      }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -472,10 +423,6 @@ namespace NetworkMessages {
           }
           case 58: {
             states_.AddEntriesFrom(input, _repeated_states_codec);
-            break;
-          }
-          case 792: {
-            Sequence = input.ReadUInt64();
             break;
           }
         }
@@ -513,10 +460,6 @@ namespace NetworkMessages {
             states_.AddEntriesFrom(ref input, _repeated_states_codec);
             break;
           }
-          case 792: {
-            Sequence = input.ReadUInt64();
-            break;
-          }
         }
       }
     }
@@ -526,17 +469,17 @@ namespace NetworkMessages {
 
   [global::System.SerializableAttribute]
   [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
-  public sealed partial class ReliablePacket : pb::IMessage<ReliablePacket>
+  public sealed partial class Handshake : pb::IMessage<Handshake>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
   #endif
   {
-    private static readonly pb::MessageParser<ReliablePacket> _parser = new pb::MessageParser<ReliablePacket>(() => new ReliablePacket());
+    private static readonly pb::MessageParser<Handshake> _parser = new pb::MessageParser<Handshake>(() => new Handshake());
     private pb::UnknownFieldSet _unknownFields;
     private int _hasBits0;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public static pb::MessageParser<ReliablePacket> Parser { get { return _parser; } }
+    public static pb::MessageParser<Handshake> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -552,7 +495,7 @@ namespace NetworkMessages {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public ReliablePacket() {
+    public Handshake() {
       OnConstruction();
     }
 
@@ -560,24 +503,19 @@ namespace NetworkMessages {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public ReliablePacket(ReliablePacket other) : this() {
+    public Handshake(Handshake other) : this() {
       _hasBits0 = other._hasBits0;
       tick_ = other.tick_;
       sender_ = other.sender_;
       timestamp_ = other.timestamp_;
-      chatMessages_ = other.chatMessages_.Clone();
-      commands_ = other.commands_.Clone();
-      playerList_ = other.playerList_.Clone();
-      playerLeft_ = other.playerLeft_.Clone();
-      playerJoined_ = other.playerJoined_.Clone();
-      sequence_ = other.sequence_;
+      peers_ = other.peers_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public ReliablePacket Clone() {
-      return new ReliablePacket(this);
+    public Handshake Clone() {
+      return new Handshake(this);
     }
 
     /// <summary>Field number for the "tick" field.</summary>
@@ -631,97 +569,26 @@ namespace NetworkMessages {
       _hasBits0 &= ~1;
     }
 
-    /// <summary>Field number for the "chatMessages" field.</summary>
-    public const int ChatMessagesFieldNumber = 4;
-    private static readonly pb::FieldCodec<global::NetworkMessages.Chat> _repeated_chatMessages_codec
-        = pb::FieldCodec.ForMessage(34, global::NetworkMessages.Chat.Parser);
-    private readonly pbc::RepeatedField<global::NetworkMessages.Chat> chatMessages_ = new pbc::RepeatedField<global::NetworkMessages.Chat>();
+    /// <summary>Field number for the "peers" field.</summary>
+    public const int PeersFieldNumber = 4;
+    private static readonly pb::FieldCodec<ulong> _repeated_peers_codec
+        = pb::FieldCodec.ForUInt64(34);
+    private readonly pbc::RepeatedField<ulong> peers_ = new pbc::RepeatedField<ulong>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::NetworkMessages.Chat> ChatMessages {
-      get { return chatMessages_; }
-    }
-
-    /// <summary>Field number for the "commands" field.</summary>
-    public const int CommandsFieldNumber = 5;
-    private static readonly pb::FieldCodec<global::NetworkMessages.Command> _repeated_commands_codec
-        = pb::FieldCodec.ForMessage(42, global::NetworkMessages.Command.Parser);
-    private readonly pbc::RepeatedField<global::NetworkMessages.Command> commands_ = new pbc::RepeatedField<global::NetworkMessages.Command>();
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::NetworkMessages.Command> Commands {
-      get { return commands_; }
-    }
-
-    /// <summary>Field number for the "playerList" field.</summary>
-    public const int PlayerListFieldNumber = 90;
-    private static readonly pb::FieldCodec<ulong> _repeated_playerList_codec
-        = pb::FieldCodec.ForUInt64(722);
-    private readonly pbc::RepeatedField<ulong> playerList_ = new pbc::RepeatedField<ulong>();
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<ulong> PlayerList {
-      get { return playerList_; }
-    }
-
-    /// <summary>Field number for the "playerLeft" field.</summary>
-    public const int PlayerLeftFieldNumber = 91;
-    private static readonly pb::FieldCodec<ulong> _repeated_playerLeft_codec
-        = pb::FieldCodec.ForUInt64(730);
-    private readonly pbc::RepeatedField<ulong> playerLeft_ = new pbc::RepeatedField<ulong>();
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<ulong> PlayerLeft {
-      get { return playerLeft_; }
-    }
-
-    /// <summary>Field number for the "playerJoined" field.</summary>
-    public const int PlayerJoinedFieldNumber = 92;
-    private static readonly pb::FieldCodec<ulong> _repeated_playerJoined_codec
-        = pb::FieldCodec.ForUInt64(738);
-    private readonly pbc::RepeatedField<ulong> playerJoined_ = new pbc::RepeatedField<ulong>();
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<ulong> PlayerJoined {
-      get { return playerJoined_; }
-    }
-
-    /// <summary>Field number for the "sequence" field.</summary>
-    public const int SequenceFieldNumber = 99;
-    private readonly static ulong SequenceDefaultValue = 0UL;
-
-    private ulong sequence_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public ulong Sequence {
-      get { if ((_hasBits0 & 2) != 0) { return sequence_; } else { return SequenceDefaultValue; } }
-      set {
-        _hasBits0 |= 2;
-        sequence_ = value;
-      }
-    }
-    /// <summary>Gets whether the "sequence" field is set</summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public bool HasSequence {
-      get { return (_hasBits0 & 2) != 0; }
-    }
-    /// <summary>Clears the value of the "sequence" field</summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void ClearSequence() {
-      _hasBits0 &= ~2;
+    public pbc::RepeatedField<ulong> Peers {
+      get { return peers_; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
-      return Equals(other as ReliablePacket);
+      return Equals(other as Handshake);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public bool Equals(ReliablePacket other) {
+    public bool Equals(Handshake other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
@@ -731,12 +598,7 @@ namespace NetworkMessages {
       if (Tick != other.Tick) return false;
       if (Sender != other.Sender) return false;
       if (!pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.Equals(Timestamp, other.Timestamp)) return false;
-      if(!chatMessages_.Equals(other.chatMessages_)) return false;
-      if(!commands_.Equals(other.commands_)) return false;
-      if(!playerList_.Equals(other.playerList_)) return false;
-      if(!playerLeft_.Equals(other.playerLeft_)) return false;
-      if(!playerJoined_.Equals(other.playerJoined_)) return false;
-      if (Sequence != other.Sequence) return false;
+      if(!peers_.Equals(other.peers_)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -747,12 +609,7 @@ namespace NetworkMessages {
       if (Tick != 0UL) hash ^= Tick.GetHashCode();
       if (Sender != 0UL) hash ^= Sender.GetHashCode();
       if (HasTimestamp) hash ^= pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.GetHashCode(Timestamp);
-      hash ^= chatMessages_.GetHashCode();
-      hash ^= commands_.GetHashCode();
-      hash ^= playerList_.GetHashCode();
-      hash ^= playerLeft_.GetHashCode();
-      hash ^= playerJoined_.GetHashCode();
-      if (HasSequence) hash ^= Sequence.GetHashCode();
+      hash ^= peers_.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -783,15 +640,7 @@ namespace NetworkMessages {
         output.WriteRawTag(25);
         output.WriteDouble(Timestamp);
       }
-      chatMessages_.WriteTo(output, _repeated_chatMessages_codec);
-      commands_.WriteTo(output, _repeated_commands_codec);
-      playerList_.WriteTo(output, _repeated_playerList_codec);
-      playerLeft_.WriteTo(output, _repeated_playerLeft_codec);
-      playerJoined_.WriteTo(output, _repeated_playerJoined_codec);
-      if (HasSequence) {
-        output.WriteRawTag(152, 6);
-        output.WriteUInt64(Sequence);
-      }
+      peers_.WriteTo(output, _repeated_peers_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -814,15 +663,7 @@ namespace NetworkMessages {
         output.WriteRawTag(25);
         output.WriteDouble(Timestamp);
       }
-      chatMessages_.WriteTo(ref output, _repeated_chatMessages_codec);
-      commands_.WriteTo(ref output, _repeated_commands_codec);
-      playerList_.WriteTo(ref output, _repeated_playerList_codec);
-      playerLeft_.WriteTo(ref output, _repeated_playerLeft_codec);
-      playerJoined_.WriteTo(ref output, _repeated_playerJoined_codec);
-      if (HasSequence) {
-        output.WriteRawTag(152, 6);
-        output.WriteUInt64(Sequence);
-      }
+      peers_.WriteTo(ref output, _repeated_peers_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -842,14 +683,7 @@ namespace NetworkMessages {
       if (HasTimestamp) {
         size += 1 + 8;
       }
-      size += chatMessages_.CalculateSize(_repeated_chatMessages_codec);
-      size += commands_.CalculateSize(_repeated_commands_codec);
-      size += playerList_.CalculateSize(_repeated_playerList_codec);
-      size += playerLeft_.CalculateSize(_repeated_playerLeft_codec);
-      size += playerJoined_.CalculateSize(_repeated_playerJoined_codec);
-      if (HasSequence) {
-        size += 2 + pb::CodedOutputStream.ComputeUInt64Size(Sequence);
-      }
+      size += peers_.CalculateSize(_repeated_peers_codec);
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -858,7 +692,7 @@ namespace NetworkMessages {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void MergeFrom(ReliablePacket other) {
+    public void MergeFrom(Handshake other) {
       if (other == null) {
         return;
       }
@@ -871,14 +705,7 @@ namespace NetworkMessages {
       if (other.HasTimestamp) {
         Timestamp = other.Timestamp;
       }
-      chatMessages_.Add(other.chatMessages_);
-      commands_.Add(other.commands_);
-      playerList_.Add(other.playerList_);
-      playerLeft_.Add(other.playerLeft_);
-      playerJoined_.Add(other.playerJoined_);
-      if (other.HasSequence) {
-        Sequence = other.Sequence;
-      }
+      peers_.Add(other.peers_);
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -906,31 +733,9 @@ namespace NetworkMessages {
             Timestamp = input.ReadDouble();
             break;
           }
-          case 34: {
-            chatMessages_.AddEntriesFrom(input, _repeated_chatMessages_codec);
-            break;
-          }
-          case 42: {
-            commands_.AddEntriesFrom(input, _repeated_commands_codec);
-            break;
-          }
-          case 722:
-          case 720: {
-            playerList_.AddEntriesFrom(input, _repeated_playerList_codec);
-            break;
-          }
-          case 730:
-          case 728: {
-            playerLeft_.AddEntriesFrom(input, _repeated_playerLeft_codec);
-            break;
-          }
-          case 738:
-          case 736: {
-            playerJoined_.AddEntriesFrom(input, _repeated_playerJoined_codec);
-            break;
-          }
-          case 792: {
-            Sequence = input.ReadUInt64();
+          case 34:
+          case 32: {
+            peers_.AddEntriesFrom(input, _repeated_peers_codec);
             break;
           }
         }
@@ -960,31 +765,9 @@ namespace NetworkMessages {
             Timestamp = input.ReadDouble();
             break;
           }
-          case 34: {
-            chatMessages_.AddEntriesFrom(ref input, _repeated_chatMessages_codec);
-            break;
-          }
-          case 42: {
-            commands_.AddEntriesFrom(ref input, _repeated_commands_codec);
-            break;
-          }
-          case 722:
-          case 720: {
-            playerList_.AddEntriesFrom(ref input, _repeated_playerList_codec);
-            break;
-          }
-          case 730:
-          case 728: {
-            playerLeft_.AddEntriesFrom(ref input, _repeated_playerLeft_codec);
-            break;
-          }
-          case 738:
-          case 736: {
-            playerJoined_.AddEntriesFrom(ref input, _repeated_playerJoined_codec);
-            break;
-          }
-          case 792: {
-            Sequence = input.ReadUInt64();
+          case 34:
+          case 32: {
+            peers_.AddEntriesFrom(ref input, _repeated_peers_codec);
             break;
           }
         }
@@ -1260,8 +1043,7 @@ namespace NetworkMessages {
     public Command(Command other) : this() {
       command_ = other.command_;
       sender_ = other.sender_;
-      param_ = other.param_;
-      extraParams_ = other.extraParams_.Clone();
+      params_ = other.params_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1284,7 +1066,7 @@ namespace NetworkMessages {
     }
 
     /// <summary>Field number for the "sender" field.</summary>
-    public const int SenderFieldNumber = 4;
+    public const int SenderFieldNumber = 3;
     private ulong sender_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -1295,27 +1077,15 @@ namespace NetworkMessages {
       }
     }
 
-    /// <summary>Field number for the "param" field.</summary>
-    public const int ParamFieldNumber = 2;
-    private string param_ = "";
+    /// <summary>Field number for the "params" field.</summary>
+    public const int ParamsFieldNumber = 2;
+    private static readonly pb::FieldCodec<string> _repeated_params_codec
+        = pb::FieldCodec.ForString(18);
+    private readonly pbc::RepeatedField<string> params_ = new pbc::RepeatedField<string>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public string Param {
-      get { return param_; }
-      set {
-        param_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
-      }
-    }
-
-    /// <summary>Field number for the "extraParams" field.</summary>
-    public const int ExtraParamsFieldNumber = 3;
-    private static readonly pb::FieldCodec<string> _repeated_extraParams_codec
-        = pb::FieldCodec.ForString(26);
-    private readonly pbc::RepeatedField<string> extraParams_ = new pbc::RepeatedField<string>();
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<string> ExtraParams {
-      get { return extraParams_; }
+    public pbc::RepeatedField<string> Params {
+      get { return params_; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1335,8 +1105,7 @@ namespace NetworkMessages {
       }
       if (Command_ != other.Command_) return false;
       if (Sender != other.Sender) return false;
-      if (Param != other.Param) return false;
-      if(!extraParams_.Equals(other.extraParams_)) return false;
+      if(!params_.Equals(other.params_)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -1346,8 +1115,7 @@ namespace NetworkMessages {
       int hash = 1;
       if (Command_.Length != 0) hash ^= Command_.GetHashCode();
       if (Sender != 0UL) hash ^= Sender.GetHashCode();
-      if (Param.Length != 0) hash ^= Param.GetHashCode();
-      hash ^= extraParams_.GetHashCode();
+      hash ^= params_.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1370,13 +1138,9 @@ namespace NetworkMessages {
         output.WriteRawTag(10);
         output.WriteString(Command_);
       }
-      if (Param.Length != 0) {
-        output.WriteRawTag(18);
-        output.WriteString(Param);
-      }
-      extraParams_.WriteTo(output, _repeated_extraParams_codec);
+      params_.WriteTo(output, _repeated_params_codec);
       if (Sender != 0UL) {
-        output.WriteRawTag(32);
+        output.WriteRawTag(24);
         output.WriteUInt64(Sender);
       }
       if (_unknownFields != null) {
@@ -1393,13 +1157,9 @@ namespace NetworkMessages {
         output.WriteRawTag(10);
         output.WriteString(Command_);
       }
-      if (Param.Length != 0) {
-        output.WriteRawTag(18);
-        output.WriteString(Param);
-      }
-      extraParams_.WriteTo(ref output, _repeated_extraParams_codec);
+      params_.WriteTo(ref output, _repeated_params_codec);
       if (Sender != 0UL) {
-        output.WriteRawTag(32);
+        output.WriteRawTag(24);
         output.WriteUInt64(Sender);
       }
       if (_unknownFields != null) {
@@ -1418,10 +1178,7 @@ namespace NetworkMessages {
       if (Sender != 0UL) {
         size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Sender);
       }
-      if (Param.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(Param);
-      }
-      size += extraParams_.CalculateSize(_repeated_extraParams_codec);
+      size += params_.CalculateSize(_repeated_params_codec);
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -1440,10 +1197,7 @@ namespace NetworkMessages {
       if (other.Sender != 0UL) {
         Sender = other.Sender;
       }
-      if (other.Param.Length != 0) {
-        Param = other.Param;
-      }
-      extraParams_.Add(other.extraParams_);
+      params_.Add(other.params_);
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -1464,14 +1218,10 @@ namespace NetworkMessages {
             break;
           }
           case 18: {
-            Param = input.ReadString();
+            params_.AddEntriesFrom(input, _repeated_params_codec);
             break;
           }
-          case 26: {
-            extraParams_.AddEntriesFrom(input, _repeated_extraParams_codec);
-            break;
-          }
-          case 32: {
+          case 24: {
             Sender = input.ReadUInt64();
             break;
           }
@@ -1495,14 +1245,10 @@ namespace NetworkMessages {
             break;
           }
           case 18: {
-            Param = input.ReadString();
+            params_.AddEntriesFrom(ref input, _repeated_params_codec);
             break;
           }
-          case 26: {
-            extraParams_.AddEntriesFrom(ref input, _repeated_extraParams_codec);
-            break;
-          }
-          case 32: {
+          case 24: {
             Sender = input.ReadUInt64();
             break;
           }

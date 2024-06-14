@@ -5,7 +5,7 @@
 [ext_resource type="Script" path="res://scripts/managers/UIManager.cs" id="2_gdcb3"]
 [ext_resource type="AudioStream" uid="uid://dsadnt3yyjesu" path="res://import/Gregoire Lourme - Commando Team (Action) [loop cut].ogg" id="3_lhhe4"]
 [ext_resource type="Script" path="res://scripts/managers/InputManager.cs" id="4_rs1vn"]
-[ext_resource type="Script" path="res://scripts/networking/NetworkManager.cs" id="5_d6dd4"]
+[ext_resource type="Script" path="res://scripts/networking/NetworkPeer.cs" id="4_wm43t"]
 [ext_resource type="Script" path="res://scripts/managers/AudioManager.cs" id="6_5rbi3"]
 
 [node name="main" type="Node"]
@@ -23,8 +23,8 @@ script = ExtResource("2_gdcb3")
 [node name="InputManager" type="Node" parent="."]
 script = ExtResource("4_rs1vn")
 
-[node name="NetworkManager" type="Node" parent="."]
-script = ExtResource("5_d6dd4")
+[node name="NetworkPeer" type="Node" parent="."]
+script = ExtResource("4_wm43t")
 
 [node name="AudioManager" type="AudioStreamPlayer" parent="."]
 script = ExtResource("6_5rbi3")
