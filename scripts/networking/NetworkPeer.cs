@@ -60,13 +60,21 @@ public partial class NetworkPeer : Node
     private void OnHandshakeMessageReceived(Handshake handshake)
     {
         Global.debugLog("Handshake received from: " + handshake.Sender);
+        SteamNetworkingIdentity identity = new SteamNetworkingIdentity();
+        identity.SetSteamID64(handshake.Sender);
+        if (!remotePeers.Contains(identity))
+        {
+            Global.debugLog("Adding primary peer: " + handshake.Sender);
+            remotePeers.Add(identity);
+        }
+
         foreach (ulong id in handshake.Peers)
         {
             if (id == Global.clientID)
             {
                 continue;
             }
-            SteamNetworkingIdentity identity = new SteamNetworkingIdentity();
+            identity = new SteamNetworkingIdentity();
             identity.SetSteamID64(id);
             if (!remotePeers.Contains(identity))
             {
@@ -103,7 +111,7 @@ public partial class NetworkPeer : Node
             {
                 AcceptSessionWithUser(ref param.m_identityRemote);
                 remotePeers.Add(param.m_identityRemote);
-                Global.debugLog("Accepting session request and adding remote peer: " + param.m_identityRemote);
+                Global.debugLog("Accepting session request and adding remote peer: " + param.m_identityRemote.GetSteamID64());
                 Handshake handshake = new Handshake() { };
                 handshake.Sender = Global.clientID;
                 handshake.Tick = Global.getTick();
@@ -112,7 +120,7 @@ public partial class NetworkPeer : Node
                 {
                     handshake.Peers.Add(i.GetSteamID64());
                 }
-                SendMessageToPeer(param.m_identityRemote, new Handshake() {  });
+                SendMessageToPeer(param.m_identityRemote, handshake);
             }
         }
         else if (privacyMode == GamePrivacyMode.PUBLIC)
