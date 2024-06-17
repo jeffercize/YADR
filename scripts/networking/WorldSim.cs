@@ -65,12 +65,12 @@ public partial class WorldSim : Node3D
             }
             else if (remotePlayers.ContainsKey(playerState.ClientID))
             {
-                remotePlayers[playerState.ClientID].desiredState = new Player(playerState);
+                remotePlayers[playerState.ClientID].desiredState = playerState;
             }
             else
             {
                 SpawnRemotePlayer(GenerateRemotePlayer(playerState.ClientID));
-                remotePlayers[playerState.ClientID].desiredState = new Player(playerState);
+                remotePlayers[playerState.ClientID].desiredState = playerState;
             }
         }
     }
