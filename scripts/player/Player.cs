@@ -301,6 +301,7 @@ public partial class Player : Character
         physObj.Rotation = new Vec3() { X = GlobalRotation.X, Y = GlobalRotation.Y, Z = GlobalRotation.Z };
         physObj.Scale = new Vec3() { X = Scale.X, Y = Scale.Y, Z = Scale.Z };
         physObj.LinearVelocity = new Vec3() { X = Velocity.X, Y = Velocity.Y, Z = Velocity.Z };
+        state.PhysObj = physObj;
         return state;
     }
     public void FromNetworkMessage(PlayerState state)
