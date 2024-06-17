@@ -305,14 +305,14 @@ public partial class Player : Character
     }
     public void FromNetworkMessage(PlayerState state)
     {
-        this.clientID = state.ClientID;
-        this.GlobalPosition = new Vector3(state.PhysObj.Position.X, state.PhysObj.Position.Y, state.PhysObj.Position.Z);
-        this.GlobalRotation = new Vector3(state.PhysObj.Rotation.X, state.PhysObj.Rotation.Y, state.PhysObj.Rotation.Z);
-        this.Scale = new Vector3(state.PhysObj.Scale.X, state.PhysObj.Scale.Y, state.PhysObj.Scale.Z);
-        this.Velocity = new Vector3(state.PhysObj.LinearVelocity.X, state.PhysObj.LinearVelocity.Y, state.PhysObj.LinearVelocity.Z);
-        this.health.FromNetworkMessage(state.Playerhealth);
-        this.equipment.FromNetworkMessage(state.Equipment);
-        this.inventory.FromNetworkMessage(state.Inventory);
+        this.desiredState.clientID = state.ClientID;
+        this.desiredState.GlobalPosition = new Vector3(state.PhysObj.Position.X, state.PhysObj.Position.Y, state.PhysObj.Position.Z);
+        this.desiredState.GlobalRotation = new Vector3(state.PhysObj.Rotation.X, state.PhysObj.Rotation.Y, state.PhysObj.Rotation.Z);
+        this.desiredState.Scale = new Vector3(state.PhysObj.Scale.X, state.PhysObj.Scale.Y, state.PhysObj.Scale.Z);
+        this.desiredState.Velocity = new Vector3(state.PhysObj.LinearVelocity.X, state.PhysObj.LinearVelocity.Y, state.PhysObj.LinearVelocity.Z);
+        this.desiredState.health.FromNetworkMessage(state.Playerhealth);
+        this.desiredState.equipment.FromNetworkMessage(state.Equipment);
+        this.desiredState.inventory.FromNetworkMessage(state.Inventory);
 
     }
 
