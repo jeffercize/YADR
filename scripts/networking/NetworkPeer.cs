@@ -109,7 +109,6 @@ public partial class NetworkPeer : Node
         {
             case "startgame":
                 Global.UIManager.clearUI();
-
                 Global.instance.AddChild(Global.WorldSim);
                 Global.WorldSim.loadScene("res://scenes/debug.tscn");
                 Global.WorldSim.SpawnLocalPlayer(Global.WorldSim.GenerateLocalPlayer());

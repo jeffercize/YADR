@@ -120,6 +120,8 @@ public partial class Player : Character
         Equipment.equipMessage += onEquip;
         Equipment.unequipMessage += onUnequip;
 
+
+
         Global.debugLog("Testing to see if this player is me. PlayerID: " + clientID + " VS. my globalID: " + Global.clientID);
         if (Global.instance.isMe(clientID))
         {
@@ -131,51 +133,33 @@ public partial class Player : Character
             Global.UIManager.connectToPlayer(this);
             Godot.Input.MouseMode = Godot.Input.MouseModeEnum.Captured;
             Global.InputManager.SetProcessInput(true);
+            Global.InputManager.InputActionEvent += OnInputEvent;
         }
     }
 
-    private void HandleActions(PlayerInput input, double delta)
+    private void OnInputEvent(StringName action, bool pressed)
     {
-        foreach (string action in input.Actions.Keys)
+        switch (action)
         {
-            switch (action)
-            {
-                case "Jump":
-                    if (input.Actions[action])
+            case "Jump":
+                if (pressed)
+                {
+                    if (jumpButtonReady)
                     {
-                        if (jumpButtonReady)
-                        {
-                            onJumpPressed();
-                        }
-                        jumpButtonReady = false;
+                        onJumpPressed();
                     }
-                    else
-                    {
-                        jumpButtonReady = true;
-                    }
-                    break;
-                default:
-                    break;
-            }
+                    jumpButtonReady = false;
+                }
+                else
+                {
+                    jumpButtonReady = true;
+                }
+                break;
+            default:
+                break;
         }
     }
 
-    private void HandleMovementDirection(PlayerInput input, double delta)
-    {
-        Vector3 newVelocity = Velocity;
-
-
-
-        Velocity = newVelocity;
-    }
-
-
-    private void handleJumpingAndFalling(PlayerInput remoteInput, double delta)
-    {
-        Vector3 newVelocity = Velocity;
-  
-        Velocity = newVelocity;
-    }
     private void onUnequip(Equipment equipment, string slotName, Item item)
     {
         throw new NotImplementedException();
@@ -212,10 +196,14 @@ public partial class Player : Character
     //CAMERA SHIT////////////////////////////////////////////////
     public override void _Process(double delta)
     {
-        pov.Rotation = new Vector3((float)Mathf.Clamp(pov.Rotation.X - Global.InputManager.mouseDelta.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
-        Rotation = new Vector3(0, Rotation.Y - Global.InputManager.mouseDelta.X * (float)delta, 0);
-        Global.InputManager.mouseDelta.X = 0;
-        Global.InputManager.mouseDelta.Y = 0;
+        if (isMe)
+        {
+            pov.Rotation = new Vector3((float)Mathf.Clamp(pov.Rotation.X - Global.InputManager.mouseDelta.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
+            Rotation = new Vector3(0, Rotation.Y - Global.InputManager.mouseDelta.X * (float)delta, 0);
+            Global.InputManager.mouseDelta.X = 0;
+            Global.InputManager.mouseDelta.Y = 0;
+        }
+
     }
 
 
@@ -224,9 +212,16 @@ public partial class Player : Character
     public override void _PhysicsProcess(double delta)
     {
         Vector3 newVelocity = Velocity;
-        //Collect our current Input direction (drop the Y piece), and multiply it by our Transform Basis, rotating it so that forward input becomes forward in the direction we are facing
-        Vector3 dir = Transform.Basis * new Vector3(Global.InputManager.movementDirection.Y * maxSpeedX, 0, Global.InputManager.movementDirection.X * maxSpeedZ);
-
+        Vector3 dir = Vector3.Zero;
+        if (isMe)
+        {
+            //Collect our current Input direction (drop the Y piece), and multiply it by our Transform Basis, rotating it so that forward input becomes forward in the direction we are facing
+            dir = Transform.Basis * new Vector3(Global.InputManager.movementDirection.Y * maxSpeedX, 0, Global.InputManager.movementDirection.X * maxSpeedZ);
+        }
+        else
+        {
+            dir = PredictInput();
+        }
         //Create our desired vector, the direction we're going at max speed
         Vector3 targetVec = new Vector3(dir.X, 0, dir.Z);
 
@@ -278,6 +273,10 @@ public partial class Player : Character
         MoveAndSlide();
     }
 
+    private Vector3 PredictInput()
+    {
+        return Vector3.Zero;
+    }
 
     internal void IterativeSync()
     {

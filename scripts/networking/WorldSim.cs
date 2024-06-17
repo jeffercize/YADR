@@ -69,7 +69,8 @@ public partial class WorldSim : Node3D
             }
             else
             {
-                SpawnRemotePlayer(new Player(playerState));
+                SpawnRemotePlayer(GenerateRemotePlayer(playerState.ClientID));
+                remotePlayers[playerState.ClientID].desiredState = new Player(playerState);
             }
         }
     }
@@ -83,7 +84,6 @@ public partial class WorldSim : Node3D
     public void SpawnLocalPlayer(Player player)
     {
         localPlayer = player;
-
         AddChild(player);
         localPlayer.GlobalPosition = new Vector3(0, 10, 0);
     }
@@ -93,6 +93,13 @@ public partial class WorldSim : Node3D
         Player local = GD.Load<PackedScene>("res://scenes/Player.tscn").Instantiate<Player>();
         local.clientID = Global.clientID;
         return local;
+    }
+
+    public Player GenerateRemotePlayer(ulong clientID)
+    {
+        Player remote = GD.Load<PackedScene>("res://scenes/Player.tscn").Instantiate<Player>();
+        remote.clientID = clientID;
+        return remote;
     }
 
     public void loadScene(string scenePath)
