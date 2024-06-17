@@ -284,7 +284,7 @@ public partial class Player : Character
         this.Position = this.Position.Lerp(Global.Vec3ToVector3(desiredState.PhysObj.Position), 0.5f);
         this.Rotation = this.Rotation.Lerp(new Vector3(0, desiredState.PhysObj.Rotation.Y, 0),0.5f);
         this.pov.Rotation = this.pov.Rotation.Lerp(new Vector3(desiredState.PhysObj.Rotation.X, 0, 0),0.5f);
-        this.Scale = this.Scale.Lerp(Global.Vec3ToVector3(desiredState.PhysObj.Scale), 0.5f);
+
         this.Velocity = this.Velocity.Lerp(Global.Vec3ToVector3(desiredState.PhysObj.LinearVelocity), 0.5f);
     }
 
@@ -300,8 +300,8 @@ public partial class Player : Character
         //Global.debugLog("Packing player physics state for local player");
         physObj.Position = new Vec3() { X = Position.X, Y = Position.Y, Z = Position.Z };
         physObj.Rotation = new Vec3() { X = pov.Rotation.X, Y = Rotation.Y, Z = 0 };
-        physObj.Scale = new Vec3() { X = Scale.X, Y = Scale.Y, Z = Scale.Z };
-        physObj.LinearVelocity = new Vec3() { X = Velocity.X, Y = Velocity.Y, Z = Velocity.Z };
+     //   physObj.Scale = new Vec3() { X = Scale.X, Y = Scale.Y, Z = Scale.Z };
+      //  physObj.LinearVelocity = new Vec3() { X = Velocity.X, Y = Velocity.Y, Z = Velocity.Z };
         state.PhysObj = physObj;
         return state;
     }
