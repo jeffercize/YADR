@@ -211,18 +211,18 @@ public partial class Player : Character
 
     //MOVEMENT SHIT ///////////////////////////////////////////////
     public override void _PhysicsProcess(double delta)
+
     {
+        if (!isMe)
+        {
+            //MoveAndSlide();
+            return;
+        }
         Vector3 newVelocity = Velocity;
         Vector3 dir = Vector3.Zero;
-        if (isMe)
-        {
-            //Collect our current Input direction (drop the Y piece), and multiply it by our Transform Basis, rotating it so that forward input becomes forward in the direction we are facing
-            dir = Transform.Basis * new Vector3(Global.InputManager.movementDirection.Y * maxSpeedX, 0, Global.InputManager.movementDirection.X * maxSpeedZ);
-        }
-        else
-        {
-            dir = PredictInput();
-        }
+
+        //Collect our current Input direction (drop the Y piece), and multiply it by our Transform Basis, rotating it so that forward input becomes forward in the direction we are facing
+        dir = Transform.Basis * new Vector3(Global.InputManager.movementDirection.Y * maxSpeedX, 0, Global.InputManager.movementDirection.X * maxSpeedZ);
         //Create our desired vector, the direction we're going at max speed
         Vector3 targetVec = new Vector3(dir.X, 0, dir.Z);
 
@@ -285,7 +285,7 @@ public partial class Player : Character
         this.Rotation = this.Rotation.Lerp(new Vector3(0, desiredState.PhysObj.Rotation.Y, 0),0.5f);
         this.pov.Rotation = this.pov.Rotation.Lerp(new Vector3(desiredState.PhysObj.Rotation.X, 0, 0),0.5f);
 
-        this.Velocity = this.Velocity.Lerp(Global.Vec3ToVector3(desiredState.PhysObj.LinearVelocity), 0.5f);
+     //   this.Velocity = this.Velocity.Lerp(Global.Vec3ToVector3(desiredState.PhysObj.LinearVelocity), 0.5f);
     }
 
     internal PlayerState ToNetworkMessage()
