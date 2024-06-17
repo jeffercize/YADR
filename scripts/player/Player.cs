@@ -281,11 +281,11 @@ public partial class Player : Character
 
     internal void IterativeSync()
     {
-        this.Position = this.Position.Slerp(Global.Vec3ToVector3(desiredState.PhysObj.Position), 0.5f);
-        this.Rotation = new Vector3(0, desiredState.PhysObj.Rotation.Y, 0);
-        this.pov.Rotation = new Vector3(desiredState.PhysObj.Rotation.X, 0, 0);
-        this.Scale = this.Scale.Slerp(Global.Vec3ToVector3(desiredState.PhysObj.Scale), 0.5f);
-        this.Velocity = this.Velocity.Slerp(Global.Vec3ToVector3(desiredState.PhysObj.LinearVelocity), 0.5f);
+        this.Position = this.Position.Lerp(Global.Vec3ToVector3(desiredState.PhysObj.Position), 0.5f);
+        this.Rotation = this.Rotation.Lerp(new Vector3(0, desiredState.PhysObj.Rotation.Y, 0),0.5f);
+        this.pov.Rotation = this.pov.Rotation.Lerp(new Vector3(desiredState.PhysObj.Rotation.X, 0, 0),0.5f);
+        this.Scale = this.Scale.Lerp(Global.Vec3ToVector3(desiredState.PhysObj.Scale), 0.5f);
+        this.Velocity = this.Velocity.Lerp(Global.Vec3ToVector3(desiredState.PhysObj.LinearVelocity), 0.5f);
     }
 
     internal PlayerState ToNetworkMessage()
