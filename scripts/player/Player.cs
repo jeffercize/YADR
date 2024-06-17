@@ -215,7 +215,7 @@ public partial class Player : Character
     {
         if (!isMe)
         {
-            //MoveAndSlide();
+            MoveAndSlide();
             return;
         }
         Vector3 newVelocity = Velocity;
@@ -271,6 +271,7 @@ public partial class Player : Character
         }
 
         Velocity = newVelocity;
+        Scale= new Vector3(1, 1, 1);
         MoveAndSlide();
     }
 
@@ -281,11 +282,11 @@ public partial class Player : Character
 
     internal void IterativeSync()
     {
-        this.Position = this.Position.Lerp(Global.Vec3ToVector3(desiredState.PhysObj.Position), 0.5f);
-        this.Rotation = this.Rotation.Lerp(new Vector3(0, desiredState.PhysObj.Rotation.Y, 0),0.5f);
-        this.pov.Rotation = this.pov.Rotation.Lerp(new Vector3(desiredState.PhysObj.Rotation.X, 0, 0),0.5f);
+        this.Position = this.Position.Lerp(Global.Vec3ToVector3(desiredState.PhysObj.Position), 0.1f);
+        this.Rotation = this.Rotation.Lerp(new Vector3(0, desiredState.PhysObj.Rotation.Y, 0),0.1f);
+        this.pov.Rotation = this.pov.Rotation.Lerp(new Vector3(desiredState.PhysObj.Rotation.X, 0, 0),0.1f);
 
-     //   this.Velocity = this.Velocity.Lerp(Global.Vec3ToVector3(desiredState.PhysObj.LinearVelocity), 0.5f);
+        this.Velocity = this.Velocity.Lerp(Global.Vec3ToVector3(desiredState.PhysObj.LinearVelocity), 0.1f);
     }
 
     internal PlayerState ToNetworkMessage()
@@ -301,7 +302,7 @@ public partial class Player : Character
         physObj.Position = new Vec3() { X = Position.X, Y = Position.Y, Z = Position.Z };
         physObj.Rotation = new Vec3() { X = pov.Rotation.X, Y = Rotation.Y, Z = 0 };
      //   physObj.Scale = new Vec3() { X = Scale.X, Y = Scale.Y, Z = Scale.Z };
-      //  physObj.LinearVelocity = new Vec3() { X = Velocity.X, Y = Velocity.Y, Z = Velocity.Z };
+        physObj.LinearVelocity = new Vec3() { X = Velocity.X, Y = Velocity.Y, Z = Velocity.Z };
         state.PhysObj = physObj;
         return state;
     }
