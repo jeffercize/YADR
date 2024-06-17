@@ -11,7 +11,7 @@ public partial class Player : Character
 
     public Player(PlayerState playerState)
     {
-        FromNetworkMessage(playerState);
+        this.desiredState = playerState;
     }
 
     public PlayerState desiredState = new() { ClientID = Global.clientID, PhysObj = new() { Position = new() { X = 0,Y=0,Z=0 } } };
@@ -281,8 +281,9 @@ public partial class Player : Character
 
     internal void IterativeSync()
     {
-        this.GlobalPosition = this.GlobalPosition.Slerp(Global.Vec3ToVector3(desiredState.PhysObj.Position), 0.5f);
-        this.GlobalRotation = this.GlobalRotation.Slerp(Global.Vec3ToVector3(desiredState.PhysObj.Rotation), 0.5f);
+        this.Position = this.Position.Slerp(Global.Vec3ToVector3(desiredState.PhysObj.Position), 0.5f);
+        this.Rotation = new Vector3(0, desiredState.PhysObj.Rotation.Y, 0);
+        this.pov.Rotation = new Vector3(desiredState.PhysObj.Rotation.X, 0, 0);
         this.Scale = this.Scale.Slerp(Global.Vec3ToVector3(desiredState.PhysObj.Scale), 0.5f);
         this.Velocity = this.Velocity.Slerp(Global.Vec3ToVector3(desiredState.PhysObj.LinearVelocity), 0.5f);
     }
@@ -297,25 +298,14 @@ public partial class Player : Character
         state.ClientID = clientID;
         PhysicsObject physObj = new PhysicsObject();
         //Global.debugLog("Packing player physics state for local player");
-        physObj.Position = new Vec3() { X = GlobalPosition.X, Y = GlobalPosition.Y, Z = GlobalPosition.Z };
-        physObj.Rotation = new Vec3() { X = GlobalRotation.X, Y = GlobalRotation.Y, Z = GlobalRotation.Z };
+        physObj.Position = new Vec3() { X = Position.X, Y = Position.Y, Z = Position.Z };
+        physObj.Rotation = new Vec3() { X = pov.Rotation.X, Y = Rotation.Y, Z = 0 };
         physObj.Scale = new Vec3() { X = Scale.X, Y = Scale.Y, Z = Scale.Z };
         physObj.LinearVelocity = new Vec3() { X = Velocity.X, Y = Velocity.Y, Z = Velocity.Z };
         state.PhysObj = physObj;
         return state;
     }
-    public void FromNetworkMessage(PlayerState state)
-    {
-        this.desiredState.ClientID = state.ClientID;
-        this.desiredState.PhysObj.Position = Global.Vector3ToVec3(new Vector3(state.PhysObj.Position.X, state.PhysObj.Position.Y, state.PhysObj.Position.Z));
-        this.desiredState.PhysObj.Rotation = Global.Vector3ToVec3(new Vector3(state.PhysObj.Rotation.X, state.PhysObj.Rotation.Y, state.PhysObj.Rotation.Z));
-        this.desiredState.PhysObj.Scale = Global.Vector3ToVec3(new Vector3(state.PhysObj.Scale.X, state.PhysObj.Scale.Y, state.PhysObj.Scale.Z));
-        this.desiredState.PhysObj.LinearVelocity = Global.Vector3ToVec3(new Vector3(state.PhysObj.LinearVelocity.X, state.PhysObj.LinearVelocity.Y, state.PhysObj.LinearVelocity.Z));
-       // this.desiredState.Playerhealth.FromNetworkMessage(state.Playerhealth);
-       // this.desiredState.Equipment.FromNetworkMessage(state.Equipment);
-       // this.desiredState.inventory.FromNetworkMessage(state.Inventory);
 
-    }
 
     internal void HardSync()
     {
