@@ -28,7 +28,7 @@
               "RelativeDocumentMoniker": "scripts\\terrain\\TerrainGeneration.cs",
               "ToolTip": "C:\\Users\\jeffe\\Desktop\\YADR\\scripts\\terrain\\TerrainGeneration.cs",
               "RelativeToolTip": "scripts\\terrain\\TerrainGeneration.cs",
-              "ViewState": "AQIAAAwCAAAAAAAAAAASwBgCAACCAAAA",
+              "ViewState": "AQIAADgCAAAAAAAAAAAWwFgCAAAJAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-06-01T19:47:52.858Z",
               "EditorCaption": ""
@@ -43,8 +43,7 @@
               "RelativeToolTip": "scripts\\terrain\\TerrainChunk.cs",
               "ViewState": "AQIAAIMBAAAAAAAAAAAewJ8BAAALAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-06-02T16:22:59.717Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-06-02T16:22:59.717Z"
             }
           ]
         }

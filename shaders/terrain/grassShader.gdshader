@@ -60,9 +60,9 @@ float noise12(vec2 p) {
   vec2 f = fract(p);
   vec2 u = smoothstep(vec2(0.0), vec2(1.0), f);
 
-	float val = mix( mix( hash12( i + vec2(0.0, 0.0) ), 
+	float val = mix( mix( hash12( i + vec2(0.0, 0.0) ),
                         hash12( i + vec2(1.0, 0.0) ), u.x),
-                   mix( hash12( i + vec2(0.0, 1.0) ), 
+                   mix( hash12( i + vec2(0.0, 1.0) ),
                         hash12( i + vec2(1.0, 1.0) ), u.x), u.y);
   return val * 2.0 - 1.0;
 }
@@ -141,15 +141,15 @@ void vertex() {
 	//Noise Sampling for Wind\\
 	float noiseSample = noise12(vec2(time * 0.35 * 0.5) + grassBladeWorldPos.xz);
 	randomLean += noiseSample * heightPercent * 0.2;// * windStrength;
-	
-	
+
+
 
 	float windNoiseSample = noise12(grassBladeWorldPos.xz * 0.5 + time*(windStrength+0.5));
 	float windLeanAngle = remap(windNoiseSample, -1.0, 1.0, 0.25, 1.0);
 	windLeanAngle = easeIn(windLeanAngle, 2.0) * 1.25;
 	windLeanAngle *= heightPercent;
 	windLeanAngle *= (windStrength+0.5);
-	
+
 	float windHeightMixValue = min(adjustedGrassTotalHeight, 1.0);
 	float windStrengthMix = mix(0.2, 1.0, windStrength+0.5);
 
@@ -165,7 +165,7 @@ void vertex() {
 
 	mat3 grassMat = rotateAxis(windAxis, windLeanAngle) * rotateX(randomLean);
 
-	VERTEX.xyz = grassMat * VERTEX.xyz; 
+	VERTEX.xyz = grassMat * VERTEX.xyz;
 
 
 	//heightmap sampling
@@ -192,7 +192,7 @@ void vertex() {
 	vec3 cameraPosition = INV_VIEW_MATRIX[3].xyz;
 	vec3 viewDir = normalize(cameraPosition - grassBladeWorldPos);
 	vec3 viewDirXZ = normalize(vec3(viewDir.x, 0.0, viewDir.z));
-	
+
 
 //Rounded Normals\\
 	float totalLean = randomLean *  heightPercent + windLeanAngle;
@@ -245,7 +245,7 @@ void vertex() {
 
 void fragment() {
 	float steepnessThreshold = 0.9;  // Adjust this value as needed
-	
+
 	//AO
 	float density = 0.5;
 	float aoForDensity = mix(1.0, 0.25, density);
@@ -276,7 +276,7 @@ void fragment() {
 
 
 	//ALPHA = alpha;
-    
+
 	//ROUGHNESS
 	//ROUGHNESS = 0.9;
 }

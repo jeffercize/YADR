@@ -510,8 +510,8 @@ public partial class TerrainGeneration : Node3D
             // Submit to GPU and wait for sync
             GD.Print("Submit Blur Noise Job");
             rd.Submit();
-            int waitTime = 3000;
-            Thread.Sleep(waitTime);
+/*            int waitTime = 3000;
+            Thread.Sleep(waitTime);*/
             rd.Sync();
 
             //Get Data
@@ -534,16 +534,16 @@ public partial class TerrainGeneration : Node3D
     public Image GPUGeneratePath(RenderingDevice rd, Image noiseImage, int offsetX, int offsetY, int x_axis, int y_axis, Vector3[] points)
     { 
 
-        //TODO this is the shit that is broken idk :) if we just loop over all points then its fine but of course that is terrible
-        int gridSize = 512;
+        //TODO this is the shit that is broken idk :) if we just loop over all points then its fine but of course that isnt an option
+        int gridSize = 256;
         // Calculate the bounds for cell IDs based on the specified rectangular region
-        int minX = offsetX / gridSize;
-        int maxX = (offsetX + x_axis) / gridSize;
-        int minY = offsetY / gridSize;
-        int maxY = (offsetY + y_axis) / gridSize;
-        int totalCellsX = (maxX - minX + 1);
-        int totalCellsY = (maxY - minY + 1);
-        int totalCells = totalCellsX * totalCellsY;
+        int minX = offsetX / gridSize; // 0/512 = 0
+        int maxX = (offsetX + x_axis) / gridSize; //0+8192 / 512 = 18
+        int minY = offsetY / gridSize; // 0/512 = 0
+        int maxY = (offsetY + y_axis) / gridSize; //0+8192 / 512 = 18
+        int totalCellsX = (maxX - minX); //18
+        int totalCellsY = (maxY - minY); //18
+        int totalCells = totalCellsX * totalCellsY; //324
 
         // Initialize with the correct size based on grid dimensions
         (int StartIndex, int Count)[] cellIndexAndCountArray = new (int, int)[totalCells];
@@ -555,25 +555,58 @@ public partial class TerrainGeneration : Node3D
             cellIndexAndCountArray[i] = (0, 0);
         }
 
+        // Initialize a dictionary to hold lists of points for each cell
+        System.Collections.Generic.Dictionary<(int cellX, int cellY), List<Vector3>> cellPointsDict = new System.Collections.Generic.Dictionary<(int cellX, int cellY), List<Vector3>>();
+        GD.Print("OffsetX: " + offsetX + " x_axis: " + x_axis);
         foreach (Vector3 point in points)
         {
-            int cellX = (int)Math.Floor(point.X / gridSize);
-            int cellY = (int)Math.Floor(point.Y / gridSize);
-            int cellIndex = cellX + cellY * totalCellsX;
+            int cellX = (int)Math.Floor((point.X - (float)offsetX) / (float)gridSize);
+            int cellY = (int)Math.Floor((point.Y - (float)offsetY) / (float)gridSize);
 
             if (cellX >= 0 && cellX < totalCellsX && cellY >= 0 && cellY < totalCellsY)
             {
-                if (cellIndexAndCountArray[cellIndex].Count == 0)
+                // Create a key for the current cell
+                var cellKey = (cellX, cellY);
+
+                // If the cell is not already in the dictionary, add it with a new list
+                if (!cellPointsDict.ContainsKey(cellKey))
                 {
-                    cellIndexAndCountArray[cellIndex].StartIndex = pointsList.Count;
+                    cellPointsDict[cellKey] = new List<Vector3>();
                 }
-                cellIndexAndCountArray[cellIndex].Count++;
-                pointsList.Add(point);
+
+                // Add the current point to the list for this cell
+                cellPointsDict[cellKey].Add(point);
             }
+        }
+
+        foreach (var kvp in cellPointsDict)
+        {
+            var cellKey = kvp.Key;
+            var pointsInCell = kvp.Value;
+            int cellIndex = cellKey.cellX + (cellKey.cellY * totalCellsX);
+            GD.Print($"Cell Location: {cellKey}, Count: {pointsInCell.Count}, Cell Index: {cellIndex}AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+            GD.Print($"Point: {pointsInCell.First()}");
+            // Assuming cellIndexAndCountArray has been initialized to the correct size
+            cellIndexAndCountArray[cellIndex].StartIndex = pointsList.Count; // Set the start index for this cell
+            cellIndexAndCountArray[cellIndex].Count = pointsInCell.Count; // Set the count of points for this cell
+
+            // Add all points from this cell to the pointsList
+            pointsList.AddRange(pointsInCell);
+        }
+
+        for (int i = 0; i < cellIndexAndCountArray.Length; i++)
+        {
+            var cell = cellIndexAndCountArray[i];
+            GD.Print($"Cell Index: {i}, StartIndex: {cell.StartIndex}, Count: {cell.Count}");
         }
 
         // Convert pointsList to an array
         Vector3[] pointsArray = pointsList.ToArray();
+/*        for (int i = 0; i < pointsArray.Length/4; i++)
+        {
+            var cell = pointsArray[i];
+            GD.Print($"Point Index: {i}, Point Value: {cell}");
+        }*/
 
         //setup compute shader
 
@@ -657,22 +690,22 @@ public partial class TerrainGeneration : Node3D
         var cellIndexUniform = new RDUniform
         {
             UniformType = RenderingDevice.UniformType.StorageBuffer,
-            Binding = 3 // Assuming the next available binding index
+            Binding = 3
         };
         cellIndexUniform.AddId(cellIndexBuffer);
 
         // Calculate the size of the buffer needed
-        int bufferSize = points.Length * sizeof(float) * 3; // 3 floats per Vector3, 4 bytes per float
+        int bufferSize = pointsArray.Length * sizeof(float) * 3; // 3 floats per Vector3, 4 bytes per float
 
         // Create a byte array to hold the points data
         byte[] pointsBytes = new byte[bufferSize];
 
         // Fill the byte array with the points data
-        for (int i = 0; i < points.Length; i++)
+        for (int i = 0; i < pointsArray.Length; i++)
         {
-            Buffer.BlockCopy(BitConverter.GetBytes(points[i].X), 0, pointsBytes, i * sizeof(float) * 3, sizeof(float));
-            Buffer.BlockCopy(BitConverter.GetBytes(points[i].Y), 0, pointsBytes, i * sizeof(float) * 3 + sizeof(float), sizeof(float));
-            Buffer.BlockCopy(BitConverter.GetBytes(points[i].Z), 0, pointsBytes, i * sizeof(float) * 3 + 2 * sizeof(float), sizeof(float));
+            Buffer.BlockCopy(BitConverter.GetBytes(pointsArray[i].X), 0, pointsBytes, i * sizeof(float) * 3, sizeof(float));
+            Buffer.BlockCopy(BitConverter.GetBytes(pointsArray[i].Y), 0, pointsBytes, i * sizeof(float) * 3 + sizeof(float), sizeof(float));
+            Buffer.BlockCopy(BitConverter.GetBytes(pointsArray[i].Z), 0, pointsBytes, i * sizeof(float) * 3 + 2 * sizeof(float), sizeof(float));
         }
 
         // Create the storage buffer with the points data
@@ -681,11 +714,11 @@ public partial class TerrainGeneration : Node3D
         var pointsArrayUniform = new RDUniform
         {
             UniformType = RenderingDevice.UniformType.StorageBuffer,
-            Binding = 4 // Assuming the next available binding index
+            Binding = 4
         };
         pointsArrayUniform.AddId(pointsBuffer);
 
-        //create the uniformSet
+        // Create the uniformSet
         Rid blenduniformSet = rd.UniformSetCreate(new Array<RDUniform> { noiseSamplerUniform, blendOutputTexUniform, imageDimensionsUniform, pointsArrayUniform, cellIndexUniform }, blendShader, 0);
 
         // Create a compute pipeline
@@ -703,8 +736,8 @@ public partial class TerrainGeneration : Node3D
         // Submit to GPU and wait for sync
         GD.Print("Submit Generate Path Job");
         rd.Submit();
-        int waitTime = 3000;
-        Thread.Sleep(waitTime);
+        /*int waitTime = 3000;
+        Thread.Sleep(waitTime);//this was an attempt at avoiding the hitches didnt seem to work?*/
         rd.Sync();
 
         //rd.FreeRid(blenduniformSet); //for some reason this is invalid to free?
@@ -718,6 +751,7 @@ public partial class TerrainGeneration : Node3D
         rd.FreeRid(noiseSampler);
         rd.FreeRid(noiseTex);
         rd.FreeRid(pointsBuffer);
+        rd.FreeRid(cellIndexBuffer);
         rd.FreeRid(blendOutputTex);
         rd.FreeRid(imageDimensionsBuffer);
 
@@ -728,10 +762,10 @@ public partial class TerrainGeneration : Node3D
 	{
         //move offset back by 10 and add 20 extra pixels to discard after blurring
         //that way we have a ring of extra pixels so we can calculate blur
-        offsetX -= 16;
+/*        offsetX -= 16;
         x_axis += 32;
         offsetY -= 16;
-        y_axis += 32;
+        y_axis += 32;*/
         
 
         //consider moving all this noise generation to GPU and do errosion and other fun stuff
@@ -790,21 +824,21 @@ public partial class TerrainGeneration : Node3D
         // Get the player's global position
         Vector3 playerPosition = player.GlobalTransform.Origin;
         // Calculate the player's current chunk
-        int playerChunkX = (int)Math.Floor((playerPosition.X / 2048));
+        int playerChunkX = (int)Math.Floor((playerPosition.X / 2048)); //512 * vertex expansion (which is 4 when writing this)
         int playerChunkY = (int)Math.Floor((playerPosition.Z / 2048));
 
         //generate new regions heightmaps and other processing if the player is getting close enough to them
-        int regionSize = 4;
+        int regionSize = 4; //number of chunks in a region 16 gives you a region size of 8192x8192
         int playerRegionX = (playerChunkX / regionSize);
         int playerRegionY = (playerChunkY / regionSize);
 
-        for (int i = 0; i < 2; i++)
+        for (int i = 0; i < 2; i++) //probably switch to -1 <= 1, but leaving because this is probably all getting thrown out
         {
             for (int j = 0; j < 2; j++)
             {
                 if (!regionLoaded.TryGetValue((playerRegionX + i, playerChunkY + j), out bool hasRegion))
                 {
-                    GD.Print(playerRegionX + i + " " + playerChunkY + j);
+                    GD.Print((playerRegionX + i) + " " + (playerChunkY + j));
                     if (renderingDevices.Any())
                     {
                         if (renderingDevices.TryDequeue(out RenderingDevice rd))
@@ -820,7 +854,7 @@ public partial class TerrainGeneration : Node3D
     private void GenerateRegion(RenderingDevice rd, int regionX, int regionY, int x_axis, int y_axis, int regionSize)
     {
         //each region is regionsize by regionsize chunks
-        GD.Print(regionX * regionSize * x_axis + " " + regionY * regionSize * y_axis + " " + x_axis * regionSize + " " + y_axis * regionSize);
+        GD.Print("OffsetX: " + regionX * regionSize * x_axis + " OffsetY: " + regionY * regionSize * y_axis + " x_axis: " + x_axis * regionSize + " y_axis: " + y_axis * regionSize);
         Image regionImg = GenerateTerrain(rd, regionX * regionSize * x_axis, regionY * regionSize * y_axis, x_axis * regionSize, y_axis* regionSize);
         regionImg.SavePng("C:\\Users\\jeffe\\test_images\\region(" + regionX + "," + regionY + ").png");
         for (int i = 0; i < regionSize; i++)
