@@ -1,6 +1,6 @@
 shader_type spatial;
 
-uniform sampler2D heightMap : repeat_disable;
+uniform sampler2D heightMap : repeat_disable, filter_nearest;
 uniform sampler2D rockTexture;
 uniform sampler2D grassTexture;
 uniform sampler2D roadTexture;

@@ -10,6 +10,10 @@ using System.Reflection;
 
 public partial class TerrainChunk : Node3D
 {
+    public static int highQuality = 4;
+    public static int midQuality = 16;
+    public static int lowQuality = 32;
+
     ImageTexture heightMapTexture;
     CompressedTexture2D rock;
     CompressedTexture2D grass;
@@ -49,6 +53,13 @@ public partial class TerrainChunk : Node3D
     bool cleaningUp = false;
     bool deployedMesh = false;
 
+    Dictionary shape_data;
+
+    //get rid of for production
+    StaticBody3D _debugStaticBody;
+    CollisionShape3D debugColShape;
+    HeightMapShape3D hshape;
+
     public TerrainChunk(Image mapImage, Image paddedImg, float heightScale, int x_axis, int y_axis, int offsetX, int offsetY, bool wantGrass, int quality, TerrainGeneration parent, RDShaderFile blendShaderFile, Shader grassShader, CompressedTexture2D rock, CompressedTexture2D grass, CompressedTexture2D road, CompressedTexture2D rockNormal, CompressedTexture2D grassNormal, Shader terrainShader)
 	{
         this.mapImage = mapImage;
@@ -73,10 +84,13 @@ public partial class TerrainChunk : Node3D
     public override void _Ready()
     {
         Stopwatch sw = Stopwatch.StartNew();
-        //Thread setupColliderThread = new Thread(() => BuildCollision(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX - 0.5f, 0.0f, offsetY - 0.5f)));
-        //setupColliderThread.Start();
-        //BuildDebugCollision(paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX*2.0f, 0.0f, offsetY*2.0f), quality); //TODO kinda weird that we adjust by 0.5 here
 
+        if(quality <= highQuality)
+        {
+            //BuildDebugCollision(paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX * 4.0f, 0.0f, offsetY * 4.0f), quality);
+            Thread setupColliderThread = new Thread(() => BuildCollision(paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX*4.0f, 0.0f, offsetY*4.0f), quality));
+            setupColliderThread.Start();
+        }
         setupMeshThread = new Thread(() => BuildMesh(paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX*4.0f, 0.0f, offsetY*4.0f), quality));
         setupMeshThread.Start();                                  
         //BuildMesh(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX, 0.0f, offsetY));
@@ -122,9 +136,9 @@ public partial class TerrainChunk : Node3D
 
 
         //we need to check if the mesh setup thread is running because it is potentially still working
-        if (setupMeshThread.IsAlive)
+        Stopwatch sw = Stopwatch.StartNew();
+        while (setupMeshThread.IsAlive)
         {
-            Stopwatch sw = Stopwatch.StartNew();
             setupMeshThread.Join();
             if(sw.ElapsedMilliseconds > 4)
             {
@@ -138,9 +152,14 @@ public partial class TerrainChunk : Node3D
         }
         Thread rebuildMeshThread = new Thread(() => RebuildMesh(new Vector3(offsetX*4.0f, 0.0f, offsetY*4.0f)));
         rebuildMeshThread.Start();
-        
+        if (quality <= highQuality)
+        {
+            //CallDeferred(TerrainChunk.MethodName.RebuildDebugCollision, paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX * 4.0f, 0.0f, offsetY * 4.0f), quality);
+            //RebuildDebugCollision(paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX * 4.0f, 0.0f, offsetY * 4.0f), quality);
+            RebuildCollisionMesh(paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX * 4.0f, 0.0f, offsetY * 4.0f), quality);
+        }
 
-        //RebuildCollision();
+
         //RebuildNavigationMesh();
 
         if (wantGrass)
@@ -149,16 +168,11 @@ public partial class TerrainChunk : Node3D
         }
     }
 
-    float[] mapData;
-    Dictionary shape_data;
-    public void BuildCollision(Image heightMap, float heightScale, int width, int depth, Vector3 globalPosition, int resolution = 2)
+    public void BuildCollision(Image heightMap, float heightScale, int width, int depth, Vector3 globalPosition, int resolution)
     {
-        Image temp = new Image();
-        temp.CopyFrom(heightMap);
-        temp.Resize(temp.GetWidth() / resolution + 1, temp.GetHeight() / resolution + 1, Image.Interpolation.Nearest);//maybe switch to nearest
-        width = temp.GetWidth();
-        depth = temp.GetHeight();
-        mapData = new float[width * depth];
+        width = (width / resolution) + 1;
+        depth = (depth / resolution) + 1;
+        float[] mapData = new float[width * depth];
 
         float minHeight = float.MaxValue;
         float maxHeight = float.MinValue;
@@ -168,7 +182,7 @@ public partial class TerrainChunk : Node3D
             for (int j = depth - 1; j >= 0; j--)
             {
                 int index = i * depth + (depth - 1 - j);
-                mapData[index] = temp.GetPixel(i, j).R * heightScale;
+                mapData[index] = heightMap.GetPixel(i * resolution + 15 , j * resolution + 15).R * heightScale; //+16 because we are using the padded image
                 if (mapData[index] < minHeight)
                 {
                     minHeight = mapData[index];
@@ -179,14 +193,11 @@ public partial class TerrainChunk : Node3D
                 }
             }
         }
-        //Transform3D xform = new Transform3D(Basis.Identity, globalPosition);
-        Transform3D xform = new Transform3D(new Basis(new Vector3(0f, 1f, 0f), Mathf.Pi * 0.5f), new Vector3(width * 0.5f, 0.0f, depth * 0.5f));
-        xform = xform.Scaled(new Vector3((float)resolution, 1.0f, (float)resolution));
+
+        Transform3D xform = new Transform3D(new Basis(new Vector3(0f, 1f, 0f), Mathf.Pi * 0.5f), new Vector3(width * 0.5f - 0.5f, 0.0f, depth * 0.5f - 0.5f)); 
+        xform = xform.Scaled(new Vector3((float)4.0f*resolution, 1.0f, (float)4.0f*resolution)); //multiple by vertex spacing and the resolution
         xform = xform.Translated(globalPosition);
 
-        // scale the xform if we want to increase or decrease mesh_vertex_spacing, I think a value of 1 is good for now
-        //xform.scale(Vector3(_mesh_vertex_spacing, 1.f, _mesh_vertex_spacing));
-        //xform = xform.Scaled(new Vector3(2.0f, 2.0f, 2.0f));
 
         shape_data = new Dictionary();
         shape_data["width"] = width;
@@ -225,12 +236,12 @@ public partial class TerrainChunk : Node3D
     public bool BuildDebugCollision(Image heightMap, float heightScale, int width, int depth, Vector3 globalPosition, int resolution)
     {
         //GD.Print("Building debug collision. Disable this mode for releases");
-        StaticBody3D _debugStaticBody = new StaticBody3D();
+        _debugStaticBody = new StaticBody3D();
         _debugStaticBody.Name = "StaticBody3D";
         AddChild(_debugStaticBody);
-
         shape = PhysicsServer3D.HeightmapShapeCreate();
-
+        width = (width / resolution) + 1;
+        depth = (depth / resolution) + 1;
         float[] mapData = new float[width * depth];
 
         float minHeight = float.MaxValue;
@@ -241,7 +252,7 @@ public partial class TerrainChunk : Node3D
             for (int j = depth - 1; j >= 0; j--)
             {
                 int index = i * depth + (depth - 1 - j);
-                mapData[index] = heightMap.GetPixel(i+16, j+16).R * heightScale; //+16 because we are using the padded image
+                mapData[index] = heightMap.GetPixel(i * resolution + 15 , j * resolution + 15).R * heightScale; //+16 because we are using the padded image
                 if (mapData[index] < minHeight)
                 {
                     minHeight = mapData[index];
@@ -253,15 +264,15 @@ public partial class TerrainChunk : Node3D
             }
         }
 
-        Transform3D xform = new Transform3D(new Basis(new Vector3(0f, 1f, 0f), Mathf.Pi * 0.5f), new Vector3(width * 0.5f, 0.0f, depth * 0.5f)); 
-        CollisionShape3D debugColShape = new CollisionShape3D();
-        xform = xform.Scaled(new Vector3((float)resolution, 1.0f, (float)resolution));
+        Transform3D xform = new Transform3D(new Basis(new Vector3(0f, 1f, 0f), Mathf.Pi * 0.5f), new Vector3(width * 0.5f - 0.5f, 0.0f, depth * 0.5f - 0.5f)); 
+        debugColShape = new CollisionShape3D();
+        xform = xform.Scaled(new Vector3((float)4.0f*resolution, 1.0f, (float)4.0f*resolution)); //multiple by vertex spacing and the resolution
         xform = xform.Translated(globalPosition);
         debugColShape.Name = "CollisionShape3D";
         _debugStaticBody.AddChild(debugColShape);
         debugColShape.Owner = _debugStaticBody;
 
-        HeightMapShape3D hshape = new HeightMapShape3D();
+        hshape = new HeightMapShape3D();
         hshape.MapWidth = width;
         hshape.MapDepth = depth;
         hshape.MapData = mapData;
@@ -338,8 +349,6 @@ public partial class TerrainChunk : Node3D
 
     private void BuildMesh(Image heightMap, float heightScale, int width, int depth, Vector3 globalPosition, int resolution)
     {
-        int originalWidth = width;
-        int originalDepth = depth;
         myGlobalPosition = globalPosition;
         // Create an array for the vertices
         width = (width / resolution) + 1;
@@ -410,10 +419,10 @@ public partial class TerrainChunk : Node3D
         Transform3D xform = new Transform3D(Basis.Identity, myGlobalPosition);
 
         RenderingServer.InstanceSetTransform(instance, xform);
-/*        if(quality >= 8)
+        if(quality >= 8)
         {
-            RenderingServer.InstanceGeometrySetVisibilityRange(instance, 3600.0f, 0.0f, 500.0f, 0.0f, RenderingServer.VisibilityRangeFadeMode.Self);
-        }*/
+            RenderingServer.InstanceGeometrySetVisibilityRange(instance, 1768.0f, 0.0f, 500.0f, 0.0f, RenderingServer.VisibilityRangeFadeMode.Self);
+        }
         ShaderMaterial terrainMat = new ShaderMaterial();
         terrainMat.Shader = terrainShader;
         // Create a RID for the material and set its shader
@@ -447,6 +456,102 @@ public partial class TerrainChunk : Node3D
         Transform3D xform = new Transform3D(Basis.Identity, globalPosition);
         RenderingServer.InstanceSetTransform(instance, xform);
         RenderingServer.InstanceSetVisible(instance, true);
+    }
+
+    public void RebuildDebugCollision(Image heightMap,  float heightScale, int width, int depth, Vector3 globalPosition, int resolution)
+    {
+        GD.Print("rebuild collider");
+        width = (width / resolution) + 1;
+        depth = (depth / resolution) + 1;
+        float[] mapData = new float[width * depth];
+
+        float minHeight = float.MaxValue;
+        float maxHeight = float.MinValue;
+
+        for (int i = 0; i < width; i++)
+        {
+            for (int j = depth - 1; j >= 0; j--)
+            {
+                int index = i * depth + (depth - 1 - j);
+                mapData[index] = heightMap.GetPixel(i * resolution + 15, j * resolution + 15).R * heightScale; //+16 because we are using the padded image
+                if (mapData[index] < minHeight)
+                {
+                    minHeight = mapData[index];
+                }
+                if (mapData[index] > maxHeight)
+                {
+                    maxHeight = mapData[index];
+                }
+            }
+        }
+
+        Transform3D xform = new Transform3D(new Basis(new Vector3(0f, 1f, 0f), Mathf.Pi * 0.5f), new Vector3(width * 0.5f - 0.5f, 0.0f, depth * 0.5f - 0.5f));
+        xform = xform.Scaled(new Vector3((float)4.0f * resolution, 1.0f, (float)4.0f * resolution)); //multiple by vertex spacing and the resolution
+        xform = xform.Translated(globalPosition);
+        hshape.MapWidth = width;
+        hshape.MapDepth = depth;
+        CallDeferred(TerrainChunk.MethodName.RedeployDebugCollision, xform, mapData);
+    }
+    public void RedeployDebugCollision(Transform3D xform, float[] mapData)
+    {
+        hshape.MapData = mapData;
+        debugColShape.GlobalTransform = xform;
+        debugColShape.Shape = hshape;
+    }
+
+    public void RebuildCollisionMesh(Image heightMap, float heightScale, int width, int depth, Vector3 globalPosition, int resolution = 2)
+    {
+        width = (width / resolution) + 1;
+        depth = (depth / resolution) + 1;
+        float[] mapData = new float[width * depth];
+
+        float minHeight = float.MaxValue;
+        float maxHeight = float.MinValue;
+
+        for (int i = 0; i < width; i++)
+        {
+            for (int j = depth - 1; j >= 0; j--)
+            {
+                int index = i * depth + (depth - 1 - j);
+                mapData[index] = heightMap.GetPixel(i * resolution + 15, j * resolution + 15).R * heightScale; //+16 because we are using the padded image
+                if (mapData[index] < minHeight)
+                {
+                    minHeight = mapData[index];
+                }
+                if (mapData[index] > maxHeight)
+                {
+                    maxHeight = mapData[index];
+                }
+            }
+        }
+
+        Transform3D xform = new Transform3D(new Basis(new Vector3(0f, 1f, 0f), Mathf.Pi * 0.5f), new Vector3(width * 0.5f - 0.5f, 0.0f, depth * 0.5f - 0.5f));
+        xform = xform.Scaled(new Vector3((float)4.0f * resolution, 1.0f, (float)4.0f * resolution)); //multiple by vertex spacing and the resolution
+        xform = xform.Translated(globalPosition);
+
+        shape_data = new Dictionary();
+        shape_data["width"] = width;
+        shape_data["depth"] = depth;
+        shape_data["heights"] = mapData;
+        shape_data["min_height"] = minHeight;
+        shape_data["max_height"] = maxHeight;
+        if (cleaningUp == false)
+        {
+            CallDeferred(TerrainChunk.MethodName.RedeployCollision, shape_data, xform);
+        }
+    }
+
+    public void RedeployCollision(Dictionary shape_data, Transform3D xform)
+    {
+        Stopwatch sw = Stopwatch.StartNew();
+        PhysicsServer3D.ShapeSetData(shape, shape_data);
+        PhysicsServer3D.BodySetShape(staticBody, 0, shape);
+        PhysicsServer3D.BodySetShapeTransform(staticBody, 0, xform);
+
+        if (sw.ElapsedMilliseconds > 2)
+        {
+            GD.Print("Collision Re-Deploy Time: " + sw.ElapsedMilliseconds);
+        }
     }
 
     public void CleanUp()
