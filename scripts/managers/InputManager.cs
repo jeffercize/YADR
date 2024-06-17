@@ -8,6 +8,8 @@ public partial class InputManager : Node
     public float mouseSens = .1f;
 
     public PlayerInput localInput = new PlayerInput();
+    public Vector2 movementDirection = Vector2.Zero;
+    public Vector2 mouseDelta = Vector2.Zero;
 
     public delegate void InputActionEventHandler(StringName action,bool pressed);
     public event InputActionEventHandler InputActionEvent;
@@ -26,14 +28,14 @@ public partial class InputManager : Node
     {
         if (@event is InputEventMouseMotion mouse && Input.MouseMode == Input.MouseModeEnum.Captured)
         {
-            Vector2 mouseDelta = (mouse.ScreenRelative * mouseSens);
+            mouseDelta = (mouse.ScreenRelative * mouseSens);
             localInput.LookDelta = new Vec2() { X = mouseDelta.X, Y = mouseDelta.Y };
             localInput.LookDirection = new Vec2() { X = localInput.LookDirection.X - mouseDelta.X, Y = localInput.LookDirection.Y - mouseDelta.Y };
         }
 
         if (@event.IsAction("moveForward") || @event.IsAction("moveBackward") || @event.IsAction("moveLeft") || @event.IsAction("moveRight"))
         {
-            Vector2 movementDirection = Input.GetVector("moveForward", "moveBackward", "moveLeft", "moveRight");
+            movementDirection = Input.GetVector("moveForward", "moveBackward", "moveLeft", "moveRight");
             localInput.MovementDirection = new Vec2() { X = movementDirection.X, Y = movementDirection.Y };
         }
 

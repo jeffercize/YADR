@@ -95,4 +95,14 @@ public partial class Equipment : Node
         }
         return false;
     }
+
+    internal NetworkMessages.Equipment ToNetworkMessage()
+    {
+      return new NetworkMessages.Equipment();
+    }
+
+    internal void FromNetworkMessage(NetworkMessages.Equipment equipment)
+    {
+       
+    }
 }

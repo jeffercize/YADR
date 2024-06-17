@@ -1,4 +1,5 @@
 ﻿using Godot;
+using ImGuiGodot.Internal;
 using ImGuiNET;
 using NetworkMessages;
 using System;
@@ -8,10 +9,16 @@ public partial class Player : Character
     public Player() { }
     public Player(ulong clientID) { this.clientID = clientID; }
 
+    public Player(PlayerState playerState)
+    {
+    }
+
+    public Player desiredState;
 
     //Core properties of Player
     public Equipment equipment;
     public Inventory inventory;
+    public Health health;
     public ulong clientID = 0;
     public bool spawned = false;
     public bool isMe = false;
@@ -91,9 +98,6 @@ public partial class Player : Character
     public Vector3 leftGunOriginPos;
     public float leftGunOriginRecoilRotation;
 
-    public PlayerInput lastFrameInput = new PlayerInput();
-
-
 
     public override void _Ready()
     {
@@ -125,39 +129,9 @@ public partial class Player : Character
             pov.AddChild(cam);
             cam.Current = true;
             Global.UIManager.connectToPlayer(this);
-            Input.MouseMode = Input.MouseModeEnum.Captured;
+            Godot.Input.MouseMode = Godot.Input.MouseModeEnum.Captured;
             Global.InputManager.SetProcessInput(true);
         }
-    }
-
-
-    public void Tick(PlayerInput input, double delta)
-    {
-        if (!isMe)
-        {
-            HandleLookingDirection(input, delta);
-        }
-
-        HandleMovementDirection(input, delta);
-
-        HandleActions(input, delta);
-
-        handleJumpingAndFalling(input, delta);
-
-        MoveAndSlide();
-    }
-
-
-    public PlayerInput PredictInput(PlayerInput input, double delta)
-    {
-        PlayerInput predictedInput = new PlayerInput();
-        predictedInput.MovementDirection = input.MovementDirection;
-        predictedInput.LookDirection = input.LookDirection;
-        foreach (string action in input.Actions.Keys)
-        {
-            predictedInput.Actions.Add(action, input.Actions[action]);
-        }
-        return predictedInput;
     }
 
     private void HandleActions(PlayerInput input, double delta)
@@ -190,8 +164,68 @@ public partial class Player : Character
     {
         Vector3 newVelocity = Velocity;
 
+
+
+        Velocity = newVelocity;
+    }
+
+
+    private void handleJumpingAndFalling(PlayerInput remoteInput, double delta)
+    {
+        Vector3 newVelocity = Velocity;
+  
+        Velocity = newVelocity;
+    }
+    private void onUnequip(Equipment equipment, string slotName, Item item)
+    {
+        throw new NotImplementedException();
+    }
+
+    private void onEquip(Equipment equipment, string slotName, Item item)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void onJumpReleased()
+    {
+
+    }
+    public void onJumpPressed()
+    {
+        Vector3 newVelocity = Velocity;
+        if (jumps > 0)
+        {
+            jumping = true;
+            jumps -= 1;
+
+            //nullify the down velocity (Y) if using momentum cancel
+            if (jumpMomentumCancel && Velocity.Y < 0)
+            {
+                newVelocity.Y = 0;
+            }
+
+            newVelocity += jumpVelocity;
+        }
+        Velocity = newVelocity;
+    }
+    //
+    //CAMERA SHIT////////////////////////////////////////////////
+    public override void _Process(double delta)
+    {
+        pov.Rotation = new Vector3((float)Mathf.Clamp(pov.Rotation.X - Global.InputManager.mouseDelta.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
+        Rotation = new Vector3(0, Rotation.Y - Global.InputManager.mouseDelta.X * (float)delta, 0);
+        Global.InputManager.mouseDelta.X = 0;
+        Global.InputManager.mouseDelta.Y = 0;
+    }
+
+
+
+    //MOVEMENT SHIT ///////////////////////////////////////////////
+    public override void _PhysicsProcess(double delta)
+    {
+        Vector3 newVelocity = Velocity;
         //Collect our current Input direction (drop the Y piece), and multiply it by our Transform Basis, rotating it so that forward input becomes forward in the direction we are facing
-        Vector3 dir = Transform.Basis * new Vector3(input.MovementDirection.Y * maxSpeedX, 0, input.MovementDirection.X * maxSpeedZ);
+        Vector3 dir = Transform.Basis * new Vector3(Global.InputManager.movementDirection.Y * maxSpeedX, 0, Global.InputManager.movementDirection.X * maxSpeedZ);
 
         //Create our desired vector, the direction we're going at max speed
         Vector3 targetVec = new Vector3(dir.X, 0, dir.Z);
@@ -199,22 +233,6 @@ public partial class Player : Character
         //Set the velocity
         newVelocity.X = targetVec.X;
         newVelocity.Z = targetVec.Z;
-
-        Velocity = newVelocity;
-    }
-
-    private void HandleLookingDirection(PlayerInput input, double delta)
-    {
-        pov.Rotation = new Vector3((float)Mathf.Clamp(Global.InputManager.localInput.LookDirection.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
-        Rotation = new Vector3(0, Global.InputManager.localInput.LookDirection.X * (float)delta, 0);
-        Global.InputManager.localInput.LookDelta.X = 0;
-        Global.InputManager.localInput.LookDelta.Y = 0;
-    }
-
-
-    private void handleJumpingAndFalling(PlayerInput remoteInput, double delta)
-    {
-        Vector3 newVelocity = Velocity;
         //Lets get the Y component sorted - gravity and jumping
         if (!IsOnFloor())
         {
@@ -255,121 +273,52 @@ public partial class Player : Character
             }
 
         }
+
         Velocity = newVelocity;
-    }
-    private void onUnequip(Equipment equipment, string slotName, Item item)
-    {
-        throw new NotImplementedException();
-    }
-
-    private void onEquip(Equipment equipment, string slotName, Item item)
-    {
-        throw new NotImplementedException();
-    }
-
-    public void onJumpReleased()
-    {
-
-    }
-    public void onJumpPressed()
-    {
-        Vector3 newVelocity = Velocity;
-        if (jumps > 0)
-        {
-            jumping = true;
-            jumps -= 1;
-
-            //nullify the down velocity (Y) if using momentum cancel
-            if (jumpMomentumCancel && Velocity.Y < 0)
-            {
-                newVelocity.Y = 0;
-            }
-
-            newVelocity += jumpVelocity;
-        }
-        Velocity = newVelocity;
-    }
-    //
-    //CAMERA SHIT////////////////////////////////////////////////
-    public override void _Process(double delta)
-    {
-        if (isMe)
-        {
-            pov.Rotation = new Vector3((float)Mathf.Clamp(pov.Rotation.X - Global.InputManager.localInput.LookDelta.Y * delta, Mathf.DegToRad(negativeVerticalLookLimit), Mathf.DegToRad(positiveVerticalLookLimit)), 0, 0);
-            Rotation = new Vector3(0, Rotation.Y - Global.InputManager.localInput.LookDelta.X * (float)delta, 0);
-            Global.InputManager.localInput.LookDelta.X = 0;
-            Global.InputManager.localInput.LookDelta.Y = 0;
-        }
+        MoveAndSlide();
     }
 
 
-
-    //MOVEMENT SHIT ///////////////////////////////////////////////
-    public override void _PhysicsProcess(double delta)
+    internal void IterativeSync()
     {
-        //Tick(Global.InputManager.frameInput, delta);
-        //lastFrameInput = Global.InputManager.frameInput.Clone();
-
-
-        if (leftHeldItem != Item.NONE)
-        {
-            RayCast3D ray = leftHeldItem.GetNode<RayCast3D>("barrelRay");
-            if (ray != null && ray.IsColliding())
-            {
-                float distance = ray.GetCollisionPoint().DistanceTo(ray.GlobalPosition);
-                float target = MathF.Abs(ray.TargetPosition.Y);
-                float diff = target - distance;
-                Vector3 targetVec = new Vector3(leftHoldPointOriginPos.X, leftHoldPointOriginPos.Y, leftHoldPointOriginPos.Z + diff);
-                float targetZ = Mathf.Lerp(leftHoldPoint.Position.Z, targetVec.Z, .3f);
-                Vector3 newVec = new Vector3(leftHoldPointOriginPos.X, leftHoldPointOriginPos.Y, targetZ);
-                leftHoldPoint.Position = newVec;
-            }
-            else if (ray != null && !ray.IsColliding())
-            {
-                float targetZ = Mathf.Lerp(leftHoldPoint.Position.Z, leftHoldPointOriginPos.Z, .05f);
-                Vector3 newVec = new Vector3(leftHoldPointOriginPos.X, leftHoldPointOriginPos.Y, targetZ);
-                leftHoldPoint.Position = newVec;
-            }
-        }
-
-        if (rightHeldItem != Item.NONE)
-        {
-            RayCast3D ray = rightHeldItem.GetNode<RayCast3D>("barrelRay");
-            if (ray != null && ray.IsColliding())
-            {
-                float distance = ray.GetCollisionPoint().DistanceTo(ray.GlobalPosition);
-                float target = MathF.Abs(ray.TargetPosition.Y);
-                float diff = target - distance;
-                Vector3 targetVec = new Vector3(rightHoldPointOriginPos.X, rightHoldPointOriginPos.Y, rightHoldPointOriginPos.Z + diff);
-                float targetZ = Mathf.Lerp(rightHoldPoint.Position.Z, targetVec.Z, .3f);
-                Vector3 newVec = new Vector3(rightHoldPointOriginPos.X, rightHoldPointOriginPos.Y, targetZ);
-                rightHoldPoint.Position = newVec;
-            }
-            else if (ray != null && !ray.IsColliding())
-            {
-                float targetZ = Mathf.Lerp(rightHoldPoint.Position.Z, rightHoldPointOriginPos.Z, .05f);
-                Vector3 newVec = new Vector3(rightHoldPointOriginPos.X, rightHoldPointOriginPos.Y, targetZ);
-
-                rightHoldPoint.Position = newVec;
-            }
-
-
-        }
+        this.GlobalPosition = this.GlobalPosition.Slerp(desiredState.GlobalPosition, 0.5f);
+        this.GlobalRotation = this.GlobalRotation.Slerp(desiredState.GlobalRotation, 0.5f);
+        this.Scale = this.Scale.Slerp(desiredState.Scale, 0.5f);
+        this.Velocity = this.Velocity.Slerp(desiredState.Velocity, 0.5f);
     }
 
-    internal NetworkMessages.Inventory GetInventory()
+    internal PlayerState ToNetworkMessage()
     {
-        return new NetworkMessages.Inventory();
+        PlayerState state = new PlayerState(); 
+        state.Playerhealth = health?.ToNetworkMessage();
+        state.Equipment = equipment?.ToNetworkMessage();
+        state.Inventory = inventory?.ToNetworkMessage();
+        state.ClientID = clientID;
+        PhysicsObject physObj = new PhysicsObject();
+        physObj.Position = new Vec3() { X = GlobalPosition.X, Y = GlobalPosition.Y, Z = GlobalPosition.Z };
+        physObj.Rotation = new Vec3() { X = GlobalRotation.X, Y = GlobalRotation.Y, Z = GlobalRotation.Z };
+        physObj.Scale = new Vec3() { X = Scale.X, Y = Scale.Y, Z = Scale.Z };
+        physObj.LinearVelocity = new Vec3() { X = Velocity.X, Y = Velocity.Y, Z = Velocity.Z };
+        return state;
+    }
+    public void FromNetworkMessage(PlayerState state)
+    {
+        this.clientID = state.ClientID;
+        this.GlobalPosition = new Vector3(state.PhysObj.Position.X, state.PhysObj.Position.Y, state.PhysObj.Position.Z);
+        this.GlobalRotation = new Vector3(state.PhysObj.Rotation.X, state.PhysObj.Rotation.Y, state.PhysObj.Rotation.Z);
+        this.Scale = new Vector3(state.PhysObj.Scale.X, state.PhysObj.Scale.Y, state.PhysObj.Scale.Z);
+        this.Velocity = new Vector3(state.PhysObj.LinearVelocity.X, state.PhysObj.LinearVelocity.Y, state.PhysObj.LinearVelocity.Z);
+        this.health.FromNetworkMessage(state.Playerhealth);
+        this.equipment.FromNetworkMessage(state.Equipment);
+        this.inventory.FromNetworkMessage(state.Inventory);
+
     }
 
-    internal NetworkMessages.Equipment GetEquipment()
+    internal void HardSync()
     {
-        return new NetworkMessages.Equipment();
-    }
-
-    internal PlayerHealth GetHealth()
-    {
-        return new PlayerHealth();
+        this.inventory= desiredState.inventory;
+        this.equipment = desiredState.equipment;
+        this.health = desiredState.health;
     }
 }
 

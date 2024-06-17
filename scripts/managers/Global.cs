@@ -37,7 +37,7 @@ public partial class Global : Node
     /// </summary>
     public static SteamManager SteamManager;
 
-
+    public static WorldSim WorldSim;
 
     /// <summary>
     /// If true, print debug logs to console during runtime.
@@ -81,6 +81,10 @@ public partial class Global : Node
         AudioManager = GetNode<AudioManager>("../main/AudioManager");
         InputManager = GetNode<InputManager>("../main/InputManager");
         SteamManager = GetNode<SteamManager>("../SteamManager");
+
+        Global.debugLog("About to make WorldSim");
+        Global.WorldSim = new WorldSim();
+        Global.debugLog("Made WorldSim");
 
     }
 

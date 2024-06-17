@@ -285,5 +285,13 @@ public partial class Inventory : Node
 
     }
 
+    internal NetworkMessages.Inventory ToNetworkMessage()
+    {
+       return new NetworkMessages.Inventory();
+    }
 
+    internal void FromNetworkMessage(NetworkMessages.Inventory inventory)
+    {
+        //throw new NotImplementedException();
+    }
 }

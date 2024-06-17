@@ -24,82 +24,80 @@ namespace NetworkMessages {
     static NetworkingProtoReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "ChVOZXR3b3JraW5nUHJvdG8ucHJvdG8SD05ldHdvcmtNZXNzYWdlcyKnAQoF",
+            "ChVOZXR3b3JraW5nUHJvdG8ucHJvdG8SD05ldHdvcmtNZXNzYWdlcyLZAQoF",
             "U3RhdGUSDAoEdGljaxgBIAEoBBIOCgZzZW5kZXIYAiABKAQSFgoJdGltZXN0",
             "YW1wGAMgASgBSACIAQESLAoGaW5wdXRzGAYgAygLMhwuTmV0d29ya01lc3Nh",
             "Z2VzLlBsYXllcklucHV0EiwKBnN0YXRlcxgHIAMoCzIcLk5ldHdvcmtNZXNz",
-            "YWdlcy5QbGF5ZXJTdGF0ZUIMCgpfdGltZXN0YW1wIn4KCUhhbmRzaGFrZRIM",
-            "CgR0aWNrGAEgASgEEg4KBnNlbmRlchgCIAEoBBIWCgl0aW1lc3RhbXAYAyAB",
-            "KAFIAIgBARITCgZzdGF0dXMYBSABKAlIAYgBARINCgVwZWVycxgEIAMoBEIM",
-            "CgpfdGltZXN0YW1wQgkKB19zdGF0dXMiJwoEQ2hhdBIOCgZzZW5kZXIYASAB",
-            "KAQSDwoHbWVzc2FnZRgCIAEoCSI6CgdDb21tYW5kEg8KB2NvbW1hbmQYASAB",
-            "KAkSDgoGc2VuZGVyGAMgASgEEg4KBnBhcmFtcxgCIAMoCSKKAgoKR2FtZU9i",
-            "amVjdBIKCgJpZBgBIAEoBBInCghwb3NpdGlvbhgCIAEoCzIVLk5ldHdvcmtN",
-            "ZXNzYWdlcy5WZWMzEicKCHJvdGF0aW9uGAMgASgLMhUuTmV0d29ya01lc3Nh",
-            "Z2VzLlZlYzMSDgoGYXRSZXN0GAQgASgIEjIKDmxpbmVhclZlbG9jaXR5GAUg",
-            "ASgLMhUuTmV0d29ya01lc3NhZ2VzLlZlYzNIAIgBARIzCg9hbmd1bGFyVmVs",
-            "b2NpdHkYBiABKAsyFS5OZXR3b3JrTWVzc2FnZXMuVmVjM0gBiAEBQhEKD19s",
-            "aW5lYXJWZWxvY2l0eUISChBfYW5ndWxhclZlbG9jaXR5IoACCgtQbGF5ZXJT",
-            "dGF0ZRIQCghjbGllbnRJRBgFIAEoBBItCglpbnZlbnRvcnkYASABKAsyGi5O",
-            "ZXR3b3JrTWVzc2FnZXMuSW52ZW50b3J5Ei0KCWVxdWlwbWVudBgCIAEoCzIa",
-            "Lk5ldHdvcmtNZXNzYWdlcy5FcXVpcG1lbnQSMwoMcGxheWVyaGVhbHRoGAMg",
-            "ASgLMh0uTmV0d29ya01lc3NhZ2VzLlBsYXllckhlYWx0aBI6Cg1waHlzaWNz",
-            "T2JqZWN0GAQgASgLMh4uTmV0d29ya01lc3NhZ2VzLlBoeXNpY3NPYmplY3RI",
-            "AIgBAUIQCg5fcGh5c2ljc09iamVjdCJkCglJbnZlbnRvcnkSJAoFaXRlbXMY",
-            "ASADKAsyFS5OZXR3b3JrTWVzc2FnZXMuSXRlbRITCgt0b3RhbFdlaWdodBgC",
-            "IAEoAhINCgVzaXplWBgDIAEoBBINCgVzaXplWRgEIAEoBCKOAQoESXRlbRIK",
-            "CgJpZBgBIAEoBBIOCgZ3ZWlnaHQYAiABKAISDgoGaGVpZ2h0GAMgASgEEg0K",
-            "BXdpZHRoGAQgASgEEhAKCHRvcExlZnRYGAUgASgEEhAKCHRvcExlZnRZGAYg",
-            "ASgEEicKCGNvbnRhaW5zGAcgAygLMhUuTmV0d29ya01lc3NhZ2VzLkl0ZW0i",
-            "zwEKCUVxdWlwbWVudBIlCgZoZWxtZXQYASABKAsyFS5OZXR3b3JrTWVzc2Fn",
-            "ZXMuSXRlbRIjCgRib2R5GAIgASgLMhUuTmV0d29ya01lc3NhZ2VzLkl0ZW0S",
-            "KAoJcmlnaHRIYW5kGAMgASgLMhUuTmV0d29ya01lc3NhZ2VzLkl0ZW0SJwoI",
-            "bGVmdEhhbmQYBCABKAsyFS5OZXR3b3JrTWVzc2FnZXMuSXRlbRIjCgRiYWNr",
-            "GAUgASgLMhUuTmV0d29ya01lc3NhZ2VzLkl0ZW0i0wEKDFBsYXllckhlYWx0",
-            "aBINCgVtYXhIUBgBIAEoAhIRCgljdXJyZW50SFAYAiABKAISDgoGaGVhZEhQ",
-            "GAMgASgCEg4KBmJvZHlIUBgEIAEoAhIRCglsZWZ0QXJtSFAYBSABKAISEgoK",
-            "cmlnaHRBcm1IUBgGIAEoAhIRCglsZWZ0TGVnSFAYByABKAISEwoLcmlnaHRM",
-            "ZWZ0SFAYCCABKAISMgoMYWZmbGljYXRpb25zGAkgAygLMhwuTmV0d29ya01l",
-            "c3NhZ2VzLkFmZmxpY2F0aW9uIk0KC0FmZmxpY2F0aW9uEhAKCGVmZmVjdElE",
-            "GAEgASgEEiwKCWFmZmVjdGluZxgCIAEoDjIZLk5ldHdvcmtNZXNzYWdlcy5C",
-            "b2R5UGFydCIdCgpXb3JsZFN0YXRlEg8KB2xldmVsSUQYASABKAQi2gIKC1Bs",
-            "YXllcklucHV0EhAKCGNsaWVudElEGAQgASgEEjoKB2FjdGlvbnMYASADKAsy",
-            "KS5OZXR3b3JrTWVzc2FnZXMuUGxheWVySW5wdXQuQWN0aW9uc0VudHJ5EjUK",
-            "EW1vdmVtZW50RGlyZWN0aW9uGAIgASgLMhUuTmV0d29ya01lc3NhZ2VzLlZl",
-            "YzJIAIgBARItCglsb29rRGVsdGEYBSABKAsyFS5OZXR3b3JrTWVzc2FnZXMu",
-            "VmVjMkgBiAEBEjEKDWxvb2tEaXJlY3Rpb24YAyABKAsyFS5OZXR3b3JrTWVz",
-            "c2FnZXMuVmVjMkgCiAEBGi4KDEFjdGlvbnNFbnRyeRILCgNrZXkYASABKAkS",
-            "DQoFdmFsdWUYAiABKAg6AjgBQhQKEl9tb3ZlbWVudERpcmVjdGlvbkIMCgpf",
-            "bG9va0RlbHRhQhAKDl9sb29rRGlyZWN0aW9uIhwKBFZlYzISCQoBWBgBIAEo",
-            "AhIJCgFZGAIgASgCIicKBFZlYzMSCQoBWBgBIAEoAhIJCgFZGAIgASgCEgkK",
-            "AVoYAyABKAIisgIKDVBoeXNpY3NPYmplY3QSCgoCaWQYBiABKAQSJwoIcG9z",
-            "aXRpb24YASABKAsyFS5OZXR3b3JrTWVzc2FnZXMuVmVjMxIpCgVzY2FsZRgC",
-            "IAEoCzIVLk5ldHdvcmtNZXNzYWdlcy5WZWMzSACIAQESJwoIcm90YXRpb24Y",
-            "AyABKAsyFS5OZXR3b3JrTWVzc2FnZXMuVmVjMxIyCg5saW5lYXJWZWxvY2l0",
-            "eRgEIAEoCzIVLk5ldHdvcmtNZXNzYWdlcy5WZWMzSAGIAQESMwoPYW5ndWxh",
-            "clZlbG9jaXR5GAUgASgLMhUuTmV0d29ya01lc3NhZ2VzLlZlYzNIAogBAUII",
-            "CgZfc2NhbGVCEQoPX2xpbmVhclZlbG9jaXR5QhIKEF9hbmd1bGFyVmVsb2Np",
-            "dHkicwoDTlBDEgoKAmlkGAEgASgEEhIKCmF0dGFjaGVkVG8YAiABKAQSOgoN",
-            "cGh5c2ljc09iamVjdBgDIAEoCzIeLk5ldHdvcmtNZXNzYWdlcy5QaHlzaWNz",
-            "T2JqZWN0SACIAQFCEAoOX3BoeXNpY3NPYmplY3QiegoHVmVoaWNsZRIKCgJp",
-            "ZBgBIAEoBBIVCg1hdHRhY2hlZENoYXJzGAIgAygEEjoKDXBoeXNpY3NPYmpl",
-            "Y3QYAyABKAsyHi5OZXR3b3JrTWVzc2FnZXMuUGh5c2ljc09iamVjdEgAiAEB",
-            "QhAKDl9waHlzaWNzT2JqZWN0IpEBCgpQcm9qZWN0aWxlEgoKAmlkGAEgASgE",
-            "Eg8KB293bmVySUQYAiABKAQSGAoQcHJvamVjdGlsZVR5cGVJRBgDIAEoBBI6",
-            "Cg1waHlzaWNzT2JqZWN0GAQgASgLMh4uTmV0d29ya01lc3NhZ2VzLlBoeXNp",
-            "Y3NPYmplY3RIAIgBAUIQCg5fcGh5c2ljc09iamVjdCpmCghCb2R5UGFydBII",
-            "CgRIZWFkEAASCAoEQm9keRABEggKBExBcm0QAhIICgRSQXJtEAMSCAoETExl",
-            "ZxAEEggKBFJMZWcQBRIHCgNBbGwQBhIICgROb25lEAcSCwoHR2VuZXJhbBAI",
-            "YgZwcm90bzM="));
+            "YWdlcy5QbGF5ZXJTdGF0ZRIwCgtnYW1lT2JqZWN0cxgJIAMoCzIbLk5ldHdv",
+            "cmtNZXNzYWdlcy5HYW1lT2JqZWN0QgwKCl90aW1lc3RhbXAifgoJSGFuZHNo",
+            "YWtlEgwKBHRpY2sYASABKAQSDgoGc2VuZGVyGAIgASgEEhYKCXRpbWVzdGFt",
+            "cBgDIAEoAUgAiAEBEhMKBnN0YXR1cxgFIAEoCUgBiAEBEg0KBXBlZXJzGAQg",
+            "AygEQgwKCl90aW1lc3RhbXBCCQoHX3N0YXR1cyInCgRDaGF0Eg4KBnNlbmRl",
+            "chgBIAEoBBIPCgdtZXNzYWdlGAIgASgJIjoKB0NvbW1hbmQSDwoHY29tbWFu",
+            "ZBgBIAEoCRIOCgZzZW5kZXIYAyABKAQSDgoGcGFyYW1zGAIgAygJIncKCkdh",
+            "bWVPYmplY3QSCgoCaWQYASABKAQSDAoEdHlwZRgCIAEoBBINCgVvd25lchgD",
+            "IAEoBBI0CgdwaHlzT2JqGAQgASgLMh4uTmV0d29ya01lc3NhZ2VzLlBoeXNp",
+            "Y3NPYmplY3RIAIgBAUIKCghfcGh5c09iaiL0AQoLUGxheWVyU3RhdGUSEAoI",
+            "Y2xpZW50SUQYBSABKAQSLQoJaW52ZW50b3J5GAEgASgLMhouTmV0d29ya01l",
+            "c3NhZ2VzLkludmVudG9yeRItCgllcXVpcG1lbnQYAiABKAsyGi5OZXR3b3Jr",
+            "TWVzc2FnZXMuRXF1aXBtZW50EjMKDHBsYXllcmhlYWx0aBgDIAEoCzIdLk5l",
+            "dHdvcmtNZXNzYWdlcy5QbGF5ZXJIZWFsdGgSNAoHcGh5c09iahgEIAEoCzIe",
+            "Lk5ldHdvcmtNZXNzYWdlcy5QaHlzaWNzT2JqZWN0SACIAQFCCgoIX3BoeXNP",
+            "YmoiZAoJSW52ZW50b3J5EiQKBWl0ZW1zGAEgAygLMhUuTmV0d29ya01lc3Nh",
+            "Z2VzLkl0ZW0SEwoLdG90YWxXZWlnaHQYAiABKAISDQoFc2l6ZVgYAyABKAQS",
+            "DQoFc2l6ZVkYBCABKAQijgEKBEl0ZW0SCgoCaWQYASABKAQSDgoGd2VpZ2h0",
+            "GAIgASgCEg4KBmhlaWdodBgDIAEoBBINCgV3aWR0aBgEIAEoBBIQCgh0b3BM",
+            "ZWZ0WBgFIAEoBBIQCgh0b3BMZWZ0WRgGIAEoBBInCghjb250YWlucxgHIAMo",
+            "CzIVLk5ldHdvcmtNZXNzYWdlcy5JdGVtIs8BCglFcXVpcG1lbnQSJQoGaGVs",
+            "bWV0GAEgASgLMhUuTmV0d29ya01lc3NhZ2VzLkl0ZW0SIwoEYm9keRgCIAEo",
+            "CzIVLk5ldHdvcmtNZXNzYWdlcy5JdGVtEigKCXJpZ2h0SGFuZBgDIAEoCzIV",
+            "Lk5ldHdvcmtNZXNzYWdlcy5JdGVtEicKCGxlZnRIYW5kGAQgASgLMhUuTmV0",
+            "d29ya01lc3NhZ2VzLkl0ZW0SIwoEYmFjaxgFIAEoCzIVLk5ldHdvcmtNZXNz",
+            "YWdlcy5JdGVtItMBCgxQbGF5ZXJIZWFsdGgSDQoFbWF4SFAYASABKAISEQoJ",
+            "Y3VycmVudEhQGAIgASgCEg4KBmhlYWRIUBgDIAEoAhIOCgZib2R5SFAYBCAB",
+            "KAISEQoJbGVmdEFybUhQGAUgASgCEhIKCnJpZ2h0QXJtSFAYBiABKAISEQoJ",
+            "bGVmdExlZ0hQGAcgASgCEhMKC3JpZ2h0TGVmdEhQGAggASgCEjIKDGFmZmxp",
+            "Y2F0aW9ucxgJIAMoCzIcLk5ldHdvcmtNZXNzYWdlcy5BZmZsaWNhdGlvbiJN",
+            "CgtBZmZsaWNhdGlvbhIQCghlZmZlY3RJRBgBIAEoBBIsCglhZmZlY3RpbmcY",
+            "AiABKA4yGS5OZXR3b3JrTWVzc2FnZXMuQm9keVBhcnQiHQoKV29ybGRTdGF0",
+            "ZRIPCgdsZXZlbElEGAEgASgEItoCCgtQbGF5ZXJJbnB1dBIQCghjbGllbnRJ",
+            "RBgEIAEoBBI6CgdhY3Rpb25zGAEgAygLMikuTmV0d29ya01lc3NhZ2VzLlBs",
+            "YXllcklucHV0LkFjdGlvbnNFbnRyeRI1ChFtb3ZlbWVudERpcmVjdGlvbhgC",
+            "IAEoCzIVLk5ldHdvcmtNZXNzYWdlcy5WZWMySACIAQESLQoJbG9va0RlbHRh",
+            "GAUgASgLMhUuTmV0d29ya01lc3NhZ2VzLlZlYzJIAYgBARIxCg1sb29rRGly",
+            "ZWN0aW9uGAMgASgLMhUuTmV0d29ya01lc3NhZ2VzLlZlYzJIAogBARouCgxB",
+            "Y3Rpb25zRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgIOgI4AUIU",
+            "ChJfbW92ZW1lbnREaXJlY3Rpb25CDAoKX2xvb2tEZWx0YUIQCg5fbG9va0Rp",
+            "cmVjdGlvbiIcCgRWZWMyEgkKAVgYASABKAISCQoBWRgCIAEoAiInCgRWZWMz",
+            "EgkKAVgYASABKAISCQoBWRgCIAEoAhIJCgFaGAMgASgCIsoCCg1QaHlzaWNz",
+            "T2JqZWN0EiwKCHBvc2l0aW9uGAEgASgLMhUuTmV0d29ya01lc3NhZ2VzLlZl",
+            "YzNIAIgBARIpCgVzY2FsZRgCIAEoCzIVLk5ldHdvcmtNZXNzYWdlcy5WZWMz",
+            "SAGIAQESLAoIcm90YXRpb24YAyABKAsyFS5OZXR3b3JrTWVzc2FnZXMuVmVj",
+            "M0gCiAEBEjIKDmxpbmVhclZlbG9jaXR5GAQgASgLMhUuTmV0d29ya01lc3Nh",
+            "Z2VzLlZlYzNIA4gBARIzCg9hbmd1bGFyVmVsb2NpdHkYBSABKAsyFS5OZXR3",
+            "b3JrTWVzc2FnZXMuVmVjM0gEiAEBQgsKCV9wb3NpdGlvbkIICgZfc2NhbGVC",
+            "CwoJX3JvdGF0aW9uQhEKD19saW5lYXJWZWxvY2l0eUISChBfYW5ndWxhclZl",
+            "bG9jaXR5InMKA05QQxIKCgJpZBgBIAEoBBISCgphdHRhY2hlZFRvGAIgASgE",
+            "EjoKDXBoeXNpY3NPYmplY3QYAyABKAsyHi5OZXR3b3JrTWVzc2FnZXMuUGh5",
+            "c2ljc09iamVjdEgAiAEBQhAKDl9waHlzaWNzT2JqZWN0InoKB1ZlaGljbGUS",
+            "CgoCaWQYASABKAQSFQoNYXR0YWNoZWRDaGFycxgCIAMoBBI6Cg1waHlzaWNz",
+            "T2JqZWN0GAMgASgLMh4uTmV0d29ya01lc3NhZ2VzLlBoeXNpY3NPYmplY3RI",
+            "AIgBAUIQCg5fcGh5c2ljc09iamVjdCKRAQoKUHJvamVjdGlsZRIKCgJpZBgB",
+            "IAEoBBIPCgdvd25lcklEGAIgASgEEhgKEHByb2plY3RpbGVUeXBlSUQYAyAB",
+            "KAQSOgoNcGh5c2ljc09iamVjdBgEIAEoCzIeLk5ldHdvcmtNZXNzYWdlcy5Q",
+            "aHlzaWNzT2JqZWN0SACIAQFCEAoOX3BoeXNpY3NPYmplY3QqZgoIQm9keVBh",
+            "cnQSCAoESGVhZBAAEggKBEJvZHkQARIICgRMQXJtEAISCAoEUkFybRADEggK",
+            "BExMZWcQBBIICgRSTGVnEAUSBwoDQWxsEAYSCAoETm9uZRAHEgsKB0dlbmVy",
+            "YWwQCGIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::NetworkMessages.BodyPart), }, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.State), global::NetworkMessages.State.Parser, new[]{ "Tick", "Sender", "Timestamp", "Inputs", "States" }, new[]{ "Timestamp" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.State), global::NetworkMessages.State.Parser, new[]{ "Tick", "Sender", "Timestamp", "Inputs", "States", "GameObjects" }, new[]{ "Timestamp" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.Handshake), global::NetworkMessages.Handshake.Parser, new[]{ "Tick", "Sender", "Timestamp", "Status", "Peers" }, new[]{ "Timestamp", "Status" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.Chat), global::NetworkMessages.Chat.Parser, new[]{ "Sender", "Message" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.Command), global::NetworkMessages.Command.Parser, new[]{ "Command_", "Sender", "Params" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.GameObject), global::NetworkMessages.GameObject.Parser, new[]{ "Id", "Position", "Rotation", "AtRest", "LinearVelocity", "AngularVelocity" }, new[]{ "LinearVelocity", "AngularVelocity" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.PlayerState), global::NetworkMessages.PlayerState.Parser, new[]{ "ClientID", "Inventory", "Equipment", "Playerhealth", "PhysicsObject" }, new[]{ "PhysicsObject" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.GameObject), global::NetworkMessages.GameObject.Parser, new[]{ "Id", "Type", "Owner", "PhysObj" }, new[]{ "PhysObj" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.PlayerState), global::NetworkMessages.PlayerState.Parser, new[]{ "ClientID", "Inventory", "Equipment", "Playerhealth", "PhysObj" }, new[]{ "PhysObj" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.Inventory), global::NetworkMessages.Inventory.Parser, new[]{ "Items", "TotalWeight", "SizeX", "SizeY" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.Item), global::NetworkMessages.Item.Parser, new[]{ "Id", "Weight", "Height", "Width", "TopLeftX", "TopLeftY", "Contains" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.Equipment), global::NetworkMessages.Equipment.Parser, new[]{ "Helmet", "Body", "RightHand", "LeftHand", "Back" }, null, null, null, null),
@@ -109,7 +107,7 @@ namespace NetworkMessages {
             new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.PlayerInput), global::NetworkMessages.PlayerInput.Parser, new[]{ "ClientID", "Actions", "MovementDirection", "LookDelta", "LookDirection" }, new[]{ "MovementDirection", "LookDelta", "LookDirection" }, null, null, new pbr::GeneratedClrTypeInfo[] { null, }),
             new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.Vec2), global::NetworkMessages.Vec2.Parser, new[]{ "X", "Y" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.Vec3), global::NetworkMessages.Vec3.Parser, new[]{ "X", "Y", "Z" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.PhysicsObject), global::NetworkMessages.PhysicsObject.Parser, new[]{ "Id", "Position", "Scale", "Rotation", "LinearVelocity", "AngularVelocity" }, new[]{ "Scale", "LinearVelocity", "AngularVelocity" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.PhysicsObject), global::NetworkMessages.PhysicsObject.Parser, new[]{ "Position", "Scale", "Rotation", "LinearVelocity", "AngularVelocity" }, new[]{ "Position", "Scale", "Rotation", "LinearVelocity", "AngularVelocity" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.NPC), global::NetworkMessages.NPC.Parser, new[]{ "Id", "AttachedTo", "PhysicsObject" }, new[]{ "PhysicsObject" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.Vehicle), global::NetworkMessages.Vehicle.Parser, new[]{ "Id", "AttachedChars", "PhysicsObject" }, new[]{ "PhysicsObject" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::NetworkMessages.Projectile), global::NetworkMessages.Projectile.Parser, new[]{ "Id", "OwnerID", "ProjectileTypeID", "PhysicsObject" }, new[]{ "PhysicsObject" }, null, null, null)
@@ -177,6 +175,7 @@ namespace NetworkMessages {
       timestamp_ = other.timestamp_;
       inputs_ = other.inputs_.Clone();
       states_ = other.states_.Clone();
+      gameObjects_ = other.gameObjects_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -259,6 +258,17 @@ namespace NetworkMessages {
       get { return states_; }
     }
 
+    /// <summary>Field number for the "gameObjects" field.</summary>
+    public const int GameObjectsFieldNumber = 9;
+    private static readonly pb::FieldCodec<global::NetworkMessages.GameObject> _repeated_gameObjects_codec
+        = pb::FieldCodec.ForMessage(74, global::NetworkMessages.GameObject.Parser);
+    private readonly pbc::RepeatedField<global::NetworkMessages.GameObject> gameObjects_ = new pbc::RepeatedField<global::NetworkMessages.GameObject>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::NetworkMessages.GameObject> GameObjects {
+      get { return gameObjects_; }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -279,6 +289,7 @@ namespace NetworkMessages {
       if (!pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.Equals(Timestamp, other.Timestamp)) return false;
       if(!inputs_.Equals(other.inputs_)) return false;
       if(!states_.Equals(other.states_)) return false;
+      if(!gameObjects_.Equals(other.gameObjects_)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -291,6 +302,7 @@ namespace NetworkMessages {
       if (HasTimestamp) hash ^= pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.GetHashCode(Timestamp);
       hash ^= inputs_.GetHashCode();
       hash ^= states_.GetHashCode();
+      hash ^= gameObjects_.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -323,6 +335,7 @@ namespace NetworkMessages {
       }
       inputs_.WriteTo(output, _repeated_inputs_codec);
       states_.WriteTo(output, _repeated_states_codec);
+      gameObjects_.WriteTo(output, _repeated_gameObjects_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -347,6 +360,7 @@ namespace NetworkMessages {
       }
       inputs_.WriteTo(ref output, _repeated_inputs_codec);
       states_.WriteTo(ref output, _repeated_states_codec);
+      gameObjects_.WriteTo(ref output, _repeated_gameObjects_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -368,6 +382,7 @@ namespace NetworkMessages {
       }
       size += inputs_.CalculateSize(_repeated_inputs_codec);
       size += states_.CalculateSize(_repeated_states_codec);
+      size += gameObjects_.CalculateSize(_repeated_gameObjects_codec);
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -391,6 +406,7 @@ namespace NetworkMessages {
       }
       inputs_.Add(other.inputs_);
       states_.Add(other.states_);
+      gameObjects_.Add(other.gameObjects_);
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -426,6 +442,10 @@ namespace NetworkMessages {
             states_.AddEntriesFrom(input, _repeated_states_codec);
             break;
           }
+          case 74: {
+            gameObjects_.AddEntriesFrom(input, _repeated_gameObjects_codec);
+            break;
+          }
         }
       }
     #endif
@@ -459,6 +479,10 @@ namespace NetworkMessages {
           }
           case 58: {
             states_.AddEntriesFrom(ref input, _repeated_states_codec);
+            break;
+          }
+          case 74: {
+            gameObjects_.AddEntriesFrom(ref input, _repeated_gameObjects_codec);
             break;
           }
         }
@@ -1348,11 +1372,9 @@ namespace NetworkMessages {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public GameObject(GameObject other) : this() {
       id_ = other.id_;
-      position_ = other.position_ != null ? other.position_.Clone() : null;
-      rotation_ = other.rotation_ != null ? other.rotation_.Clone() : null;
-      atRest_ = other.atRest_;
-      linearVelocity_ = other.linearVelocity_ != null ? other.linearVelocity_.Clone() : null;
-      angularVelocity_ = other.angularVelocity_ != null ? other.angularVelocity_.Clone() : null;
+      type_ = other.type_;
+      owner_ = other.owner_;
+      physObj_ = other.physObj_ != null ? other.physObj_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1374,63 +1396,39 @@ namespace NetworkMessages {
       }
     }
 
-    /// <summary>Field number for the "position" field.</summary>
-    public const int PositionFieldNumber = 2;
-    private global::NetworkMessages.Vec3 position_;
+    /// <summary>Field number for the "type" field.</summary>
+    public const int TypeFieldNumber = 2;
+    private ulong type_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::NetworkMessages.Vec3 Position {
-      get { return position_; }
+    public ulong Type {
+      get { return type_; }
       set {
-        position_ = value;
+        type_ = value;
       }
     }
 
-    /// <summary>Field number for the "rotation" field.</summary>
-    public const int RotationFieldNumber = 3;
-    private global::NetworkMessages.Vec3 rotation_;
+    /// <summary>Field number for the "owner" field.</summary>
+    public const int OwnerFieldNumber = 3;
+    private ulong owner_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::NetworkMessages.Vec3 Rotation {
-      get { return rotation_; }
+    public ulong Owner {
+      get { return owner_; }
       set {
-        rotation_ = value;
+        owner_ = value;
       }
     }
 
-    /// <summary>Field number for the "atRest" field.</summary>
-    public const int AtRestFieldNumber = 4;
-    private bool atRest_;
+    /// <summary>Field number for the "physObj" field.</summary>
+    public const int PhysObjFieldNumber = 4;
+    private global::NetworkMessages.PhysicsObject physObj_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public bool AtRest {
-      get { return atRest_; }
+    public global::NetworkMessages.PhysicsObject PhysObj {
+      get { return physObj_; }
       set {
-        atRest_ = value;
-      }
-    }
-
-    /// <summary>Field number for the "linearVelocity" field.</summary>
-    public const int LinearVelocityFieldNumber = 5;
-    private global::NetworkMessages.Vec3 linearVelocity_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::NetworkMessages.Vec3 LinearVelocity {
-      get { return linearVelocity_; }
-      set {
-        linearVelocity_ = value;
-      }
-    }
-
-    /// <summary>Field number for the "angularVelocity" field.</summary>
-    public const int AngularVelocityFieldNumber = 6;
-    private global::NetworkMessages.Vec3 angularVelocity_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::NetworkMessages.Vec3 AngularVelocity {
-      get { return angularVelocity_; }
-      set {
-        angularVelocity_ = value;
+        physObj_ = value;
       }
     }
 
@@ -1450,11 +1448,9 @@ namespace NetworkMessages {
         return true;
       }
       if (Id != other.Id) return false;
-      if (!object.Equals(Position, other.Position)) return false;
-      if (!object.Equals(Rotation, other.Rotation)) return false;
-      if (AtRest != other.AtRest) return false;
-      if (!object.Equals(LinearVelocity, other.LinearVelocity)) return false;
-      if (!object.Equals(AngularVelocity, other.AngularVelocity)) return false;
+      if (Type != other.Type) return false;
+      if (Owner != other.Owner) return false;
+      if (!object.Equals(PhysObj, other.PhysObj)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -1463,11 +1459,9 @@ namespace NetworkMessages {
     public override int GetHashCode() {
       int hash = 1;
       if (Id != 0UL) hash ^= Id.GetHashCode();
-      if (position_ != null) hash ^= Position.GetHashCode();
-      if (rotation_ != null) hash ^= Rotation.GetHashCode();
-      if (AtRest != false) hash ^= AtRest.GetHashCode();
-      if (linearVelocity_ != null) hash ^= LinearVelocity.GetHashCode();
-      if (angularVelocity_ != null) hash ^= AngularVelocity.GetHashCode();
+      if (Type != 0UL) hash ^= Type.GetHashCode();
+      if (Owner != 0UL) hash ^= Owner.GetHashCode();
+      if (physObj_ != null) hash ^= PhysObj.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1490,25 +1484,17 @@ namespace NetworkMessages {
         output.WriteRawTag(8);
         output.WriteUInt64(Id);
       }
-      if (position_ != null) {
-        output.WriteRawTag(18);
-        output.WriteMessage(Position);
+      if (Type != 0UL) {
+        output.WriteRawTag(16);
+        output.WriteUInt64(Type);
       }
-      if (rotation_ != null) {
-        output.WriteRawTag(26);
-        output.WriteMessage(Rotation);
+      if (Owner != 0UL) {
+        output.WriteRawTag(24);
+        output.WriteUInt64(Owner);
       }
-      if (AtRest != false) {
-        output.WriteRawTag(32);
-        output.WriteBool(AtRest);
-      }
-      if (linearVelocity_ != null) {
-        output.WriteRawTag(42);
-        output.WriteMessage(LinearVelocity);
-      }
-      if (angularVelocity_ != null) {
-        output.WriteRawTag(50);
-        output.WriteMessage(AngularVelocity);
+      if (physObj_ != null) {
+        output.WriteRawTag(34);
+        output.WriteMessage(PhysObj);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -1524,25 +1510,17 @@ namespace NetworkMessages {
         output.WriteRawTag(8);
         output.WriteUInt64(Id);
       }
-      if (position_ != null) {
-        output.WriteRawTag(18);
-        output.WriteMessage(Position);
+      if (Type != 0UL) {
+        output.WriteRawTag(16);
+        output.WriteUInt64(Type);
       }
-      if (rotation_ != null) {
-        output.WriteRawTag(26);
-        output.WriteMessage(Rotation);
+      if (Owner != 0UL) {
+        output.WriteRawTag(24);
+        output.WriteUInt64(Owner);
       }
-      if (AtRest != false) {
-        output.WriteRawTag(32);
-        output.WriteBool(AtRest);
-      }
-      if (linearVelocity_ != null) {
-        output.WriteRawTag(42);
-        output.WriteMessage(LinearVelocity);
-      }
-      if (angularVelocity_ != null) {
-        output.WriteRawTag(50);
-        output.WriteMessage(AngularVelocity);
+      if (physObj_ != null) {
+        output.WriteRawTag(34);
+        output.WriteMessage(PhysObj);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
@@ -1557,20 +1535,14 @@ namespace NetworkMessages {
       if (Id != 0UL) {
         size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Id);
       }
-      if (position_ != null) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Position);
+      if (Type != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Type);
       }
-      if (rotation_ != null) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Rotation);
+      if (Owner != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Owner);
       }
-      if (AtRest != false) {
-        size += 1 + 1;
-      }
-      if (linearVelocity_ != null) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(LinearVelocity);
-      }
-      if (angularVelocity_ != null) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(AngularVelocity);
+      if (physObj_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(PhysObj);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -1587,32 +1559,17 @@ namespace NetworkMessages {
       if (other.Id != 0UL) {
         Id = other.Id;
       }
-      if (other.position_ != null) {
-        if (position_ == null) {
-          Position = new global::NetworkMessages.Vec3();
-        }
-        Position.MergeFrom(other.Position);
+      if (other.Type != 0UL) {
+        Type = other.Type;
       }
-      if (other.rotation_ != null) {
-        if (rotation_ == null) {
-          Rotation = new global::NetworkMessages.Vec3();
-        }
-        Rotation.MergeFrom(other.Rotation);
+      if (other.Owner != 0UL) {
+        Owner = other.Owner;
       }
-      if (other.AtRest != false) {
-        AtRest = other.AtRest;
-      }
-      if (other.linearVelocity_ != null) {
-        if (linearVelocity_ == null) {
-          LinearVelocity = new global::NetworkMessages.Vec3();
+      if (other.physObj_ != null) {
+        if (physObj_ == null) {
+          PhysObj = new global::NetworkMessages.PhysicsObject();
         }
-        LinearVelocity.MergeFrom(other.LinearVelocity);
-      }
-      if (other.angularVelocity_ != null) {
-        if (angularVelocity_ == null) {
-          AngularVelocity = new global::NetworkMessages.Vec3();
-        }
-        AngularVelocity.MergeFrom(other.AngularVelocity);
+        PhysObj.MergeFrom(other.PhysObj);
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -1633,36 +1590,19 @@ namespace NetworkMessages {
             Id = input.ReadUInt64();
             break;
           }
-          case 18: {
-            if (position_ == null) {
-              Position = new global::NetworkMessages.Vec3();
-            }
-            input.ReadMessage(Position);
+          case 16: {
+            Type = input.ReadUInt64();
             break;
           }
-          case 26: {
-            if (rotation_ == null) {
-              Rotation = new global::NetworkMessages.Vec3();
-            }
-            input.ReadMessage(Rotation);
+          case 24: {
+            Owner = input.ReadUInt64();
             break;
           }
-          case 32: {
-            AtRest = input.ReadBool();
-            break;
-          }
-          case 42: {
-            if (linearVelocity_ == null) {
-              LinearVelocity = new global::NetworkMessages.Vec3();
+          case 34: {
+            if (physObj_ == null) {
+              PhysObj = new global::NetworkMessages.PhysicsObject();
             }
-            input.ReadMessage(LinearVelocity);
-            break;
-          }
-          case 50: {
-            if (angularVelocity_ == null) {
-              AngularVelocity = new global::NetworkMessages.Vec3();
-            }
-            input.ReadMessage(AngularVelocity);
+            input.ReadMessage(PhysObj);
             break;
           }
         }
@@ -1684,36 +1624,19 @@ namespace NetworkMessages {
             Id = input.ReadUInt64();
             break;
           }
-          case 18: {
-            if (position_ == null) {
-              Position = new global::NetworkMessages.Vec3();
-            }
-            input.ReadMessage(Position);
+          case 16: {
+            Type = input.ReadUInt64();
             break;
           }
-          case 26: {
-            if (rotation_ == null) {
-              Rotation = new global::NetworkMessages.Vec3();
-            }
-            input.ReadMessage(Rotation);
+          case 24: {
+            Owner = input.ReadUInt64();
             break;
           }
-          case 32: {
-            AtRest = input.ReadBool();
-            break;
-          }
-          case 42: {
-            if (linearVelocity_ == null) {
-              LinearVelocity = new global::NetworkMessages.Vec3();
+          case 34: {
+            if (physObj_ == null) {
+              PhysObj = new global::NetworkMessages.PhysicsObject();
             }
-            input.ReadMessage(LinearVelocity);
-            break;
-          }
-          case 50: {
-            if (angularVelocity_ == null) {
-              AngularVelocity = new global::NetworkMessages.Vec3();
-            }
-            input.ReadMessage(AngularVelocity);
+            input.ReadMessage(PhysObj);
             break;
           }
         }
@@ -1763,7 +1686,7 @@ namespace NetworkMessages {
       inventory_ = other.inventory_ != null ? other.inventory_.Clone() : null;
       equipment_ = other.equipment_ != null ? other.equipment_.Clone() : null;
       playerhealth_ = other.playerhealth_ != null ? other.playerhealth_.Clone() : null;
-      physicsObject_ = other.physicsObject_ != null ? other.physicsObject_.Clone() : null;
+      physObj_ = other.physObj_ != null ? other.physObj_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1821,15 +1744,15 @@ namespace NetworkMessages {
       }
     }
 
-    /// <summary>Field number for the "physicsObject" field.</summary>
-    public const int PhysicsObjectFieldNumber = 4;
-    private global::NetworkMessages.PhysicsObject physicsObject_;
+    /// <summary>Field number for the "physObj" field.</summary>
+    public const int PhysObjFieldNumber = 4;
+    private global::NetworkMessages.PhysicsObject physObj_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::NetworkMessages.PhysicsObject PhysicsObject {
-      get { return physicsObject_; }
+    public global::NetworkMessages.PhysicsObject PhysObj {
+      get { return physObj_; }
       set {
-        physicsObject_ = value;
+        physObj_ = value;
       }
     }
 
@@ -1852,7 +1775,7 @@ namespace NetworkMessages {
       if (!object.Equals(Inventory, other.Inventory)) return false;
       if (!object.Equals(Equipment, other.Equipment)) return false;
       if (!object.Equals(Playerhealth, other.Playerhealth)) return false;
-      if (!object.Equals(PhysicsObject, other.PhysicsObject)) return false;
+      if (!object.Equals(PhysObj, other.PhysObj)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -1864,7 +1787,7 @@ namespace NetworkMessages {
       if (inventory_ != null) hash ^= Inventory.GetHashCode();
       if (equipment_ != null) hash ^= Equipment.GetHashCode();
       if (playerhealth_ != null) hash ^= Playerhealth.GetHashCode();
-      if (physicsObject_ != null) hash ^= PhysicsObject.GetHashCode();
+      if (physObj_ != null) hash ^= PhysObj.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1895,9 +1818,9 @@ namespace NetworkMessages {
         output.WriteRawTag(26);
         output.WriteMessage(Playerhealth);
       }
-      if (physicsObject_ != null) {
+      if (physObj_ != null) {
         output.WriteRawTag(34);
-        output.WriteMessage(PhysicsObject);
+        output.WriteMessage(PhysObj);
       }
       if (ClientID != 0UL) {
         output.WriteRawTag(40);
@@ -1925,9 +1848,9 @@ namespace NetworkMessages {
         output.WriteRawTag(26);
         output.WriteMessage(Playerhealth);
       }
-      if (physicsObject_ != null) {
+      if (physObj_ != null) {
         output.WriteRawTag(34);
-        output.WriteMessage(PhysicsObject);
+        output.WriteMessage(PhysObj);
       }
       if (ClientID != 0UL) {
         output.WriteRawTag(40);
@@ -1955,8 +1878,8 @@ namespace NetworkMessages {
       if (playerhealth_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Playerhealth);
       }
-      if (physicsObject_ != null) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(PhysicsObject);
+      if (physObj_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(PhysObj);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -1991,11 +1914,11 @@ namespace NetworkMessages {
         }
         Playerhealth.MergeFrom(other.Playerhealth);
       }
-      if (other.physicsObject_ != null) {
-        if (physicsObject_ == null) {
-          PhysicsObject = new global::NetworkMessages.PhysicsObject();
+      if (other.physObj_ != null) {
+        if (physObj_ == null) {
+          PhysObj = new global::NetworkMessages.PhysicsObject();
         }
-        PhysicsObject.MergeFrom(other.PhysicsObject);
+        PhysObj.MergeFrom(other.PhysObj);
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -2034,10 +1957,10 @@ namespace NetworkMessages {
             break;
           }
           case 34: {
-            if (physicsObject_ == null) {
-              PhysicsObject = new global::NetworkMessages.PhysicsObject();
+            if (physObj_ == null) {
+              PhysObj = new global::NetworkMessages.PhysicsObject();
             }
-            input.ReadMessage(PhysicsObject);
+            input.ReadMessage(PhysObj);
             break;
           }
           case 40: {
@@ -2081,10 +2004,10 @@ namespace NetworkMessages {
             break;
           }
           case 34: {
-            if (physicsObject_ == null) {
-              PhysicsObject = new global::NetworkMessages.PhysicsObject();
+            if (physObj_ == null) {
+              PhysObj = new global::NetworkMessages.PhysicsObject();
             }
-            input.ReadMessage(PhysicsObject);
+            input.ReadMessage(PhysObj);
             break;
           }
           case 40: {
@@ -4954,7 +4877,6 @@ namespace NetworkMessages {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public PhysicsObject(PhysicsObject other) : this() {
-      id_ = other.id_;
       position_ = other.position_ != null ? other.position_.Clone() : null;
       scale_ = other.scale_ != null ? other.scale_.Clone() : null;
       rotation_ = other.rotation_ != null ? other.rotation_.Clone() : null;
@@ -4967,18 +4889,6 @@ namespace NetworkMessages {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public PhysicsObject Clone() {
       return new PhysicsObject(this);
-    }
-
-    /// <summary>Field number for the "id" field.</summary>
-    public const int IdFieldNumber = 6;
-    private ulong id_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public ulong Id {
-      get { return id_; }
-      set {
-        id_ = value;
-      }
     }
 
     /// <summary>Field number for the "position" field.</summary>
@@ -5056,7 +4966,6 @@ namespace NetworkMessages {
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if (Id != other.Id) return false;
       if (!object.Equals(Position, other.Position)) return false;
       if (!object.Equals(Scale, other.Scale)) return false;
       if (!object.Equals(Rotation, other.Rotation)) return false;
@@ -5069,7 +4978,6 @@ namespace NetworkMessages {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override int GetHashCode() {
       int hash = 1;
-      if (Id != 0UL) hash ^= Id.GetHashCode();
       if (position_ != null) hash ^= Position.GetHashCode();
       if (scale_ != null) hash ^= Scale.GetHashCode();
       if (rotation_ != null) hash ^= Rotation.GetHashCode();
@@ -5113,10 +5021,6 @@ namespace NetworkMessages {
         output.WriteRawTag(42);
         output.WriteMessage(AngularVelocity);
       }
-      if (Id != 0UL) {
-        output.WriteRawTag(48);
-        output.WriteUInt64(Id);
-      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -5147,10 +5051,6 @@ namespace NetworkMessages {
         output.WriteRawTag(42);
         output.WriteMessage(AngularVelocity);
       }
-      if (Id != 0UL) {
-        output.WriteRawTag(48);
-        output.WriteUInt64(Id);
-      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -5161,9 +5061,6 @@ namespace NetworkMessages {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int CalculateSize() {
       int size = 0;
-      if (Id != 0UL) {
-        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Id);
-      }
       if (position_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Position);
       }
@@ -5190,9 +5087,6 @@ namespace NetworkMessages {
     public void MergeFrom(PhysicsObject other) {
       if (other == null) {
         return;
-      }
-      if (other.Id != 0UL) {
-        Id = other.Id;
       }
       if (other.position_ != null) {
         if (position_ == null) {
@@ -5274,10 +5168,6 @@ namespace NetworkMessages {
             input.ReadMessage(AngularVelocity);
             break;
           }
-          case 48: {
-            Id = input.ReadUInt64();
-            break;
-          }
         }
       }
     #endif
@@ -5326,10 +5216,6 @@ namespace NetworkMessages {
               AngularVelocity = new global::NetworkMessages.Vec3();
             }
             input.ReadMessage(AngularVelocity);
-            break;
-          }
-          case 48: {
-            Id = input.ReadUInt64();
             break;
           }
         }

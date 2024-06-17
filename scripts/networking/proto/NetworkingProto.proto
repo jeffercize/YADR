@@ -9,6 +9,8 @@ message State
 
 	repeated PlayerInput inputs = 6;
 	repeated PlayerState states = 7;
+
+	repeated GameObject gameObjects = 9;
 }
 
 message Handshake
@@ -36,11 +38,9 @@ message Command
 message GameObject
 {
 	uint64 id = 1;
-	Vec3 position = 2;
-	Vec3 rotation = 3;
-	bool atRest = 4;
-	optional Vec3 linearVelocity = 5;
-	optional Vec3 angularVelocity = 6;
+	uint64 type = 2;
+	uint64 owner = 3;
+	optional PhysicsObject physObj = 4;
 }
 
 message PlayerState 
@@ -49,7 +49,7 @@ message PlayerState
 	Inventory inventory = 1;
 	Equipment equipment = 2;
 	PlayerHealth playerhealth = 3;
-	optional PhysicsObject physicsObject = 4;
+	optional PhysicsObject physObj = 4;
 }
 
 message Inventory 
@@ -144,10 +144,9 @@ enum BodyPart
 
 message PhysicsObject
 {
-	uint64 id = 6;
-	Vec3 position = 1;
+	optional Vec3 position = 1;
 	optional Vec3 scale = 2;
-	Vec3 rotation = 3;
+	optional Vec3 rotation = 3;
 	optional Vec3 linearVelocity = 4;
 	optional Vec3 angularVelocity = 5;
 }

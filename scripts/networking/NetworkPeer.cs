@@ -21,6 +21,7 @@ public partial class NetworkPeer : Node
 
     List<SteamNetworkingIdentity> remotePeers = new List<SteamNetworkingIdentity>();
 
+
     protected Callback<SteamNetworkingMessagesSessionRequest_t> MessageRequest;
 
     public const int k_nSteamNetworkingSend_NoNagle = 1;
@@ -55,6 +56,7 @@ public partial class NetworkPeer : Node
     {
         MessageRequest = Callback<SteamNetworkingMessagesSessionRequest_t>.Create(OnMessageRequest);
         HandshakeMessageReceivedEvent += OnHandshakeMessageReceived;
+        CommandMessageReceivedEvent += OnCommandMessageReceived;
     }
 
     private void OnHandshakeMessageReceived(Handshake handshake)
@@ -94,6 +96,23 @@ public partial class NetworkPeer : Node
                         JoinToPeer(peer);
                     }
                 }
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void OnCommandMessageReceived(Command command)
+    {
+        Global.debugLog("Command received from: " + command.Sender);
+        switch (command.Command_)
+        {
+            case "startgame":
+                Global.UIManager.clearUI();
+
+                Global.instance.AddChild(Global.WorldSim);
+                Global.WorldSim.loadScene("res://scenes/debug.tscn");
+                Global.WorldSim.SpawnLocalPlayer(Global.WorldSim.GenerateLocalPlayer());
                 break;
             default:
                 break;
@@ -150,7 +169,6 @@ public partial class NetworkPeer : Node
         nint[] chatMessages = new nint[nMaxChatMessagesPerFrame];
         for (int i = 0; i < ReceiveMessagesOnChannel(CHAT_CHANNEL, chatMessages, nMaxChatMessagesPerFrame); i++)
         {
-            Global.debugLog("Chat message received.");
             SteamNetworkingMessage_t steamMsg = SteamNetworkingMessage_t.FromIntPtr(chatMessages[i]); //Converts the message to a C# object
             Chat chat = Chat.Parser.ParseFrom(IntPtrToBytes(steamMsg.m_pData, steamMsg.m_cbSize));
             ChatMessageReceivedEvent?.Invoke(chat);
@@ -177,6 +195,15 @@ public partial class NetworkPeer : Node
 
     }
 
+    public void DisconnectFromAllPeers()
+    {
+        foreach (SteamNetworkingIdentity i in remotePeers)
+        {
+            var i2 = i;
+            SteamNetworkingMessages.CloseSessionWithUser(ref i2);
+        }
+        remotePeers.Clear();
+    }
 
     public void JoinToPeer(ulong id)
     {
@@ -224,9 +251,12 @@ public partial class NetworkPeer : Node
     public void CommandAllPeers(string command, List<string> commandParams)
     {
         Command cmd = new Command() { Command_ = command, Sender = Global.clientID };
-        foreach(string param in commandParams)
+        if (commandParams != null)
         {
-            cmd.Params.Add(param);
+            foreach (string param in commandParams)
+            {
+                cmd.Params.Add(param);
+            }
         }
         CommandMessageReceivedEvent?.Invoke(cmd);
         MessageAllPeers(cmd, COMMAND_CHANNEL);
