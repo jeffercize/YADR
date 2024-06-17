@@ -79,12 +79,15 @@ public partial class WorldSim : Node3D
     {
         remotePlayers.Add(player.clientID, player);
         AddChild(player);
+        player.spawned = true;
+        localPlayer.GlobalPosition = new Vector3(0, 20, 0);
     }
 
     public void SpawnLocalPlayer(Player player)
     {
         localPlayer = player;
         AddChild(player);
+        player.spawned = true;
         localPlayer.GlobalPosition = new Vector3(0, 10, 0);
     }
 
@@ -132,7 +135,11 @@ public partial class WorldSim : Node3D
         {
             state.GameObjects.Add(obj.ToNetworkMessage());
         }
+
+
         state.States.Add(localPlayer.ToNetworkMessage());
+
+        //Global.debugLog("Sending local player + object state with " + state.GameObjects.Count + " objects at tick: " + tick);
         Global.NetworkPeer.MessageAllPeers(state);
         tick++;
     }

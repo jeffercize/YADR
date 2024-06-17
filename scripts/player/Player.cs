@@ -11,6 +11,7 @@ public partial class Player : Character
 
     public Player(PlayerState playerState)
     {
+        FromNetworkMessage(playerState);
     }
 
     public Player desiredState;
@@ -289,11 +290,13 @@ public partial class Player : Character
     internal PlayerState ToNetworkMessage()
     {
         PlayerState state = new PlayerState(); 
+        Global.debugLog("Packing player non-physics state for local player");
         state.Playerhealth = health?.ToNetworkMessage();
         state.Equipment = equipment?.ToNetworkMessage();
         state.Inventory = inventory?.ToNetworkMessage();
         state.ClientID = clientID;
         PhysicsObject physObj = new PhysicsObject();
+        Global.debugLog("Packing player physics state for local player");
         physObj.Position = new Vec3() { X = GlobalPosition.X, Y = GlobalPosition.Y, Z = GlobalPosition.Z };
         physObj.Rotation = new Vec3() { X = GlobalRotation.X, Y = GlobalRotation.Y, Z = GlobalRotation.Z };
         physObj.Scale = new Vec3() { X = Scale.X, Y = Scale.Y, Z = Scale.Z };
