@@ -76,6 +76,12 @@ void main() {
         height = closestPoint.z;
         imageStore(outputImage, coord, vec4(height, 1.0, 0.0, 1.0));
     }
+    else if (distanceToClosest < 60.0)
+    {
+        float blendFactor = (distanceToClosest - 20.0) / 40.0;
+        height = mix(closestPoint.z, height, blendFactor);
+        imageStore(outputImage, coord, vec4(height, 0.0, 0.0, 1.0));
+    }
     else
     {
         imageStore(outputImage, coord, vec4(height, 0.0, 0.0, 1.0));

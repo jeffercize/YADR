@@ -10,7 +10,7 @@ using System.Reflection;
 
 public partial class TerrainChunk : Node3D
 {
-    public static int highQuality = 4;
+    public static int highQuality = 1;
     public static int midQuality = 16;
     public static int lowQuality = 32;
 
@@ -155,7 +155,7 @@ public partial class TerrainChunk : Node3D
         if (quality <= highQuality)
         {
             //CallDeferred(TerrainChunk.MethodName.RebuildDebugCollision, paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX * 4.0f, 0.0f, offsetY * 4.0f), quality);
-            //RebuildDebugCollision(paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX * 4.0f, 0.0f, offsetY * 4.0f), quality);
+            // RebuildDebugCollision(paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX * 4.0f, 0.0f, offsetY * 4.0f), quality);
             RebuildCollisionMesh(paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX * 4.0f, 0.0f, offsetY * 4.0f), quality);
         }
 
@@ -182,7 +182,36 @@ public partial class TerrainChunk : Node3D
             for (int j = depth - 1; j >= 0; j--)
             {
                 int index = i * depth + (depth - 1 - j);
-                mapData[index] = heightMap.GetPixel(i * resolution + 15 , j * resolution + 15).R * heightScale; //+16 because we are using the padded image
+                int iFilterDirection = 1;
+                int jFilterDirection = 1;
+                if(i < width - 1)
+                {
+                    if(j < depth - 1)
+                    {
+                       //lazy if statements 
+                    }
+                    else
+                    {
+                        jFilterDirection = 0;
+                    }
+                }
+                else if(j < depth - 1)
+                {
+                    iFilterDirection = 0;
+                }
+                else
+                {
+                    iFilterDirection = 0;
+                    jFilterDirection = 0;
+                }
+
+                float s1 = heightMap.GetPixel(i * resolution + 15 , j * resolution + 15).R * heightScale; //+16 because we are using the padded image
+                float s2 = heightMap.GetPixel(i * resolution + 15 + iFilterDirection, j * resolution + 15).R * heightScale; //+16 because we are using the padded image
+                float s3 = heightMap.GetPixel(i * resolution + 15 , j * resolution + 15 + jFilterDirection).R * heightScale; //+16 because we are using the padded image
+                float s4 = heightMap.GetPixel(i * resolution + 15 + iFilterDirection, j * resolution + 15 + jFilterDirection).R * heightScale; //+16 because we are using the padded image
+
+                mapData[index] = (s1+s2+s3+s4)/4.0f;
+                //mapData[index] = heightMap.GetPixel(i * resolution + 15 , j * resolution + 15).R * heightScale; //+16 because we are using the padded image
                 if (mapData[index] < minHeight)
                 {
                     minHeight = mapData[index];
@@ -252,7 +281,36 @@ public partial class TerrainChunk : Node3D
             for (int j = depth - 1; j >= 0; j--)
             {
                 int index = i * depth + (depth - 1 - j);
-                mapData[index] = heightMap.GetPixel(i * resolution + 15 , j * resolution + 15).R * heightScale; //+16 because we are using the padded image
+                int iFilterDirection = 1;
+                int jFilterDirection = 1;
+                if (i < width - 1)
+                {
+                    if (j < depth - 1)
+                    {
+                        //lazy if statements 
+                    }
+                    else
+                    {
+                        jFilterDirection = 0;
+                    }
+                }
+                else if (j < depth - 1)
+                {
+                    iFilterDirection = 0;
+                }
+                else
+                {
+                    iFilterDirection = 0;
+                    jFilterDirection = 0;
+                }
+
+                float s1 = heightMap.GetPixel(i * resolution + 15, j * resolution + 15).R * heightScale; //+16 because we are using the padded image
+                float s2 = heightMap.GetPixel(i * resolution + 15 + iFilterDirection, j * resolution + 15).R * heightScale; //+16 because we are using the padded image
+                float s3 = heightMap.GetPixel(i * resolution + 15, j * resolution + 15 + jFilterDirection).R * heightScale; //+16 because we are using the padded image
+                float s4 = heightMap.GetPixel(i * resolution + 15 + iFilterDirection, j * resolution + 15 + jFilterDirection).R * heightScale; //+16 because we are using the padded image
+
+                mapData[index] = (s1 + s2 + s3 + s4) / 4.0f;
+                //mapData[index] = heightMap.GetPixel(i * resolution + 15 , j * resolution + 15).R * heightScale; //+16 because we are using the padded image
                 if (mapData[index] < minHeight)
                 {
                     minHeight = mapData[index];
@@ -421,7 +479,7 @@ public partial class TerrainChunk : Node3D
         RenderingServer.InstanceSetTransform(instance, xform);
         if(quality >= 8)
         {
-            RenderingServer.InstanceGeometrySetVisibilityRange(instance, 1768.0f, 0.0f, 500.0f, 0.0f, RenderingServer.VisibilityRangeFadeMode.Self);
+            RenderingServer.InstanceGeometrySetVisibilityRange(instance, 1468.0f, 0.0f, 500.0f, 0.0f, RenderingServer.VisibilityRangeFadeMode.Self);
         }
         ShaderMaterial terrainMat = new ShaderMaterial();
         terrainMat.Shader = terrainShader;
