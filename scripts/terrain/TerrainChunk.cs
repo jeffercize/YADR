@@ -11,7 +11,7 @@ using System.Reflection;
 public partial class TerrainChunk : Node3D
 {
     public static int highQuality = 1;
-    public static int midQuality = 16;
+    public static int midQuality = 8;
     public static int lowQuality = 32;
 
     ImageTexture heightMapTexture;
@@ -48,7 +48,7 @@ public partial class TerrainChunk : Node3D
 
     Rid region;
 
-    Thread setupMeshThread;
+    //Thread setupMeshThread;
 
     bool cleaningUp = false;
     bool deployedMesh = false;
@@ -87,12 +87,15 @@ public partial class TerrainChunk : Node3D
 
         if(quality <= highQuality)
         {
+            ThreadPool.QueueUserWorkItem(BuildCollisionCallback, (paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX * 4.0f, 0.0f, offsetY * 4.0f), quality));
+
             //BuildDebugCollision(paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX * 4.0f, 0.0f, offsetY * 4.0f), quality);
-            Thread setupColliderThread = new Thread(() => BuildCollision(paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX*4.0f, 0.0f, offsetY*4.0f), quality));
-            setupColliderThread.Start();
+            /*Thread setupColliderThread = new Thread(() => BuildCollision(paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX*4.0f, 0.0f, offsetY*4.0f), quality));
+            setupColliderThread.Start();*/
         }
-        setupMeshThread = new Thread(() => BuildMesh(paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX*4.0f, 0.0f, offsetY*4.0f), quality));
-        setupMeshThread.Start();                                  
+        ThreadPool.QueueUserWorkItem(BuildMeshCallback, (paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX * 4.0f, 0.0f, offsetY * 4.0f), quality));
+/*        setupMeshThread = new Thread(() => BuildMesh(paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX*4.0f, 0.0f, offsetY*4.0f), quality));
+        setupMeshThread.Start();     */                             
         //BuildMesh(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX, 0.0f, offsetY));
 
         //Thread buildNavMeshThread = new Thread(() => terrainChunk.BuildNavigationMesh(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX, 0.0f, offsetY)));
@@ -116,6 +119,18 @@ public partial class TerrainChunk : Node3D
         }
     }
 
+    private void BuildCollisionCallback(Object state)
+    {
+        (Image paddedImg, float heightScale, int x_axis, int y_axis, Vector3 globalPosition, int quality) = ((Image, float, int, int, Vector3, int))state;
+        BuildCollision(paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX * 4.0f, 0.0f, offsetY * 4.0f), quality);
+    }
+
+    private void BuildMeshCallback(Object state)
+    {
+        (Image paddedImg, float heightScale, int x_axis, int y_axis, Vector3 globalPosition, int quality) = ((Image, float, int, int, Vector3, int))state;
+        BuildMesh(paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX * 4.0f, 0.0f, offsetY * 4.0f), quality);
+    }
+
     public void PrepForFree()
     {
         //RenderingServer.InstanceSetVisible(instance, false);
@@ -137,7 +152,7 @@ public partial class TerrainChunk : Node3D
 
         //we need to check if the mesh setup thread is running because it is potentially still working
         Stopwatch sw = Stopwatch.StartNew();
-        while (setupMeshThread.IsAlive)
+/*        while (setupMeshThread.IsAlive)
         {
             setupMeshThread.Join();
             if(sw.ElapsedMilliseconds > 4)
@@ -149,9 +164,10 @@ public partial class TerrainChunk : Node3D
                 //shouldn't be possible if we pre-load on launch properly :)
                 GD.Print("yo the mesh isnt even deployed");
             }
-        }
-        Thread rebuildMeshThread = new Thread(() => RebuildMesh(new Vector3(offsetX*4.0f, 0.0f, offsetY*4.0f)));
-        rebuildMeshThread.Start();
+        }*/
+        RebuildMesh(new Vector3(offsetX * 4.0f, 0.0f, offsetY * 4.0f));
+/*        Thread rebuildMeshThread = new Thread(() => RebuildMesh(new Vector3(offsetX*4.0f, 0.0f, offsetY*4.0f)));
+        rebuildMeshThread.Start();*/
         if (quality <= highQuality)
         {
             //CallDeferred(TerrainChunk.MethodName.RebuildDebugCollision, paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX * 4.0f, 0.0f, offsetY * 4.0f), quality);
@@ -477,7 +493,7 @@ public partial class TerrainChunk : Node3D
         Transform3D xform = new Transform3D(Basis.Identity, myGlobalPosition);
 
         RenderingServer.InstanceSetTransform(instance, xform);
-        if(quality >= 8)
+        if(quality >= 4)
         {
             RenderingServer.InstanceGeometrySetVisibilityRange(instance, 1468.0f, 0.0f, 500.0f, 0.0f, RenderingServer.VisibilityRangeFadeMode.Self);
         }
@@ -513,6 +529,10 @@ public partial class TerrainChunk : Node3D
         RenderingServer.MaterialSetParam(terrainMaterial, "heightMap", heightMapTexture.GetRid());
         Transform3D xform = new Transform3D(Basis.Identity, globalPosition);
         RenderingServer.InstanceSetTransform(instance, xform);
+        if (quality >= 4)
+        {
+            RenderingServer.InstanceGeometrySetVisibilityRange(instance, 1468.0f, 0.0f, 500.0f, 0.0f, RenderingServer.VisibilityRangeFadeMode.Self);
+        }
         RenderingServer.InstanceSetVisible(instance, true);
     }
 
@@ -531,7 +551,36 @@ public partial class TerrainChunk : Node3D
             for (int j = depth - 1; j >= 0; j--)
             {
                 int index = i * depth + (depth - 1 - j);
-                mapData[index] = heightMap.GetPixel(i * resolution + 15, j * resolution + 15).R * heightScale; //+16 because we are using the padded image
+                int iFilterDirection = 1;
+                int jFilterDirection = 1;
+                if (i < width - 1)
+                {
+                    if (j < depth - 1)
+                    {
+                        //lazy if statements 
+                    }
+                    else
+                    {
+                        jFilterDirection = 0;
+                    }
+                }
+                else if (j < depth - 1)
+                {
+                    iFilterDirection = 0;
+                }
+                else
+                {
+                    iFilterDirection = 0;
+                    jFilterDirection = 0;
+                }
+
+                float s1 = heightMap.GetPixel(i * resolution + 15, j * resolution + 15).R * heightScale; //+16 because we are using the padded image
+                float s2 = heightMap.GetPixel(i * resolution + 15 + iFilterDirection, j * resolution + 15).R * heightScale; //+16 because we are using the padded image
+                float s3 = heightMap.GetPixel(i * resolution + 15, j * resolution + 15 + jFilterDirection).R * heightScale; //+16 because we are using the padded image
+                float s4 = heightMap.GetPixel(i * resolution + 15 + iFilterDirection, j * resolution + 15 + jFilterDirection).R * heightScale; //+16 because we are using the padded image
+
+                mapData[index] = (s1 + s2 + s3 + s4) / 4.0f;
+                //mapData[index] = heightMap.GetPixel(i * resolution + 15 , j * resolution + 15).R * heightScale; //+16 because we are using the padded image
                 if (mapData[index] < minHeight)
                 {
                     minHeight = mapData[index];
@@ -571,7 +620,36 @@ public partial class TerrainChunk : Node3D
             for (int j = depth - 1; j >= 0; j--)
             {
                 int index = i * depth + (depth - 1 - j);
-                mapData[index] = heightMap.GetPixel(i * resolution + 15, j * resolution + 15).R * heightScale; //+16 because we are using the padded image
+                int iFilterDirection = 1;
+                int jFilterDirection = 1;
+                if (i < width - 1)
+                {
+                    if (j < depth - 1)
+                    {
+                        //lazy if statements 
+                    }
+                    else
+                    {
+                        jFilterDirection = 0;
+                    }
+                }
+                else if (j < depth - 1)
+                {
+                    iFilterDirection = 0;
+                }
+                else
+                {
+                    iFilterDirection = 0;
+                    jFilterDirection = 0;
+                }
+
+                float s1 = heightMap.GetPixel(i * resolution + 15, j * resolution + 15).R * heightScale; //+16 because we are using the padded image
+                float s2 = heightMap.GetPixel(i * resolution + 15 + iFilterDirection, j * resolution + 15).R * heightScale; //+16 because we are using the padded image
+                float s3 = heightMap.GetPixel(i * resolution + 15, j * resolution + 15 + jFilterDirection).R * heightScale; //+16 because we are using the padded image
+                float s4 = heightMap.GetPixel(i * resolution + 15 + iFilterDirection, j * resolution + 15 + jFilterDirection).R * heightScale; //+16 because we are using the padded image
+
+                mapData[index] = (s1 + s2 + s3 + s4) / 4.0f;
+                //mapData[index] = heightMap.GetPixel(i * resolution + 15 , j * resolution + 15).R * heightScale; //+16 because we are using the padded image
                 if (mapData[index] < minHeight)
                 {
                     minHeight = mapData[index];

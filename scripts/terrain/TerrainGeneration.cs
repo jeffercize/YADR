@@ -83,6 +83,7 @@ public partial class TerrainGeneration : Node3D
         grassShader = GD.Load<Shader>("res://shaders/terrain/grassShader.gdshader");
         pathBuilderShaderFile = GD.Load<RDShaderFile>("res://shaders/terrain/pathbuilder.glsl");
 
+
         player = GetNode<CharacterBody3D>("Player");
         for (int i = 0; i < 20; i++)
         {
@@ -149,6 +150,8 @@ public partial class TerrainGeneration : Node3D
         // Calculate the player's current chunk
         int playerChunkX = (int)Math.Floor((playerPosition.X / 2048));
         int playerChunkY = (int)Math.Floor((playerPosition.Z / 2048));
+
+
 
 
         // Only update the current chunk if the player is outside the buffer zone
@@ -238,15 +241,15 @@ public partial class TerrainGeneration : Node3D
                     //GD.Print("USING FREE CHUNK");
                     if (renderingDevices.TryDequeue(out RenderingDevice rd))
                     {
-                        Thread updateTerrainThread = new Thread(() => UpdateTerrainChunk(rd, tempChunk, TerrainChunk.highQuality, (requestedChunk.Item1, requestedChunk.Item2)));
-                        updateTerrainThread.Start();
+                        ThreadPool.QueueUserWorkItem(UpdateTerrainChunkCallback, (rd, tempChunk, TerrainChunk.highQuality, (requestedChunk.Item1, requestedChunk.Item2)));
+                        /*Thread updateTerrainThread = new Thread(() => UpdateTerrainChunk(rd, tempChunk, TerrainChunk.highQuality, (requestedChunk.Item1, requestedChunk.Item2)));
+                        updateTerrainThread.Start();*/
                     }
                 }
                 else if (renderingDevices.TryDequeue(out RenderingDevice rd))
                 {
                     //GD.Print("Create New CHUNK");
-                    Thread addTerrainThread = new Thread(() => AddTerrain(rd, false, TerrainChunk.highQuality, (requestedChunk.Item1, requestedChunk.Item2)));
-                    addTerrainThread.Start();
+                    ThreadPool.QueueUserWorkItem(AddTerrainCallback, (rd, false, TerrainChunk.highQuality, (requestedChunk.Item1, requestedChunk.Item2)));
                 }
                 else
                 {
@@ -266,14 +269,14 @@ public partial class TerrainGeneration : Node3D
                     //GD.Print("USING FREE MID CHUNK");
                     if (renderingDevices.TryDequeue(out RenderingDevice rd))
                     {
-                        Thread updateTerrainThread = new Thread(() => UpdateMidTerrainChunk(rd, tempChunk, TerrainChunk.midQuality, (requestedChunk.Item1, requestedChunk.Item2)));
-                        updateTerrainThread.Start();
+                        ThreadPool.QueueUserWorkItem(UpdateTerrainChunkCallback, (rd, tempChunk, TerrainChunk.midQuality, (requestedChunk.Item1, requestedChunk.Item2)));
+
                     }
                 }
                 else if (renderingDevices.TryDequeue(out RenderingDevice rd))
                 {
-                    Thread addTerrainThread = new Thread(() => AddMidTerrain(rd, false, TerrainChunk.midQuality, (requestedChunk.Item1, requestedChunk.Item2)));
-                    addTerrainThread.Start();
+                    ThreadPool.QueueUserWorkItem(AddTerrainCallback, (rd, false, TerrainChunk.midQuality, (requestedChunk.Item1, requestedChunk.Item2)));
+
                 }
                 else
                 {
@@ -311,33 +314,49 @@ public partial class TerrainGeneration : Node3D
         {
             GD.Print($"Full Process Time elapsed: {sw2.ElapsedMilliseconds}");
         }
-
-/*        if (Input.IsKeyPressed(Key.K)) // Check if K key is pressed
-        {
-            GD.Print("Player Location:" + playerChunkX + " " + playerChunkY);
-            GD.Print("midLODChunkRequests:");
-            foreach (var request in midLODChunkRequests)
-            {
-                GD.Print(request);
-            }
-
-            GD.Print("midLODTerrainChunks (sorted by keys):");
-            // Sort the ConcurrentDictionary by keys using LINQ
-            var sortedChunks = midLODTerrainChunks.OrderBy(kvp => kvp.Key);
-            foreach (var kvp in sortedChunks)
-            {
-                GD.Print($"Key: {kvp.Key}, Value: {kvp.Value}");
-            }
-
-            GD.Print("freeMidLODChunks:");
-            foreach (var chunk in freeMidLODChunks)
-            {
-                GD.Print(chunk);
-            }
-        }*/
     }
 
+    void UpdateTerrainChunkCallback(Object state)
+    {
+        (RenderingDevice, TerrainChunk, int quality, (int, int)) data = ((RenderingDevice, TerrainChunk, int, (int, int)))state;
+        if(data.quality == TerrainChunk.highQuality)
+        {
+            UpdateHighTerrainChunk(data.Item1, data.Item2, data.Item3, data.Item4);
+        }
+        else if(data.quality == TerrainChunk.midQuality)
+        {
+            UpdateMidTerrainChunk(data.Item1, data.Item2, data.Item3, data.Item4);
+        }
+        else if (data.quality == TerrainChunk.lowQuality)
+        {
+            UpdateLowTerrainChunk(data.Item1, data.Item2, data.Item3, data.Item4);
+        }
+        else
+        {
+            GD.Print("Invalid Update Quality");
+        }
+    }
 
+    void AddTerrainCallback(Object state)
+    {
+        (RenderingDevice, bool, int quality, (int, int)) data = ((RenderingDevice, bool, int, (int, int)))state;
+        if (data.quality == TerrainChunk.highQuality)
+        {
+            AddTerrain(data.Item1, data.Item2, data.Item3, data.Item4);
+        }
+        else if (data.quality == TerrainChunk.midQuality)
+        {
+            AddMidTerrain(data.Item1, data.Item2, data.Item3, data.Item4);
+        }
+        else if (data.quality == TerrainChunk.lowQuality)
+        {
+            AddLowTerrain(data.Item1, data.Item2, data.Item3, data.Item4);
+        }
+        else
+        {
+            GD.Print("Invalid Add Quality");
+        }
+    }
     public static float Lerp(float a, float b, float t)
     {
         return a + (b - a) * t;
@@ -408,10 +427,6 @@ public partial class TerrainGeneration : Node3D
             }
         }
     }
-
-
-
-
 
     public Image ApplyGassianAndBoxBlur(RenderingDevice rd, Image image, RenderingDevice.DataFormat imageFormat)
     {
@@ -901,7 +916,7 @@ public partial class TerrainGeneration : Node3D
         }
         else
         {
-/*            GD.Print("OBSOLETE SHOULD NOT BE CALLED");  //we generate region ahead of time and should be loaded into paddedHeightMaps ahead of time
+/*            GD.Print("OBSOLETE SHOULD NOT BE CALLED");  //I changed my mind regions suck for speed 6/18/2024 //we generate region ahead of time and should be loaded into paddedHeightMaps ahead of time
             return;*/
             paddedImg = GenerateTerrain(rd, offsetX, offsetY, x_axis, y_axis);
             renderingDevices.Enqueue(rd);
