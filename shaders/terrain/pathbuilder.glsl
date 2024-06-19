@@ -5,9 +5,10 @@ layout(local_size_x = 32, local_size_y = 32) in;
 
 layout(set = 0, binding = 0) uniform sampler2D noiseTexture;
 
-layout(set = 0, binding = 1, rg32f) uniform image2D outputImage;
+layout(set = 0, binding = 1, r32f) uniform image2D outputImage;
+layout(set = 0, binding = 2, r8) uniform image2D pathOutputImage;
 
-layout(set = 0, binding = 2) restrict buffer ImageDimensions {
+layout(set = 0, binding = 3) restrict buffer ImageDimensions {
     int imageWidth;
     int imageHeight;
     int offsetX;
@@ -16,11 +17,11 @@ layout(set = 0, binding = 2) restrict buffer ImageDimensions {
     int gridDimY;
 };
 
-layout(std430, binding = 3) buffer CellIndexBuffer {
+layout(std430, binding = 4) buffer CellIndexBuffer {
     ivec2 cellIndices[];
 };
 
-layout(std140, binding = 4) buffer PointsArrayBuffer {
+layout(std140, binding = 5) buffer PointsArrayBuffer {
     vec4 points[];
 };
 
@@ -48,42 +49,29 @@ void main() {
             ivec2 nearbyCellID = ivec2(cellID.x + dx, cellID.y + dy);
             // Ensure nearbyCellID is within grid bounds
             int cellIndex = (nearbyCellID.x + 1) + ((nearbyCellID.y + 1) * gridDims.x);
-            if (cellIndex >= 0 && cellIndex < cellIndices.length()) {
-                startIndex = cellIndices[cellIndex].x;
-                int count = cellIndices[cellIndex].y;
-                for (int i = 0; i < count; i++) {
-                    vec4 point = points[startIndex + i];
-                    float distance = distance(point.xy, vec2(global_coord));
-                    if (distance < distanceToClosest) {
-                        distanceToClosest = distance;
-                        closestPoint = point;
-                    }
+            //clamp cellIndex as opposed to a if statement to avoid conditional branching
+            cellIndex = clamp(cellIndex, 0, cellIndices.length() - 1);
+            startIndex = cellIndices[cellIndex].x;
+            int count = cellIndices[cellIndex].y;
+            for (int i = 0; i < count; i++) {
+                vec4 point = points[startIndex + i];
+                float distance = distance(point.xy, vec2(global_coord));
+                if (distance < distanceToClosest) {
+                    distanceToClosest = distance;
+                    closestPoint = point;
                 }
             }
         }
     }
-    
-    if (height < 0.0) {
-        height = height / ((1.0 - height) * (1.0 - height));
-    }
-    else 
-    {
-        height = height * height * height;
-    }
-
-    if(distanceToClosest < 20.0)
-    {
-        height = closestPoint.z;
-        imageStore(outputImage, coord, vec4(height, 1.0, 0.0, 1.0));
-    }
-    else if (distanceToClosest < 60.0)
-    {
-        float blendFactor = (distanceToClosest - 20.0) / 40.0;
-        height = mix(closestPoint.z, height, blendFactor);
-        imageStore(outputImage, coord, vec4(height, 0.0, 0.0, 1.0));
-    }
-    else
-    {
-        imageStore(outputImage, coord, vec4(height, 0.0, 0.0, 1.0));
-    }
+    float adjustedHeight = height < 0.0 ? height / ((1.0 - height) * (1.0 - height)) : height * height * height;
+    float isClose = step(distanceToClosest, 20.0);
+    float isMedium = step(20.0, distanceToClosest) * (1.0 - step(60.0, distanceToClosest));
+    float blendFactor = (distanceToClosest - 20.0) / 40.0;
+    blendFactor = isMedium * blendFactor + isClose * (1.0 - isMedium);
+    float finalHeight = mix(adjustedHeight, closestPoint.z, isClose);
+    finalHeight = mix(finalHeight, mix(closestPoint.z, adjustedHeight, blendFactor), isMedium);
+    vec4 color = vec4(finalHeight, isClose, 0.0, 1.0);
+    vec4 pathColor = vec4(isClose * (1.0 - isMedium), 0.0, 0.0, 1.0);
+    imageStore(outputImage, coord, color);
+    imageStore(pathOutputImage, coord, pathColor);
 }

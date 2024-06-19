@@ -15,6 +15,7 @@ public partial class TerrainChunk : Node3D
     public static int lowQuality = 32;
 
     ImageTexture heightMapTexture;
+    ImageTexture pathMapTexture;
     CompressedTexture2D rock;
     CompressedTexture2D grass;
     CompressedTexture2D road;
@@ -24,8 +25,8 @@ public partial class TerrainChunk : Node3D
 
     Shader terrainShader;
 
-    Image mapImage;
-    Image paddedImg;
+    (Image heightMap, Image pathMap) mapImgs;
+    (Image heightMap, Image pathMap) paddedMaps;
     float heightScale;
     int x_axis;
     int y_axis;
@@ -60,10 +61,12 @@ public partial class TerrainChunk : Node3D
     CollisionShape3D debugColShape;
     HeightMapShape3D hshape;
 
-    public TerrainChunk(Image mapImage, Image paddedImg, float heightScale, int x_axis, int y_axis, int offsetX, int offsetY, bool wantGrass, int quality, TerrainGeneration parent, RDShaderFile blendShaderFile, Shader grassShader, CompressedTexture2D rock, CompressedTexture2D grass, CompressedTexture2D road, CompressedTexture2D rockNormal, CompressedTexture2D grassNormal, Shader terrainShader)
+    public TerrainChunk((Image heightMap, Image pathMap) mapImgs, (Image heightMap, Image pathMap) paddedMaps, float heightScale, int x_axis, int y_axis, int offsetX, int offsetY, bool wantGrass, int quality, TerrainGeneration parent, RDShaderFile blendShaderFile, Shader grassShader, CompressedTexture2D rock, CompressedTexture2D grass, CompressedTexture2D road, CompressedTexture2D rockNormal, CompressedTexture2D grassNormal, Shader terrainShader)
 	{
-        this.mapImage = mapImage;
-        this.paddedImg = paddedImg;
+        this.mapImgs = mapImgs;
+        this.paddedMaps = paddedMaps;
+/*        paddedMaps.heightMap.SavePng("C:\\Users\\jeffe\\test_images\\paddedHEIGHTmap" + "(" + offsetX + "," + offsetY + ")" + ".png");
+        paddedMaps.pathMap.SavePng("C:\\Users\\jeffe\\test_images\\paddedPATHmap" + "(" + offsetX + "," + offsetY + ")" + ".png");*/
         this.heightScale = heightScale;
         this.x_axis = x_axis;
         this.y_axis = y_axis;
@@ -87,13 +90,13 @@ public partial class TerrainChunk : Node3D
 
         if(quality <= highQuality)
         {
-            ThreadPool.QueueUserWorkItem(BuildCollisionCallback, (paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX * 4.0f, 0.0f, offsetY * 4.0f), quality));
+            ThreadPool.QueueUserWorkItem(BuildCollisionCallback, (paddedMaps.heightMap, heightScale, x_axis, y_axis, new Vector3(offsetX * 4.0f, 0.0f, offsetY * 4.0f), quality));
 
             //BuildDebugCollision(paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX * 4.0f, 0.0f, offsetY * 4.0f), quality);
             /*Thread setupColliderThread = new Thread(() => BuildCollision(paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX*4.0f, 0.0f, offsetY*4.0f), quality));
             setupColliderThread.Start();*/
         }
-        ThreadPool.QueueUserWorkItem(BuildMeshCallback, (paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX * 4.0f, 0.0f, offsetY * 4.0f), quality));
+        ThreadPool.QueueUserWorkItem(BuildMeshCallback, (paddedMaps, heightScale, x_axis, y_axis, new Vector3(offsetX * 4.0f, 0.0f, offsetY * 4.0f), quality));
 /*        setupMeshThread = new Thread(() => BuildMesh(paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX*4.0f, 0.0f, offsetY*4.0f), quality));
         setupMeshThread.Start();     */                             
         //BuildMesh(mapImage, heightScale, x_axis, y_axis, new Vector3(offsetX, 0.0f, offsetY));
@@ -108,7 +111,7 @@ public partial class TerrainChunk : Node3D
             myGrassMeshMaker = new GrassMeshMaker();
             AddChild(myGrassMeshMaker);
             //grassMeshMakerNode.AddChild(myGrassManager);
-            Thread setupGrassThread = new Thread(() => myGrassMeshMaker.SetupGrass(paddedImg, offsetX, offsetY, x_axis, y_axis, null, null, this, parent, blendShaderFile, grassShader));
+            Thread setupGrassThread = new Thread(() => myGrassMeshMaker.SetupGrass(paddedMaps, offsetX, offsetY, x_axis, y_axis, null, null, this, parent, blendShaderFile, grassShader));
             setupGrassThread.Start();
             //myGrassManager.SetupGrass(paddedImg, offsetX, offsetY, x_axis, y_axis, null, null);
         }
@@ -127,8 +130,8 @@ public partial class TerrainChunk : Node3D
 
     private void BuildMeshCallback(Object state)
     {
-        (Image paddedImg, float heightScale, int x_axis, int y_axis, Vector3 globalPosition, int quality) = ((Image, float, int, int, Vector3, int))state;
-        BuildMesh(paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX * 4.0f, 0.0f, offsetY * 4.0f), quality);
+        ((Image heightMap, Image pathMap) maps, float heightScale, int x_axis, int y_axis, Vector3 globalPosition, int quality) = (((Image heightMap, Image pathMap) maps, float, int, int, Vector3, int))state;
+        BuildMesh(paddedMaps, heightScale, x_axis, y_axis, new Vector3(offsetX * 4.0f, 0.0f, offsetY * 4.0f), quality);
     }
 
     public void PrepForFree()
@@ -136,10 +139,10 @@ public partial class TerrainChunk : Node3D
         //RenderingServer.InstanceSetVisible(instance, false);
     }
 
-    public void RebuildChunk(Image mapImage, Image paddedImg, int x_axis, int y_axis, int offsetX, int offsetY)
+    public void RebuildChunk((Image heightMap, Image pathMap) mapImgs, (Image heightMap, Image pathMap) paddedMaps, int x_axis, int y_axis, int offsetX, int offsetY)
     {
-        this.mapImage = mapImage;
-        this.paddedImg = paddedImg;
+        this.mapImgs = mapImgs;
+        this.paddedMaps = paddedMaps;
         this.x_axis = x_axis;
         this.y_axis = y_axis;
         this.offsetX = offsetX;
@@ -165,14 +168,14 @@ public partial class TerrainChunk : Node3D
                 GD.Print("yo the mesh isnt even deployed");
             }
         }*/
-        RebuildMesh(new Vector3(offsetX * 4.0f, 0.0f, offsetY * 4.0f));
+        RebuildMesh(paddedMaps, new Vector3(offsetX * 4.0f, 0.0f, offsetY * 4.0f));
 /*        Thread rebuildMeshThread = new Thread(() => RebuildMesh(new Vector3(offsetX*4.0f, 0.0f, offsetY*4.0f)));
         rebuildMeshThread.Start();*/
         if (quality <= highQuality)
         {
             //CallDeferred(TerrainChunk.MethodName.RebuildDebugCollision, paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX * 4.0f, 0.0f, offsetY * 4.0f), quality);
             // RebuildDebugCollision(paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX * 4.0f, 0.0f, offsetY * 4.0f), quality);
-            RebuildCollisionMesh(paddedImg, heightScale, x_axis, y_axis, new Vector3(offsetX * 4.0f, 0.0f, offsetY * 4.0f), quality);
+            RebuildCollisionMesh(paddedMaps.heightMap, heightScale, x_axis, y_axis, new Vector3(offsetX * 4.0f, 0.0f, offsetY * 4.0f), quality);
         }
 
 
@@ -421,7 +424,7 @@ public partial class TerrainChunk : Node3D
         return true;
     }
 
-    private void BuildMesh(Image heightMap, float heightScale, int width, int depth, Vector3 globalPosition, int resolution)
+    private void BuildMesh((Image heightMap, Image pathMap) maps, float heightScale, int width, int depth, Vector3 globalPosition, int resolution)
     {
         myGlobalPosition = globalPosition;
         // Create an array for the vertices
@@ -468,7 +471,8 @@ public partial class TerrainChunk : Node3D
         arrays[(int)RenderingServer.ArrayType.Vertex] = p_vertices;
         arrays[(int)RenderingServer.ArrayType.Index] = p_indices;
 
-        heightMapTexture = ImageTexture.CreateFromImage(heightMap);
+        heightMapTexture = ImageTexture.CreateFromImage(maps.heightMap);
+        pathMapTexture = ImageTexture.CreateFromImage(maps.pathMap);
 
         // Create the mesh
         mesh = RenderingServer.MeshCreate();
@@ -508,6 +512,7 @@ public partial class TerrainChunk : Node3D
         // Set the shader parameters
 
         RenderingServer.MaterialSetParam(terrainMaterial, "heightMap", heightMapTexture.GetRid());
+        RenderingServer.MaterialSetParam(terrainMaterial, "pathMap", pathMapTexture.GetRid());
         RenderingServer.MaterialSetParam(terrainMaterial, "rockTexture", rock.GetRid());
         RenderingServer.MaterialSetParam(terrainMaterial, "grassTexture", grass.GetRid());
         RenderingServer.MaterialSetParam(terrainMaterial, "roadTexture", road.GetRid());
@@ -521,12 +526,14 @@ public partial class TerrainChunk : Node3D
         return true;
     }
 
-    public void RebuildMesh(Vector3 globalPosition)
+    public void RebuildMesh((Image heightMap, Image pathMap) maps, Vector3 globalPosition)
     {
         //RenderingServer.InstanceSetVisible(instance, false);
-        heightMapTexture = ImageTexture.CreateFromImage(paddedImg);
+        heightMapTexture = ImageTexture.CreateFromImage(maps.heightMap);
+        pathMapTexture = ImageTexture.CreateFromImage(maps.pathMap);
         RenderingServer.MaterialSetParam(terrainMaterial, "heightParams", new Vector2(heightMapTexture.GetWidth(), heightMapTexture.GetHeight()));
         RenderingServer.MaterialSetParam(terrainMaterial, "heightMap", heightMapTexture.GetRid());
+        RenderingServer.MaterialSetParam(terrainMaterial, "pathMap", pathMapTexture.GetRid());
         Transform3D xform = new Transform3D(Basis.Identity, globalPosition);
         RenderingServer.InstanceSetTransform(instance, xform);
         if (quality >= 4)

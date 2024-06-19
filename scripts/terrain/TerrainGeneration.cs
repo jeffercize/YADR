@@ -51,7 +51,7 @@ public partial class TerrainGeneration : Node3D
 
 
     //dictionary for the heightmap
-    public ConcurrentDictionary<(int, int), Image> paddedHeightMaps = new ConcurrentDictionary<(int, int), Image>();
+    public ConcurrentDictionary<(int, int), (Image, Image)> paddedHeightMaps = new ConcurrentDictionary<(int, int), (Image, Image)>();
 
     //dictionary for the regions to track if paddedHeightMaps has the region loaded
     public ConcurrentDictionary<(int, int), bool> regionLoaded = new ConcurrentDictionary<(int, int), bool>();
@@ -62,7 +62,7 @@ public partial class TerrainGeneration : Node3D
 
 
     //queue of free grass chunks to be used by grassmeshmakers
-    bool wantGrass = false;
+    bool wantGrass = true;
 
 
     CompressedTexture2D rock = ResourceLoader.Load<CompressedTexture2D>("res://.godot/imported/rock030_alb_ht.png-c841db18b37aa5c942943cffad123dc2.bptc.ctex");
@@ -151,10 +151,16 @@ public partial class TerrainGeneration : Node3D
         int playerChunkX = (int)Math.Floor((playerPosition.X / 2048));
         int playerChunkY = (int)Math.Floor((playerPosition.Z / 2048));
 
+        //cleanup heightmaps that are too far away
+        foreach (var heightmapKVP in paddedHeightMaps)
+        {
+            if(Math.Abs(heightmapKVP.Key.Item1 - playerChunkX) > 30 || Math.Abs(heightmapKVP.Key.Item2 - playerChunkY) > 30)
+            {
+                paddedHeightMaps.TryRemove(heightmapKVP.Key, out (Image, Image) temp);
+            }
+        }
 
-
-
-        // Only update the current chunk if the player is outside the buffer zone
+        // Update if the player is in a new chunk, maybe add a buffer?
         if (Math.Abs(playerChunkX - currentChunk.Item1) > 0 || Math.Abs(playerChunkY - currentChunk.Item2) > 0)
         {
             (int, int) prevChunk = currentChunk;
@@ -428,10 +434,10 @@ public partial class TerrainGeneration : Node3D
         }
     }
 
-    public Image ApplyGassianAndBoxBlur(RenderingDevice rd, Image image, RenderingDevice.DataFormat imageFormat)
+    public Image ApplyGassianAndBoxBlur(RenderingDevice rd, Image image, Image.Format imageFormat, RenderingDevice.DataFormat rdImageFormat)
     {
         // Create a local rendering device.
-        Image pathImg = Image.Create(image.GetWidth(), image.GetHeight(), false, Image.Format.Rgf);
+        Image pathImg = Image.Create(image.GetWidth(), image.GetHeight(), false, imageFormat);
         foreach (var shaderFile in shaderList)
         {
             RDShaderSpirV shaderBytecode = shaderFile.GetSpirV();
@@ -449,7 +455,7 @@ public partial class TerrainGeneration : Node3D
             RDTextureFormat inputFmt = new RDTextureFormat();
             inputFmt.Width = (uint)image.GetWidth();
             inputFmt.Height = (uint)image.GetHeight();
-            inputFmt.Format = imageFormat;
+            inputFmt.Format = rdImageFormat;
             inputFmt.UsageBits = RenderingDevice.TextureUsageBits.CanCopyFromBit | RenderingDevice.TextureUsageBits.SamplingBit | RenderingDevice.TextureUsageBits.CanUpdateBit;
             RDTextureView inputView = new RDTextureView();
             byte[] inputImageData = image.GetData();
@@ -470,10 +476,10 @@ public partial class TerrainGeneration : Node3D
             RDTextureFormat fmt = new RDTextureFormat();
             fmt.Width = (uint)image.GetWidth();
             fmt.Height = (uint)image.GetHeight();
-            fmt.Format = RenderingDevice.DataFormat.R32G32Sfloat;
+            fmt.Format = rdImageFormat;
             fmt.UsageBits = RenderingDevice.TextureUsageBits.StorageBit | RenderingDevice.TextureUsageBits.CanUpdateBit | RenderingDevice.TextureUsageBits.CanCopyFromBit;
             RDTextureView view = new RDTextureView();
-            Image output_image = Image.Create(image.GetWidth(), image.GetHeight(), false, Image.Format.Rgf);
+            Image output_image = Image.Create(image.GetWidth(), image.GetHeight(), false, imageFormat);
             byte[] outputImageData = image.GetData();
             Godot.Collections.Array<byte[]> tempData = new Godot.Collections.Array<byte[]>
             {
@@ -523,9 +529,8 @@ public partial class TerrainGeneration : Node3D
 
             //Get Data
             var byteData = rd.TextureGetData(output_tex, 0);
-            pathImg = Image.CreateFromData(image.GetWidth(), image.GetHeight(), false, Image.Format.Rgf, byteData);
+            pathImg = Image.CreateFromData(image.GetWidth(), image.GetHeight(), false, imageFormat, byteData);
             image = pathImg;
-            imageFormat = RenderingDevice.DataFormat.R32G32Sfloat;
 
             rd.FreeRid(shader);
             rd.FreeRid(sampler);
@@ -538,7 +543,7 @@ public partial class TerrainGeneration : Node3D
         return pathImg;
     }
 
-    public Image GPUGeneratePath(RenderingDevice rd, Image noiseImage, int offsetX, int offsetY, int x_axis, int y_axis, Vector3[] points)
+    public (Image heightMap, Image pathMap) GPUGeneratePath(RenderingDevice rd, Image noiseImage, int offsetX, int offsetY, int x_axis, int y_axis, Vector3[] points)
     { 
 
         //TODO this is the shit that is broken idk :) if we just loop over all points then its fine but of course that isnt an option
@@ -625,7 +630,7 @@ public partial class TerrainGeneration : Node3D
         RDTextureFormat noiseInputFmt = new RDTextureFormat();
         noiseInputFmt.Width = (uint)noiseImage.GetWidth();
         noiseInputFmt.Height = (uint)noiseImage.GetHeight();
-        noiseInputFmt.Format = RenderingDevice.DataFormat.R32G32Sfloat;
+        noiseInputFmt.Format = RenderingDevice.DataFormat.R32Sfloat;
         noiseInputFmt.UsageBits = RenderingDevice.TextureUsageBits.CanCopyFromBit | RenderingDevice.TextureUsageBits.SamplingBit | RenderingDevice.TextureUsageBits.CanUpdateBit;
         RDTextureView noiseInputView = new RDTextureView();
         byte[] noiseInputImageData = noiseImage.GetData();
@@ -644,10 +649,10 @@ public partial class TerrainGeneration : Node3D
         RDTextureFormat blendfmt = new RDTextureFormat();
         blendfmt.Width = (uint)x_axis;
         blendfmt.Height = (uint)y_axis;
-        blendfmt.Format = RenderingDevice.DataFormat.R32G32Sfloat;
+        blendfmt.Format = RenderingDevice.DataFormat.R32Sfloat;
         blendfmt.UsageBits = RenderingDevice.TextureUsageBits.StorageBit | RenderingDevice.TextureUsageBits.CanUpdateBit | RenderingDevice.TextureUsageBits.CanCopyFromBit;
         RDTextureView blendview = new RDTextureView();
-        Image blend_image = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
+        Image blend_image = Image.Create(x_axis, y_axis, false, Image.Format.Rf);
         byte[] blendOutputImageData = blend_image.GetData();
         Godot.Collections.Array<byte[]> blendTempData = new Godot.Collections.Array<byte[]>
             {
@@ -658,6 +663,25 @@ public partial class TerrainGeneration : Node3D
         blendOutputTexUniform.UniformType = RenderingDevice.UniformType.Image;
         blendOutputTexUniform.Binding = 1;
         blendOutputTexUniform.AddId(blendOutputTex);
+
+        //Setup PathOutput Image 
+        RDTextureFormat blendpathfmt = new RDTextureFormat();
+        blendpathfmt.Width = (uint)x_axis;
+        blendpathfmt.Height = (uint)y_axis;
+        blendpathfmt.Format = RenderingDevice.DataFormat.R8Unorm;
+        blendpathfmt.UsageBits = RenderingDevice.TextureUsageBits.StorageBit | RenderingDevice.TextureUsageBits.CanUpdateBit | RenderingDevice.TextureUsageBits.CanCopyFromBit;
+        RDTextureView blendpathview = new RDTextureView();
+        Image blend_path_image = Image.Create(x_axis, y_axis, false, Image.Format.R8);
+        byte[] blendOutputPathImageData = blend_path_image.GetData();
+        Godot.Collections.Array<byte[]> blendPathTempData = new Godot.Collections.Array<byte[]>
+            {
+                blendOutputPathImageData
+            };
+        Rid blendPathOutputTex = rd.TextureCreate(blendpathfmt, blendpathview, blendPathTempData);
+        RDUniform blendOutputPathTexUniform = new RDUniform();
+        blendOutputPathTexUniform.UniformType = RenderingDevice.UniformType.Image;
+        blendOutputPathTexUniform.Binding = 2;
+        blendOutputPathTexUniform.AddId(blendPathOutputTex);
 
         // Setup ImageDimensionsUniform
         int imageWidth = x_axis;
@@ -676,7 +700,7 @@ public partial class TerrainGeneration : Node3D
         RDUniform imageDimensionsUniform = new RDUniform()
         {
             UniformType = RenderingDevice.UniformType.StorageBuffer,
-            Binding = 2
+            Binding = 3
         };
         imageDimensionsUniform.AddId(imageDimensionsBuffer);
 
@@ -696,7 +720,7 @@ public partial class TerrainGeneration : Node3D
         var cellIndexUniform = new RDUniform
         {
             UniformType = RenderingDevice.UniformType.StorageBuffer,
-            Binding = 3
+            Binding = 4
         };
         cellIndexUniform.AddId(cellIndexBuffer);
 
@@ -721,12 +745,12 @@ public partial class TerrainGeneration : Node3D
         var pointsArrayUniform = new RDUniform
         {
             UniformType = RenderingDevice.UniformType.StorageBuffer,
-            Binding = 4
+            Binding = 5
         };
         pointsArrayUniform.AddId(pointsBuffer);
 
         // Create the uniformSet
-        Rid blenduniformSet = rd.UniformSetCreate(new Array<RDUniform> { noiseSamplerUniform, blendOutputTexUniform, imageDimensionsUniform, pointsArrayUniform, cellIndexUniform }, blendShader, 0);
+        Rid blenduniformSet = rd.UniformSetCreate(new Array<RDUniform> { noiseSamplerUniform, blendOutputTexUniform, blendOutputPathTexUniform, imageDimensionsUniform, pointsArrayUniform, cellIndexUniform }, blendShader, 0);
 
         // Create a compute pipeline
         Rid blendpipeline = rd.ComputePipelineCreate(blendShader);
@@ -744,7 +768,7 @@ public partial class TerrainGeneration : Node3D
         //GD.Print("Submit Generate Path Job");
         rd.Submit();
         /*int waitTime = 3000;
-        Thread.Sleep(waitTime);//this was an attempt at avoiding the hitches didnt seem to work?*/
+        Thread.Sleep(waitTime);//this was an attempt at avoiding the hitches didnt seem to work, just make the compute shader good xdd*/
         rd.Sync();
 
         //rd.FreeRid(blenduniformSet); //for some reason this is invalid to free?
@@ -752,7 +776,10 @@ public partial class TerrainGeneration : Node3D
 
         //Get Data
         var blendbyteData = rd.TextureGetData(blendOutputTex, 0);
-        Image final_img = Image.CreateFromData(x_axis, y_axis, false, Image.Format.Rgf, blendbyteData);
+        Image final_img = Image.CreateFromData(x_axis, y_axis, false, Image.Format.Rf, blendbyteData);
+
+        var blendPathByteData = rd.TextureGetData(blendPathOutputTex, 0);
+        Image final_path_img = Image.CreateFromData(x_axis, y_axis, false, Image.Format.R8, blendPathByteData);
 
         rd.FreeRid(blendShader);
         rd.FreeRid(noiseSampler);
@@ -760,13 +787,14 @@ public partial class TerrainGeneration : Node3D
         rd.FreeRid(pointsBuffer);
         rd.FreeRid(cellIndexBuffer);
         rd.FreeRid(blendOutputTex);
+        rd.FreeRid(blendPathOutputTex);
         rd.FreeRid(imageDimensionsBuffer);
 
-        return final_img;
+        return (final_img, final_path_img);
     }
 
-    public Image GenerateTerrain(RenderingDevice rd, int offsetX, int offsetY, int x_axis, int y_axis)
-	{
+    public (Image, Image) GenerateTerrain(RenderingDevice rd, int offsetX, int offsetY, int x_axis, int y_axis)
+    {
         //move offset back by 10 and add 20 extra pixels to discard after blurring
         //that way we have a ring of extra pixels so we can calculate blur
         offsetX -= 16;
@@ -777,13 +805,13 @@ public partial class TerrainGeneration : Node3D
 
         //consider moving all this noise generation to GPU and do errosion and other fun stuff
         FastNoiseLite noise = new FastNoiseLite();
-		noise.Frequency = 0.0005f;
-		noise.Seed = 1;
+        noise.Frequency = 0.0005f;
+        noise.Seed = 1;
         noise.FractalType = FastNoiseLite.FractalTypeEnum.None;
         noise.DomainWarpEnabled = false;
         noise.Offset = new Vector3(offsetX, offsetY, 0.0f);
 
-        Image noiseImage = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
+        Image noiseImage = Image.Create(x_axis, y_axis, false, Image.Format.Rf);
         Stopwatch sw = Stopwatch.StartNew();
         for(int i = 0; i < x_axis; i++)
         {
@@ -834,16 +862,19 @@ public partial class TerrainGeneration : Node3D
                 path.AddPoint(new Vector3(300, 750, 0.9f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
                 path.AddPoint(new Vector3(300, 0, 1.0f));*/
 
-        Image pathImg = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
+        Image heightMap = Image.Create(x_axis, y_axis, false, Image.Format.Rf);
+        Image pathMap = Image.Create(x_axis, y_axis, false, Image.Format.R8);
         path.BakeInterval = 0.1f;
         Vector3[] localPath = path.GetBakedPoints();
-        pathImg = GPUGeneratePath(rd, noiseImage, offsetX, offsetY, x_axis, y_axis, localPath);
+        (heightMap, pathMap) = GPUGeneratePath(rd, noiseImage, offsetX, offsetY, x_axis, y_axis, localPath);
         // Run the blur shader
-        pathImg = ApplyGassianAndBoxBlur(rd, pathImg, RenderingDevice.DataFormat.R32G32Sfloat);
+        heightMap = ApplyGassianAndBoxBlur(rd, heightMap, Image.Format.Rf, RenderingDevice.DataFormat.R32Sfloat);
+        pathMap = ApplyGassianAndBoxBlur(rd, pathMap, Image.Format.R8, RenderingDevice.DataFormat.R8Unorm);
 
-        return pathImg;
+
+        return (heightMap, pathMap);
     }
-    private void GenerateRegions()
+/*    private void GenerateRegions()
     {
         while (true)
         {
@@ -892,38 +923,42 @@ public partial class TerrainGeneration : Node3D
                 int chunkY = regionY + j;
                 int offsetX = chunkX * x_axis;
                 int offsetY = chunkY * y_axis;
-                Image paddedImg = Image.Create(x_axis + 32, y_axis + 32, false, Image.Format.Rgf);
+                Image paddedImg = Image.Create(x_axis + 32, y_axis + 32, false, Image.Format.Rf);
                 paddedImg.BlitRect(regionImg, new Rect2I(offsetX, offsetY, x_axis + 32, y_axis + 32), new Vector2I(0, 0));
                 paddedHeightMaps.TryAdd((chunkX, chunkY), paddedImg);
             }
         }
         regionLoaded.TryUpdate((regionX, regionY), true, false);
         renderingDevices.Enqueue(rd);
-    }
+    }*/
     private void UpdateTerrainChunk(RenderingDevice rd, TerrainChunk myTerrainChunk, int quality, (int, int) chunkRequest)
     {
         int offsetX = chunkRequest.Item1 * x_axis;// - (chunkRequest.Item1 * quality);
         int offsetY = chunkRequest.Item2 * y_axis;// - (chunkRequest.Item2 * quality);
 
-        Image paddedImg;
-        if (paddedHeightMaps.TryGetValue(chunkRequest, out paddedImg))
+        (Image heightMap, Image pathMap) heightMaps;
+        if (paddedHeightMaps.TryGetValue(chunkRequest, out heightMaps))
         {
             //GD.Print("we found the heightmap in the dictionary");
             renderingDevices.Enqueue(rd);
-            Image mapImage = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
-            mapImage.BlitRect(paddedImg, new Rect2I(16, 16, x_axis + 16, y_axis + 16), new Vector2I(0, 0));
-            myTerrainChunk.RebuildChunk(mapImage, paddedImg, x_axis, y_axis, offsetX, offsetY);
+            Image heightMapImage = Image.Create(x_axis, y_axis, false, Image.Format.Rf);
+            heightMapImage.BlitRect(heightMaps.heightMap, new Rect2I(16, 16, x_axis + 16, y_axis + 16), new Vector2I(0, 0));
+            Image pathMapImage = Image.Create(x_axis, y_axis, false, Image.Format.R8);
+            pathMapImage.BlitRect(heightMaps.pathMap, new Rect2I(16, 16, x_axis + 16, y_axis + 16), new Vector2I(0, 0));
+            myTerrainChunk.RebuildChunk((heightMapImage, pathMapImage), heightMaps, x_axis, y_axis, offsetX, offsetY);
         }
         else
         {
 /*            GD.Print("OBSOLETE SHOULD NOT BE CALLED");  //I changed my mind regions suck for speed 6/18/2024 //we generate region ahead of time and should be loaded into paddedHeightMaps ahead of time
             return;*/
-            paddedImg = GenerateTerrain(rd, offsetX, offsetY, x_axis, y_axis);
+            heightMaps = GenerateTerrain(rd, offsetX, offsetY, x_axis, y_axis);
             renderingDevices.Enqueue(rd);
-            paddedHeightMaps.TryAdd(chunkRequest, paddedImg);
-            Image mapImage = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
-            mapImage.BlitRect(paddedImg, new Rect2I(16, 16, x_axis + 16, y_axis + 16), new Vector2I(0, 0));
-            myTerrainChunk.RebuildChunk(mapImage, paddedImg, x_axis, y_axis, offsetX, offsetY);
+            paddedHeightMaps.TryAdd(chunkRequest, heightMaps);
+            Image heightMapImage = Image.Create(x_axis, y_axis, false, Image.Format.Rf);
+            heightMapImage.BlitRect(heightMaps.heightMap, new Rect2I(16, 16, x_axis + 16, y_axis + 16), new Vector2I(0, 0));
+            Image pathMapImage = Image.Create(x_axis, y_axis, false, Image.Format.R8);
+            pathMapImage.BlitRect(heightMaps.pathMap, new Rect2I(16, 16, x_axis + 16, y_axis + 16), new Vector2I(0, 0));
+            myTerrainChunk.RebuildChunk((heightMapImage, pathMapImage), heightMaps, x_axis, y_axis, offsetX, offsetY);
         }
         terrainChunks.TryUpdate(chunkRequest, myTerrainChunk, null);
     }
@@ -971,26 +1006,30 @@ public partial class TerrainGeneration : Node3D
     private TerrainChunk AddTerrainChunk(RenderingDevice rd, (int,int) chunkRequest, int x_axis, int y_axis, float heightScale, bool wantGrass, int quality)
     {
 
-        int offsetX = chunkRequest.Item1 * x_axis;// - (chunkRequest.Item1 * quality);
-        int offsetY = chunkRequest.Item2 * y_axis;// - (chunkRequest.Item2 * quality);
-        Image paddedImg;
-        if (paddedHeightMaps.TryGetValue(chunkRequest, out paddedImg))
+        int offsetX = chunkRequest.Item1 * x_axis;
+        int offsetY = chunkRequest.Item2 * y_axis;
+        (Image heightMap, Image pathMap) heightMaps;
+        if (paddedHeightMaps.TryGetValue(chunkRequest, out heightMaps))
         {
-            Image mapImage = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
-            mapImage.BlitRect(paddedImg, new Rect2I(16, 16, x_axis + 16, y_axis + 16), new Vector2I(0, 0));
-            TerrainChunk terrainChunk = new TerrainChunk(mapImage, paddedImg, heightScale, x_axis, y_axis, offsetX, offsetY, wantGrass, quality, this, blendShaderFile, grassShader, rock, grass, road, rockNormal, grassNormal, terrainShader);
+            Image heightMapImage = Image.Create(x_axis, y_axis, false, Image.Format.Rf);
+            heightMapImage.BlitRect(heightMaps.heightMap, new Rect2I(16, 16, x_axis + 16, y_axis + 16), new Vector2I(0, 0));
+            Image pathMapImage = Image.Create(x_axis, y_axis, false, Image.Format.R8);
+            pathMapImage.BlitRect(heightMaps.pathMap, new Rect2I(16, 16, x_axis + 16, y_axis + 16), new Vector2I(0, 0));
+            TerrainChunk terrainChunk = new TerrainChunk((heightMapImage, pathMapImage), heightMaps, heightScale, x_axis, y_axis, offsetX, offsetY, wantGrass, quality, this, blendShaderFile, grassShader, rock, grass, road, rockNormal, grassNormal, terrainShader);
             CallDeferred(Node3D.MethodName.AddChild, (terrainChunk));
             return terrainChunk;
         }
         else
         {
-/*            GD.Print("OBSOLETE SHOULD NOT BE CALLED"); //we generate region ahead of time and should be loaded into paddedHeightMaps ahead of time
-            return null;*/
-            paddedImg = GenerateTerrain(rd, offsetX, offsetY, x_axis, y_axis);
-            paddedHeightMaps.TryAdd(chunkRequest, paddedImg);
-            Image mapImage = Image.Create(x_axis, y_axis, false, Image.Format.Rgf);
-            mapImage.BlitRect(paddedImg, new Rect2I(16, 16, x_axis + 16, y_axis + 16), new Vector2I(0, 0));
-            TerrainChunk terrainChunk = new TerrainChunk(mapImage, paddedImg, heightScale, x_axis, y_axis, offsetX, offsetY, wantGrass, quality, this, blendShaderFile, grassShader, rock, grass, road, rockNormal, grassNormal, terrainShader);
+            /*            GD.Print("OBSOLETE SHOULD NOT BE CALLED"); //we generate region ahead of time and should be loaded into paddedHeightMaps ahead of time
+                        return null;*/
+            heightMaps = GenerateTerrain(rd, offsetX, offsetY, x_axis, y_axis);
+            paddedHeightMaps.TryAdd(chunkRequest, heightMaps);
+            Image heightMapImage = Image.Create(x_axis, y_axis, false, Image.Format.Rf);
+            heightMapImage.BlitRect(heightMaps.heightMap, new Rect2I(16, 16, x_axis + 16, y_axis + 16), new Vector2I(0, 0));
+            Image pathMapImage = Image.Create(x_axis, y_axis, false, Image.Format.R8);
+            pathMapImage.BlitRect(heightMaps.pathMap, new Rect2I(16, 16, x_axis + 16, y_axis + 16), new Vector2I(0, 0));
+            TerrainChunk terrainChunk = new TerrainChunk((heightMapImage, pathMapImage), heightMaps, heightScale, x_axis, y_axis, offsetX, offsetY, wantGrass, quality, this, blendShaderFile, grassShader, rock, grass, road, rockNormal, grassNormal, terrainShader);
             CallDeferred(Node3D.MethodName.AddChild, (terrainChunk));
 
             return terrainChunk;

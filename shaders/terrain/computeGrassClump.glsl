@@ -35,6 +35,8 @@ layout(set = 0, binding = 3, std430) restrict buffer InstanceDataBuffer {
 
 layout(set = 0, binding = 4) uniform sampler2D heightMap;
 
+layout(set = 0, binding = 5) uniform sampler2D pathMap;
+
 
 
 
@@ -140,7 +142,7 @@ void main() {
 	float slope = length(gradient)*200.0;
 
     //calculate control value
-    float control = texture(heightMap, heightmap_uv).g;
+    float control = texture(pathMap, heightmap_uv).r;
 
     //set instance height
     float height = mix(mix(h00, h10, f.x), mix(h01, h11, f.x), f.y)*400.0-0.1;

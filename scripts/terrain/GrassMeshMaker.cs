@@ -26,12 +26,11 @@ public partial class GrassMeshMaker : Node3D
     Mesh lowLODMesh;
 
     ImageTexture heightMapTexture;
-    ImageTexture flattenMapTexture;
-    ImageTexture controlMapTexture;
+    ImageTexture pathMapTexture;
 
     Image heightMap;
-    Image flattenMap;
-    Image controlMap;
+    Image pathMap;
+
 
     RenderingDevice rd;
     TerrainGeneration genParent;
@@ -71,8 +70,19 @@ public partial class GrassMeshMaker : Node3D
     Rid heightMapTex;
     RDUniform heightMapSamplerUniform;
 
+    RDSamplerState pathMapSamplerState;
+    Rid pathMapSampler;
+    RDTextureFormat pathMapInputFmt;
+    RDTextureView pathMapInputView;
+    byte[] pathMapInputImageData;
+    Godot.Collections.Array<byte[]> pathMapData;
+    Rid pathMapTex;
+    RDUniform pathMapSamplerUniform;
+
     public void CleanUp()
     {
+        GD.Print("buh");
+        return;
         cleaningUp = true;
         _abortRun = true;
         if (processGrassThread != null)
@@ -89,7 +99,7 @@ public partial class GrassMeshMaker : Node3D
             RenderingServer.FreeRid(chunk.Value.Item4);
 
             (Rid, Rid, Rid, Rid) temp;
-            
+
             if (activeChunkDictionary.TryGetValue(chunk.Key, out temp))
             {
                 activeChunkDictionary.TryRemove(chunk.Key, out temp);
@@ -101,9 +111,9 @@ public partial class GrassMeshMaker : Node3D
         RenderingServer.FreeRid(materialShader);
         RenderingServer.FreeRid(lowMaterialShader);
 
-        if(rd != null)
+        if (rd != null)
         {
-           genParent.renderingDevices.Enqueue(rd);
+            genParent.renderingDevices.Enqueue(rd);
         }
         this.QueueFree();
         chunkParent.QueueFree();
@@ -168,7 +178,7 @@ public partial class GrassMeshMaker : Node3D
 
     }
 
-    public void SetupGrass(Image givenHeightMap, int offsetX, int offsetY, int x_axis, int y_axis, Image givenFlattenMap, Image givenControlMap, TerrainChunk chunkParent, TerrainGeneration parent, RDShaderFile blendShaderFile, Shader grassShader)
+    public void SetupGrass((Image heightMap, Image pathMap) maps, int offsetX, int offsetY, int x_axis, int y_axis, Image givenFlattenMap, Image givenControlMap, TerrainChunk chunkParent, TerrainGeneration parent, RDShaderFile blendShaderFile, Shader grassShader)
     {
         setupThreadRunning = true;
         this.genParent = parent;
@@ -177,8 +187,10 @@ public partial class GrassMeshMaker : Node3D
         globalOffsetY = offsetY;
         globalXGridSize = x_axis;
         globalYGridSize = y_axis;
-        heightMap = givenHeightMap;
+        heightMap = maps.heightMap;
         heightMapTexture = ImageTexture.CreateFromImage(heightMap);
+        pathMap = maps.pathMap;
+        pathMapTexture = ImageTexture.CreateFromImage(pathMap);
         this.blendShaderFile = blendShaderFile;
         this.grassShader = grassShader;
         //flattenMapTexture = ImageTexture.CreateFromImage(givenFlattenMap);
@@ -231,8 +243,7 @@ public partial class GrassMeshMaker : Node3D
         RenderingServer.MaterialSetParam(grassMaterial, "heightParams", new Vector2(heightMapTexture.GetWidth(), heightMapTexture.GetHeight()));
 
         RenderingServer.MaterialSetParam(grassMaterial, "heightMap", heightMapTexture.GetRid());
-        RenderingServer.MaterialSetParam(grassMaterial, "flattenMap", heightMapTexture.GetRid());
-        RenderingServer.MaterialSetParam(grassMaterial, "controlMap", heightMapTexture.GetRid());
+        RenderingServer.MaterialSetParam(grassMaterial, "pathMap", pathMapTexture.GetRid());
 
         //set location offset
         RenderingServer.MaterialSetParam(grassMaterial, "globalOffset", new Vector2(globalOffsetX, globalOffsetY));
@@ -246,8 +257,8 @@ public partial class GrassMeshMaker : Node3D
         RenderingServer.MaterialSetParam(lowGrassMaterial, "heightParams", new Vector2(heightMapTexture.GetWidth(), heightMapTexture.GetHeight()));
 
         RenderingServer.MaterialSetParam(lowGrassMaterial, "heightMap", heightMapTexture.GetRid());
-        RenderingServer.MaterialSetParam(lowGrassMaterial, "flattenMap", heightMapTexture.GetRid());
-        RenderingServer.MaterialSetParam(lowGrassMaterial, "controlMap", heightMapTexture.GetRid());
+        RenderingServer.MaterialSetParam(grassMaterial, "pathMap", pathMapTexture.GetRid());
+
 
         //set location offset
         RenderingServer.MaterialSetParam(lowGrassMaterial, "globalOffset", new Vector2(globalOffsetX, globalOffsetY));
@@ -275,7 +286,7 @@ public partial class GrassMeshMaker : Node3D
         heightMapInputFmt = new RDTextureFormat();
         heightMapInputFmt.Width = (uint)heightMap.GetWidth();
         heightMapInputFmt.Height = (uint)heightMap.GetHeight();
-        heightMapInputFmt.Format = RenderingDevice.DataFormat.R32G32Sfloat;
+        heightMapInputFmt.Format = RenderingDevice.DataFormat.R32Sfloat;
         heightMapInputFmt.UsageBits = RenderingDevice.TextureUsageBits.CanCopyFromBit | RenderingDevice.TextureUsageBits.SamplingBit | RenderingDevice.TextureUsageBits.CanUpdateBit;
         heightMapInputView = new RDTextureView();
         heightMapInputImageData = heightMap.GetData();
@@ -289,6 +300,33 @@ public partial class GrassMeshMaker : Node3D
         heightMapSamplerUniform.Binding = 4;
         heightMapSamplerUniform.AddId(heightMapSampler);
         heightMapSamplerUniform.AddId(heightMapTex);
+
+        //Setup heightMap Image
+        pathMapSamplerState = new RDSamplerState();
+        pathMapSamplerState.RepeatU = RenderingDevice.SamplerRepeatMode.ClampToEdge;
+        pathMapSamplerState.RepeatV = RenderingDevice.SamplerRepeatMode.ClampToEdge;
+        pathMapSamplerState.RepeatW = RenderingDevice.SamplerRepeatMode.ClampToEdge;
+        pathMapSamplerState.MinFilter = RenderingDevice.SamplerFilter.Linear;
+        pathMapSamplerState.MipFilter = RenderingDevice.SamplerFilter.Linear;
+        pathMapSamplerState.MagFilter = RenderingDevice.SamplerFilter.Linear;
+        pathMapSampler = rd.SamplerCreate(pathMapSamplerState);
+        pathMapInputFmt = new RDTextureFormat();
+        pathMapInputFmt.Width = (uint)pathMap.GetWidth();
+        pathMapInputFmt.Height = (uint)pathMap.GetHeight();
+        pathMapInputFmt.Format = RenderingDevice.DataFormat.R8Unorm;
+        pathMapInputFmt.UsageBits = RenderingDevice.TextureUsageBits.CanCopyFromBit | RenderingDevice.TextureUsageBits.SamplingBit | RenderingDevice.TextureUsageBits.CanUpdateBit;
+        pathMapInputView = new RDTextureView();
+        pathMapInputImageData = pathMap.GetData();
+        pathMapData = new Godot.Collections.Array<byte[]>
+            {
+                pathMapInputImageData
+            };
+        pathMapTex = rd.TextureCreate(pathMapInputFmt, pathMapInputView, pathMapData);
+        pathMapSamplerUniform = new RDUniform();
+        pathMapSamplerUniform.UniformType = RenderingDevice.UniformType.SamplerWithTexture;
+        pathMapSamplerUniform.Binding = 5;
+        pathMapSamplerUniform.AddId(pathMapSampler);
+        pathMapSamplerUniform.AddId(pathMapTex);
 
 
 
@@ -481,7 +519,7 @@ public partial class GrassMeshMaker : Node3D
         };
         instanceDataUniform.AddId(instanceDataBuffer);
 
-        var computeUniformSet = rd.UniformSetCreate(new Array<RDUniform> { fieldDimensionsUniform, randNumUniform, clumpPointsUniform, instanceDataUniform, heightMapSamplerUniform }, computeClumpShader, 0);
+        var computeUniformSet = rd.UniformSetCreate(new Array<RDUniform> { fieldDimensionsUniform, randNumUniform, clumpPointsUniform, instanceDataUniform, heightMapSamplerUniform, pathMapSamplerUniform }, computeClumpShader, 0);
 
         // Create a compute pipeline
         Rid blendpipeline;
