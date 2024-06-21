@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using Godot.Collections;
 using System.Runtime.CompilerServices;
 using System.Reflection;
+using System.IO;
 
 public partial class TerrainGeneration : Node3D
 {
@@ -60,6 +61,7 @@ public partial class TerrainGeneration : Node3D
     public ConcurrentQueue<(Rid, Rid, Transform3D)> queuedPhysicsShapes = new ConcurrentQueue<(Rid, Rid, Transform3D)>();
     public ConcurrentQueue<TerrainChunk> queuedChunkShapes = new ConcurrentQueue<TerrainChunk>();
 
+    Curve3D path = new Curve3D();
 
     //queue of free grass chunks to be used by grassmeshmakers
     bool wantGrass = true;
@@ -79,10 +81,17 @@ public partial class TerrainGeneration : Node3D
 
     public override void _Ready()
     {
+        FastNoiseLite noise = new FastNoiseLite();
+        noise.Frequency = 0.0005f;
+        noise.Seed = 1;
+        noise.FractalType = FastNoiseLite.FractalTypeEnum.None;
+        noise.DomainWarpEnabled = false;
+
         blendShaderFile = GD.Load<RDShaderFile>("res://shaders/terrain/computeGrassClump.glsl");
         grassShader = GD.Load<Shader>("res://shaders/terrain/grassShader.gdshader");
         pathBuilderShaderFile = GD.Load<RDShaderFile>("res://shaders/terrain/pathbuilder.glsl");
 
+        path.AddPoint(new Vector3(0.0f, 0.0f, noise.GetNoise2D(0.0f, 0.0f)));
 
         player = GetNode<CharacterBody3D>("Player");
         for (int i = 0; i < 20; i++)
@@ -138,6 +147,14 @@ public partial class TerrainGeneration : Node3D
     }
     public override void _Process(double delta)
     {
+        FastNoiseLite noise = new FastNoiseLite();
+        noise.Frequency = 0.0005f;
+        noise.Seed = 1;
+        noise.FractalType = FastNoiseLite.FractalTypeEnum.None;
+        noise.DomainWarpEnabled = false;
+
+        FastNoiseLite pathVarianceNoise = new FastNoiseLite();
+        pathVarianceNoise.Seed = 2;
 
         Stopwatch sw2 = Stopwatch.StartNew();
         // Called every frame. Delta is time since the last frame
@@ -147,9 +164,11 @@ public partial class TerrainGeneration : Node3D
         // Get the player's global position
         Vector3 playerPosition = player.GlobalTransform.Origin;
 
+        int chunkSize = 2048;
+
         // Calculate the player's current chunk
-        int playerChunkX = (int)Math.Floor((playerPosition.X / 2048));
-        int playerChunkY = (int)Math.Floor((playerPosition.Z / 2048));
+        int playerChunkX = (int)Math.Floor((playerPosition.X / chunkSize));
+        int playerChunkY = (int)Math.Floor((playerPosition.Z / chunkSize));
 
         //cleanup heightmaps that are too far away
         foreach (var heightmapKVP in paddedHeightMaps)
@@ -160,13 +179,31 @@ public partial class TerrainGeneration : Node3D
             }
         }
 
-        // Update if the player is in a new chunk, maybe add a buffer?
+        // Update if the player is in a new chunk; maybe we add a buffer for switching chunks?
         if (Math.Abs(playerChunkX - currentChunk.Item1) > 0 || Math.Abs(playerChunkY - currentChunk.Item2) > 0)
         {
             (int, int) prevChunk = currentChunk;
             currentChunk = (playerChunkX, playerChunkY);
             if(currentChunk.Item1 != prevChunk.Item1 || currentChunk.Item2 != prevChunk.Item2)
             {
+                //check the Path and add points to the path where needed
+                int i = 0;
+                path.BakeInterval = 0.1f;
+                while (path.GetPointPosition(path.PointCount-1).X - ((playerChunkX * chunkSize) + (chunkSize * 25.0f)) < 0)
+                {
+                    GD.Print("last point: " + path.GetPointPosition(path.PointCount - 1));
+                    GD.Print("first point: " + path.GetPointPosition(0));
+                    Vector3 lastPosition = path.GetPointPosition(path.PointCount - 1);
+                    Vector3 nextPosition = lastPosition;
+                    nextPosition.X += 1750.0f;
+                    nextPosition.Y += pathVarianceNoise.GetNoise2D(lastPosition.X, lastPosition.Y) * 5000.0f;
+                    nextPosition.Z = noise.GetNoise2D(nextPosition.X, nextPosition.Y);
+                    //calculate curving points here to add
+                    path.AddPoint(nextPosition, new Vector3(-300.0f, 0.0f, 0.0f), new Vector3(300.0f, 0.0f, 0.0f));
+                    GD.Print("Add Point " + i);
+                    i++;
+                }
+                GD.Print("Path Length: " + path.PointCount);
                 // Request a 3x3 grid of highLOD chunks around the player.
                 for (int x = playerChunkX - 1; x <= playerChunkX + 1; x++)
                 {
@@ -183,9 +220,9 @@ public partial class TerrainGeneration : Node3D
                     }
                 }
                 // Update the outer 11x11 grid of lowLOD chunks around the player
-                for (int x = playerChunkX - 5; x <= playerChunkX + 5; x++)
+                for (int x = playerChunkX - 8; x <= playerChunkX + 8; x++)
                 {
-                    for (int y = playerChunkY - 5; y <= playerChunkY + 5; y++)
+                    for (int y = playerChunkY - 8; y <= playerChunkY + 8; y++)
                     {
                         // Skip the inner 3x3 grid (OR DONT BECAUSE IT SUCKS JUST FADE IT)
                         if (x >= playerChunkX - 1 && x <= playerChunkX + 1 && y >= playerChunkY - 1 && y <= playerChunkY + 1)
@@ -203,7 +240,7 @@ public partial class TerrainGeneration : Node3D
                 }
 
                 // Update the outer-outer 10x10 grid of lowLOD chunks around the player
-                for (int x = playerChunkX - 14; x <= playerChunkX + 14; x++)
+/*                for (int x = playerChunkX - 14; x <= playerChunkX + 14; x++)
                 {
                     for (int y = playerChunkY - 14; y <= playerChunkY + 14; y++)
                     {
@@ -220,7 +257,7 @@ public partial class TerrainGeneration : Node3D
                             lowLODChuckRequests.Enqueue((chunk.Item1, chunk.Item2));
                         }
                     }
-                }
+                }*/
 
                 // Free chunks that are no longer needed.
                 FreeChunks(playerChunkX, playerChunkY);
@@ -229,7 +266,7 @@ public partial class TerrainGeneration : Node3D
                 FreeMidLODChunks(playerChunkX, playerChunkY);
                 /*Thread freeMidLODChunksThread = new Thread(() => FreeMidLODChunks(playerChunkX, playerChunkY));
                 freeMidLODChunksThread.Start();*/
-                FreeLowLODChunks(playerChunkX, playerChunkY);
+                //FreeLowLODChunks(playerChunkX, playerChunkY);
                 /*Thread freeLowLODChunksThread = new Thread(() => FreeLowLODChunks(playerChunkX, playerChunkY));
                 freeLowLODChunksThread.Start();*/
             }
@@ -394,7 +431,7 @@ public partial class TerrainGeneration : Node3D
     {
         foreach ((int, int) chunk in midLODTerrainChunks.Keys)
         {
-            if (Math.Abs(chunk.Item1 - playerChunkX) > 5 || Math.Abs(chunk.Item2 - playerChunkY) > 5)
+            if (Math.Abs(chunk.Item1 - playerChunkX) > 8 || Math.Abs(chunk.Item2 - playerChunkY) > 8)
             {
                 //GD.Print("MID Free At: " + chunk.Item1 + " " + chunk.Item2);
                 //GD.Print("playerAt: " + playerChunkX + " " + playerChunkY);
@@ -811,6 +848,7 @@ public partial class TerrainGeneration : Node3D
         noise.DomainWarpEnabled = false;
         noise.Offset = new Vector3(offsetX, offsetY, 0.0f);
 
+
         Image noiseImage = Image.Create(x_axis, y_axis, false, Image.Format.Rf);
         Stopwatch sw = Stopwatch.StartNew();
         for(int i = 0; i < x_axis; i++)
@@ -826,24 +864,23 @@ public partial class TerrainGeneration : Node3D
         }
         //noiseImage.SavePng("C:\\Users\\jeffe\\test_images\\noise_test"+"("+ offsetX + "," + offsetY + ")"+ ".png");
 
-        Curve3D path = new Curve3D();
-        path.AddPoint(new Vector3(300, 0, 1.0f));
-        path.AddPoint(new Vector3(300, 750, 0.9f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(400, 500, 0.8f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(500, 750, 0.7f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(600, 500, 0.6f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(700, 750, 0.5f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(800, 500, 0.4f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(900, 750, 0.3f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(1000, 500, 0.2f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(1100, 750, 0.1f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(600, 3000, 0.11f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(2600, 1000, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(2600, 3500, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(4600, 1200, 0.10f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(6600, 3500, 0.33f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(7600, 1500, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
-        path.AddPoint(new Vector3(12192, 2048, 0.0f));
+/*        Curve3D localCurve = new Curve3D();
+        localCurve.AddPoint(new Vector3(300, 0, 1.0f));
+        localCurve.AddPoint(new Vector3(300, 750, 0.9f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        localCurve.AddPoint(new Vector3(400, 500, 0.8f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        localCurve.AddPoint(new Vector3(500, 750, 0.7f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        localCurve.AddPoint(new Vector3(600, 500, 0.6f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        localCurve.AddPoint(new Vector3(700, 750, 0.5f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        localCurve.AddPoint(new Vector3(800, 500, 0.4f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        localCurve.AddPoint(new Vector3(900, 750, 0.3f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        localCurve.AddPoint(new Vector3(1100, 750, 0.1f), new Vector3(-100.0f, 0.0f, 0.0f), new Vector3(100.0f, 0.0f, 0.0f));
+        localCurve.AddPoint(new Vector3(600, 3000, 0.11f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        localCurve.AddPoint(new Vector3(2600, 1000, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        localCurve.AddPoint(new Vector3(2600, 3500, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        localCurve.AddPoint(new Vector3(4600, 1200, 0.10f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        localCurve.AddPoint(new Vector3(6600, 3500, 0.33f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        localCurve.AddPoint(new Vector3(7600, 1500, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
+        localCurve.AddPoint(new Vector3(12192, 2048, 0.0f));*/
         /*        path.AddPoint(new Vector3(12192, 2048, 0.0f));
                 path.AddPoint(new Vector3(7600, 1500, 0.19f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
                 path.AddPoint(new Vector3(6600, 3500, 0.33f), new Vector3(-200.0f, 0.0f, 0.0f), new Vector3(200.0f, 0.0f, 0.0f));
@@ -864,8 +901,12 @@ public partial class TerrainGeneration : Node3D
 
         Image heightMap = Image.Create(x_axis, y_axis, false, Image.Format.Rf);
         Image pathMap = Image.Create(x_axis, y_axis, false, Image.Format.R8);
-        path.BakeInterval = 0.1f;
-        Vector3[] localPath = path.GetBakedPoints();
+        //Vector3[] localPath = localCurve.GetBakedPoints();
+        Vector3[] localPath;
+        lock (path)
+        {
+            localPath = path.GetBakedPoints();
+        }
         (heightMap, pathMap) = GPUGeneratePath(rd, noiseImage, offsetX, offsetY, x_axis, y_axis, localPath);
         // Run the blur shader
         heightMap = ApplyGassianAndBoxBlur(rd, heightMap, Image.Format.Rf, RenderingDevice.DataFormat.R32Sfloat);

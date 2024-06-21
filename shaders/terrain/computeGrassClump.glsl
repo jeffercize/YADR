@@ -96,7 +96,7 @@ void main() {
     // Calculate the direction from the grass blade to the clump point
     vec2 directionToClump = (vec2(closestClumpX, closestClumpY) - vec2(x_loc, y_loc));
 
-    // Move the grass blade towards the clump point (CLUMPING VALUE OF 0.2)
+    // Move the grass blade towards the clump point (CLUMPING VALUE OF 0.1)
     x_loc += directionToClump.x * 0.1;
     y_loc += directionToClump.y * 0.1;
 
@@ -122,76 +122,25 @@ void main() {
         transform = rotationalBasis * transform;
     }
 
-    ivec2 coord = ivec2(transform[3][0]+globalPosX+17.0, transform[3][2]+globalPosZ+17.0);
-    vec2 heightmap_uv = vec2(coord) / vec2(544.0, 544.0);
-    heightmap_uv = clamp(heightmap_uv, 0.0, 1.0);
-    vec2 f = fract(heightmap_uv * vec2(544.0, 544.0));
-	// Sample the closest texels
-	float h00 = texture(heightMap, heightmap_uv).r;
-	float h10 = texture(heightMap, heightmap_uv + vec2(1.0, 0.0) / vec2(544.0, 544.0)).r;
-	float h01 = texture(heightMap, heightmap_uv + vec2(0.0, 1.0) / vec2(544.0, 544.0)).r;
-    float h11 = texture(heightMap, heightmap_uv + vec2(1.0, 1.0) / vec2(544.0, 544.0)).r;
-    float hm1 = texture(heightMap, heightmap_uv - vec2(1.0, 0.0) / vec2(544.0, 544.0)).r;
-	float h0m1 = texture(heightMap, heightmap_uv - vec2(0.0, 1.0) / vec2(544.0, 544.0)).r;
-
-
-    
-
-    //calculate slope
-    vec2 gradient = vec2(h10 - hm1, h01 - h0m1);
-	float slope = length(gradient)*200.0;
-
-    //calculate control value
-    float control = texture(pathMap, heightmap_uv).r;
-
-    //set instance height
-    float height = mix(mix(h00, h10, f.x), mix(h01, h11, f.x), f.y)*400.0-0.1;
-	transform[3] = vec4(transform[3][0], transform[3][1]+height, transform[3][2], transform[3][3]);
 
     //reuse x_jitter as our slope jitter and y_jitter as our control jitter because why not
-    if(control - (y_jitter * 0.10) > 0.9 || slope - (x_jitter * 0.1) > 0.6)
-    {
-        float controlVal = -5000.1337;
-        // Add the transform data to the array
-        instanceData[gl_GlobalInvocationID.x * 16 + 0] = controlVal; // Basis.X.X
-        instanceData[gl_GlobalInvocationID.x * 16 + 1] = controlVal; // Basis.X.Y
-        instanceData[gl_GlobalInvocationID.x * 16 + 2] = controlVal; // Basis.X.Z
-        instanceData[gl_GlobalInvocationID.x * 16 + 3] = controlVal; // Origin.X
-        instanceData[gl_GlobalInvocationID.x * 16 + 4] = controlVal; // Basis.Y.X
-        instanceData[gl_GlobalInvocationID.x * 16 + 5] = controlVal; // Basis.Y.Y
-        instanceData[gl_GlobalInvocationID.x * 16 + 6] = controlVal; // Basis.Y.Z
-        instanceData[gl_GlobalInvocationID.x * 16 + 7] = controlVal; // Origin.Y
-        instanceData[gl_GlobalInvocationID.x * 16 + 8] = controlVal; // Basis.Z.X
-        instanceData[gl_GlobalInvocationID.x * 16 + 9] = controlVal; // Basis.Z.Y
-        instanceData[gl_GlobalInvocationID.x * 16 + 10] = controlVal; // Basis.Z.Z
-        instanceData[gl_GlobalInvocationID.x * 16 + 11] = controlVal; // Origin.Z
+    // Add the transform data to the array
+    instanceData[gl_GlobalInvocationID.x * 16 + 0] = transform[0][0]; // Basis.X.X
+    instanceData[gl_GlobalInvocationID.x * 16 + 1] = transform[0][1]; // Basis.X.Y
+    instanceData[gl_GlobalInvocationID.x * 16 + 2] = transform[0][2]; // Basis.X.Z
+    instanceData[gl_GlobalInvocationID.x * 16 + 3] = transform[3][0]; // Origin.X
+    instanceData[gl_GlobalInvocationID.x * 16 + 4] = transform[1][0]; // Basis.Y.X
+    instanceData[gl_GlobalInvocationID.x * 16 + 5] = transform[1][1]; // Basis.Y.Y
+    instanceData[gl_GlobalInvocationID.x * 16 + 6] = transform[1][2]; // Basis.Y.Z
+    instanceData[gl_GlobalInvocationID.x * 16 + 7] = transform[3][1]; // Origin.Y
+    instanceData[gl_GlobalInvocationID.x * 16 + 8] = transform[2][0]; // Basis.Z.X
+    instanceData[gl_GlobalInvocationID.x * 16 + 9] = transform[2][1]; // Basis.Z.Y
+    instanceData[gl_GlobalInvocationID.x * 16 + 10] = transform[2][2]; // Basis.Z.Z
+    instanceData[gl_GlobalInvocationID.x * 16 + 11] = transform[3][2]; // Origin.Z
 
-        // Add custom data at the end
-        instanceData[gl_GlobalInvocationID.x * 16 + 12] = controlVal; //
-        instanceData[gl_GlobalInvocationID.x * 16 + 13] = controlVal; //
-        instanceData[gl_GlobalInvocationID.x * 16 + 14] = controlVal; //height
-        instanceData[gl_GlobalInvocationID.x * 16 + 15] = controlVal; //grassType
-    }
-    else
-    {
-        // Add the transform data to the array
-        instanceData[gl_GlobalInvocationID.x * 16 + 0] = transform[0][0]; // Basis.X.X
-        instanceData[gl_GlobalInvocationID.x * 16 + 1] = transform[0][1]; // Basis.X.Y
-        instanceData[gl_GlobalInvocationID.x * 16 + 2] = transform[0][2]; // Basis.X.Z
-        instanceData[gl_GlobalInvocationID.x * 16 + 3] = transform[3][0]; // Origin.X
-        instanceData[gl_GlobalInvocationID.x * 16 + 4] = transform[1][0]; // Basis.Y.X
-        instanceData[gl_GlobalInvocationID.x * 16 + 5] = transform[1][1]; // Basis.Y.Y
-        instanceData[gl_GlobalInvocationID.x * 16 + 6] = transform[1][2]; // Basis.Y.Z
-        instanceData[gl_GlobalInvocationID.x * 16 + 7] = transform[3][1]; // Origin.Y
-        instanceData[gl_GlobalInvocationID.x * 16 + 8] = transform[2][0]; // Basis.Z.X
-        instanceData[gl_GlobalInvocationID.x * 16 + 9] = transform[2][1]; // Basis.Z.Y
-        instanceData[gl_GlobalInvocationID.x * 16 + 10] = transform[2][2]; // Basis.Z.Z
-        instanceData[gl_GlobalInvocationID.x * 16 + 11] = transform[3][2]; // Origin.Z
-
-        // Add custom data at the end
-        instanceData[gl_GlobalInvocationID.x * 16 + 12] = closestClumpX; //
-        instanceData[gl_GlobalInvocationID.x * 16 + 13] = closestClumpY; //
-        instanceData[gl_GlobalInvocationID.x * 16 + 14] = closestClumpHeight; //height
-        instanceData[gl_GlobalInvocationID.x * 16 + 15] = closestClumpType; //grassType
-    }
+    // Add custom data at the end
+    instanceData[gl_GlobalInvocationID.x * 16 + 12] = closestClumpX; //
+    instanceData[gl_GlobalInvocationID.x * 16 + 13] = closestClumpY; //
+    instanceData[gl_GlobalInvocationID.x * 16 + 14] = closestClumpHeight; //height
+    instanceData[gl_GlobalInvocationID.x * 16 + 15] = closestClumpType; //grassType
 }

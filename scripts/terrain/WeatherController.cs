@@ -5,6 +5,7 @@ public partial class WeatherController : Node3D
 {
 	DirectionalLight3D mySun;
 	ProceduralSkyMaterial mySkyMaterial;
+    ShaderMaterial mySkyShader;
 	WorldEnvironment myEnvironment;
 
     [Export]
@@ -17,12 +18,13 @@ public partial class WeatherController : Node3D
         myEnvironment.Environment = new Godot.Environment();
 		myEnvironment.Environment.BackgroundMode = Godot.Environment.BGMode.Sky;
 
-		mySkyMaterial = new ProceduralSkyMaterial();
-		mySkyMaterial.SkyTopColor = new Color(0.2f, 0.3f, 0.5f);
-        mySkyMaterial.SkyHorizonColor = new Color(0.5f, 0.6f, 0.7f);
-        mySkyMaterial.GroundBottomColor = new Color(0.2f, 0.3f, 0.5f);
-        mySkyMaterial.GroundHorizonColor = new Color(0.5f, 0.6f, 0.7f);
-		mySkyMaterial.GroundCurve = 0.13f;
+        /*		mySkyMaterial = new ProceduralSkyMaterial();
+                mySkyMaterial.SkyTopColor = new Color(0.2f, 0.3f, 0.5f);
+                mySkyMaterial.SkyHorizonColor = new Color(0.5f, 0.6f, 0.7f);
+                mySkyMaterial.GroundBottomColor = new Color(0.2f, 0.3f, 0.5f);
+                mySkyMaterial.GroundHorizonColor = new Color(0.5f, 0.6f, 0.7f);
+                mySkyMaterial.GroundCurve = 0.13f;*/
+        mySkyShader = new ShaderMaterial();
 
         myEnvironment.Environment.Sky = new Sky();
         myEnvironment.Environment.Sky.SkyMaterial = mySkyMaterial;
@@ -30,6 +32,9 @@ public partial class WeatherController : Node3D
 		myEnvironment.Environment.AmbientLightSkyContribution = 0.5f;
 		myEnvironment.Environment.AmbientLightEnergy = 0.2f;
 		myEnvironment.Environment.TonemapMode = Godot.Environment.ToneMapper.Aces;
+        myEnvironment.Environment.SdfgiEnabled = true;
+        myEnvironment.Environment.SsaoEnabled = true;
+        myEnvironment.Environment.ReflectedLightSource = Godot.Environment.ReflectionSource.Sky;
 
         myEnvironment.Environment.VolumetricFogEnabled = true;
         myEnvironment.Environment.VolumetricFogDensity = 0.02f;

@@ -65,11 +65,11 @@ void main() {
     }
     float adjustedHeight = height < 0.0 ? height / ((1.0 - height) * (1.0 - height)) : height * height * height;
     float isClose = step(distanceToClosest, 20.0);
-    float isMedium = step(20.0, distanceToClosest) * (1.0 - step(60.0, distanceToClosest));
-    float blendFactor = (distanceToClosest - 20.0) / 40.0;
+    float isMedium = step(20.0, distanceToClosest) * (1.0 - step(300.0, distanceToClosest));
+    float blendFactor = (distanceToClosest - 20.0) / 280.0;
     blendFactor = isMedium * blendFactor + isClose * (1.0 - isMedium);
-    float finalHeight = mix(adjustedHeight, closestPoint.z, isClose);
-    finalHeight = mix(finalHeight, mix(closestPoint.z, adjustedHeight, blendFactor), isMedium);
+    float finalHeight = mix(height, closestPoint.z, smoothstep(0.0, 1.0, isClose));
+    finalHeight = mix(finalHeight, mix(closestPoint.z, height, smoothstep(0.0, 1.0, blendFactor)), smoothstep(0.0, 1.0, isMedium));
     vec4 color = vec4(finalHeight, isClose, 0.0, 1.0);
     vec4 pathColor = vec4(isClose * (1.0 - isMedium), 0.0, 0.0, 1.0);
     imageStore(outputImage, coord, color);

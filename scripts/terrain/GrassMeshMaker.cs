@@ -125,7 +125,6 @@ public partial class GrassMeshMaker : Node3D
         //configure a set randomSeed, could share between users to make grass look the same in theory, tie it to the map generation seed TODO
         Random rand = new Random();
         randomSeed = rand.Next(2000); //yes this is 2000 because large numbers gave weird shader issues, 2000 randomSeeds for grass should be 100% fine
-
     }
 
     // Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -142,17 +141,14 @@ public partial class GrassMeshMaker : Node3D
             }
             else if (readyDataChunks.Count != 0)
             {
-                if (readyDataChunks.Count != 0)
+                i++;
+                (float[], float, int, Vector3, Mesh, int, int, int) readyDataChunk;
+                if(readyDataChunks.TryDequeue(out readyDataChunk))
                 {
-                    i++;
-                    (float[], float, int, Vector3, Mesh, int, int, int) readyDataChunk;
-                    if(readyDataChunks.TryDequeue(out readyDataChunk))
+                    (Rid, Rid, Rid, Rid) chunkRids;
+                    if(freeChunks.TryDequeue(out chunkRids))
                     {
-                        (Rid, Rid, Rid, Rid) chunkRids;
-                        if(freeChunks.TryDequeue(out chunkRids))
-                        {
-                            RecycleAndAddComputeClumpData(chunkRids.Item1, chunkRids.Item2, chunkRids.Item3, chunkRids.Item4, readyDataChunk.Item1, readyDataChunk.Item2, readyDataChunk.Item3, readyDataChunk.Item4, readyDataChunk.Item5, readyDataChunk.Item6, readyDataChunk.Item7, readyDataChunk.Item8);
-                        }
+                        RecycleAndAddComputeClumpData(chunkRids.Item1, chunkRids.Item2, chunkRids.Item3, chunkRids.Item4, readyDataChunk.Item1, readyDataChunk.Item2, readyDataChunk.Item3, readyDataChunk.Item4, readyDataChunk.Item5, readyDataChunk.Item6, readyDataChunk.Item7, readyDataChunk.Item8);
                     }
                 }
             }
@@ -569,7 +565,7 @@ public partial class GrassMeshMaker : Node3D
         rd.FreeRid(randNumBuffer);
         rd.FreeRid(fieldDimensionsBuffer);
 
-        //delete the voided grass blades from the compute
+        //delete the voided grass blades from the compute (wont happen 6/19/2024, removed that from compute instead just cull using position in vertex shader)
         int count = 0;
         int k = 0;
         float target = -5000.1337f;
@@ -602,7 +598,7 @@ public partial class GrassMeshMaker : Node3D
     {
         Rid grassChunk = RenderingServer.MultimeshCreate();
         Rid instance = RenderingServer.InstanceCreate2(grassChunk, this.GetWorld3D().Scenario);
-/*        RenderingServer.InstanceSetBase(instance, grassChunk);//PICKUP HERE TODO
+/*        RenderingServer.InstanceSetBase(instance, grassChunk);//idk what this is 6/19/2024
         RenderingServer.InstanceSetBase(instance, new Rid());*/
         RenderingServer.InstanceGeometrySetCastShadowsSetting(instance, RenderingServer.ShadowCastingSetting.Off);
         if (myLOD == 0)

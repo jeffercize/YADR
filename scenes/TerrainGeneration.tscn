@@ -1,7 +1,8 @@
-[gd_scene load_steps=6 format=3 uid="uid://cofnhdcclon1w"]
+[gd_scene load_steps=10 format=3 uid="uid://cofnhdcclon1w"]
 
 [ext_resource type="Script" path="res://scripts/terrain/TerrainGeneration.cs" id="1_btvwy"]
 [ext_resource type="Script" path="res://scripts/terrain/RuntimeNavigationBaker.gd" id="5_445ur"]
+[ext_resource type="Shader" path="res://shaders/sky/BaseSky.gdshader" id="5_wb3mp"]
 [ext_resource type="PackedScene" uid="uid://domhm87hbhbg1" path="res://components/TerrainPlayer.tscn" id="6_0p1nw"]
 [ext_resource type="Script" path="res://scripts/terrain/WeatherController.cs" id="8_n3tlt"]
 
@@ -9,6 +10,20 @@
 geometry_parsed_geometry_type = 1
 agent_height = 2.0
 agent_max_slope = 30.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_tadh8"]
+shader = ExtResource("5_wb3mp")
+shader_parameter/skyColor = Vector3(0.5, 0.5, 0.5)
+shader_parameter/horizonColor = Vector3(0.8, 0.5, 1)
+
+[sub_resource type="Sky" id="Sky_1o8e8"]
+sky_material = SubResource("ShaderMaterial_tadh8")
+
+[sub_resource type="Environment" id="Environment_bbwsn"]
+background_mode = 2
+sky = SubResource("Sky_1o8e8")
+reflected_light_source = 2
+sdfgi_enabled = true
 
 [node name="TerrainGeneration" type="Node3D"]
 script = ExtResource("1_btvwy")
@@ -22,3 +37,6 @@ template = SubResource("NavigationMesh_vs6am")
 script = ExtResource("8_n3tlt")
 
 [node name="Player" parent="." instance=ExtResource("6_0p1nw")]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_bbwsn")
