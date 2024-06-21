@@ -18,13 +18,12 @@ public partial class WeatherController : Node3D
         myEnvironment.Environment = new Godot.Environment();
 		myEnvironment.Environment.BackgroundMode = Godot.Environment.BGMode.Sky;
 
-        /*		mySkyMaterial = new ProceduralSkyMaterial();
-                mySkyMaterial.SkyTopColor = new Color(0.2f, 0.3f, 0.5f);
-                mySkyMaterial.SkyHorizonColor = new Color(0.5f, 0.6f, 0.7f);
-                mySkyMaterial.GroundBottomColor = new Color(0.2f, 0.3f, 0.5f);
-                mySkyMaterial.GroundHorizonColor = new Color(0.5f, 0.6f, 0.7f);
-                mySkyMaterial.GroundCurve = 0.13f;*/
-        mySkyShader = new ShaderMaterial();
+        mySkyMaterial = new ProceduralSkyMaterial();
+        mySkyMaterial.SkyTopColor = new Color(0.2f, 0.3f, 0.5f);
+        mySkyMaterial.SkyHorizonColor = new Color(0.5f, 0.6f, 0.7f);
+        mySkyMaterial.GroundBottomColor = new Color(0.2f, 0.3f, 0.5f);
+        mySkyMaterial.GroundHorizonColor = new Color(0.5f, 0.6f, 0.7f);
+        mySkyMaterial.GroundCurve = 0.13f;
 
         myEnvironment.Environment.Sky = new Sky();
         myEnvironment.Environment.Sky.SkyMaterial = mySkyMaterial;
@@ -48,6 +47,9 @@ public partial class WeatherController : Node3D
         mySun.LightEnergy = 0.2f;
 		mySun.ShadowEnabled = true;
 
+        MakeItSunny();
+        RenderingServer.GlobalShaderParameterSet("windStrength", 0.0);
+        myRainMaker.Emitting = false;
 
         AddChild(myEnvironment);
         AddChild(mySun);
