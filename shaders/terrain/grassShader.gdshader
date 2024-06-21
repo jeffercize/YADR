@@ -9,10 +9,9 @@ global uniform float windStrength = 0.0;
 uniform float grassTotalWidth = 0.3;
 uniform float grassTotalHeight = 1.5;
 
-uniform sampler2D heightMap;
-uniform sampler2D flattenMap;
-uniform sampler2D controlMap;
+uniform vec2 globalOffset;
 
+uniform sampler2D heightMap : repeat_disable, filter_nearest;
 uniform vec2 heightParams;
 
 //uniform vec4 grassParams;
@@ -21,7 +20,7 @@ varying vec4 vGrassParams;
 varying float vSteepness;
 varying vec3 vNormal;
 varying vec3 vNormal2;
-varying vec3 color;
+varying float vDontDraw;
 
 float remap(float value, float inputMin, float inputMax, float outputMin, float outputMax) {
     return outputMin + ((value - inputMin) / (inputMax - inputMin)) * (outputMax - outputMin);
@@ -61,9 +60,9 @@ float noise12(vec2 p) {
   vec2 f = fract(p);
   vec2 u = smoothstep(vec2(0.0), vec2(1.0), f);
 
-	float val = mix( mix( hash12( i + vec2(0.0, 0.0) ), 
+	float val = mix( mix( hash12( i + vec2(0.0, 0.0) ),
                         hash12( i + vec2(1.0, 0.0) ), u.x),
-                   mix( hash12( i + vec2(0.0, 1.0) ), 
+                   mix( hash12( i + vec2(0.0, 1.0) ),
                         hash12( i + vec2(1.0, 1.0) ), u.x), u.y);
   return val * 2.0 - 1.0;
 }
@@ -106,11 +105,12 @@ float easeIn(float x, float t) {
 }
 
 void vertex() {
-	float myTime = time;
 //Variable Prep\\
 	vec3 grassBladeWorldPosTemp = (MODEL_MATRIX * vec4(0.0,0.0,0.0, 1.0)).xyz;
-	VERTEX.y = VERTEX.y * INSTANCE_CUSTOM.z * (hash12(vec2(grassBladeWorldPosTemp.x, grassBladeWorldPosTemp.z))* 0.5 + 0.75);
-	float adjustedGrassTotalHeight = grassTotalHeight * INSTANCE_CUSTOM.z;
+	float distance = distance(INV_VIEW_MATRIX[3].xz, grassBladeWorldPosTemp.xz);
+	float distanceMod = clamp((220.0 - distance) / 20.0, 0.0, 1.0);
+	VERTEX.y = VERTEX.y * INSTANCE_CUSTOM.z * (hash12(vec2(grassBladeWorldPosTemp.x, grassBladeWorldPosTemp.z))* 0.5 + 0.75) * distanceMod;
+	float adjustedGrassTotalHeight = grassTotalHeight * INSTANCE_CUSTOM.z * (hash12(vec2(grassBladeWorldPosTemp.x, grassBladeWorldPosTemp.z))* 0.5 + 0.75) * distanceMod;
     // Store the origin point of the grass for math
     vec3 grassBladeWorldPos = (MODEL_MATRIX * vec4(0.0,0.0,0.0, 1.0)).xyz;
 	//percentage goes from 0.0 to 1.0
@@ -122,45 +122,7 @@ void vertex() {
 	//1 = front, -1 = back
 	float zSide = sign(NORMAL.z);
 	//0 = left, 1 = right
-	float xSide = 0.0;
-	if (VERTEX.x > grassTotalWidth/2.0) {
-		xSide = 1.0;
-	}
-
-
-	//heightmap sampling
-	vec2 uv = vec2(grassBladeWorldPos.x / heightParams.x, grassBladeWorldPos.z / heightParams.y);
-
-	// Calculate the fractional part of the uv coordinates
-	vec2 f = fract(uv * heightParams.xy);
-
-	// Sample the four closest texels
-	float h00 = texture(heightMap, uv).r;
-	float h10 = texture(heightMap, uv + vec2(1.0, 0.0) / heightParams.xy).r;
-	float h01 = texture(heightMap, uv + vec2(0.0, 1.0) / heightParams.xy).r;
-	float h11 = texture(heightMap, uv + vec2(1.0, 1.0) / heightParams.xy).r;
-	float hm1 = texture(heightMap, uv - vec2(1.0, 0.0) / heightParams.xy).r;
-	float h0m1 = texture(heightMap, uv - vec2(0.0, 1.0) / heightParams.xy).r;
-
-	// Interpolate between the samples
-	float heightMapSample = mix(mix(h00, h10, f.x), mix(h01, h11, f.x), f.y);
-
-	vec3 cameraPosition = INV_VIEW_MATRIX[3].xyz;
-	vec3 grassBladeWorldPosToCamera = vec3(grassBladeWorldPos.x, grassBladeWorldPos.y+heightMapSample*400.0, grassBladeWorldPos.z);
-    float distanceToCamera = length(cameraPosition - grassBladeWorldPosToCamera);
-	if(distanceToCamera > 60.0)
-	{
-		myTime = 1.0;
-	}
-	if(distanceToCamera > 300.0)
-	{
-		float factor = clamp((distanceToCamera - 200.0) / 20.0, 0.0, 1.0);
-		VERTEX.y = VERTEX.y * smoothstep(1.0, 0.0, factor);
-	}
-	if (VERTEX.y == 0.0)
-	{
-		VERTEX.y = VERTEX.y - 1.0;
-	}
+	float xSide = step(grassTotalWidth / 2.0, VERTEX.x);
 
 
 //Rotating the base and leaning\\
@@ -177,23 +139,22 @@ void vertex() {
 	float randomLean = remap(hashVal1.w, 0.0, 1.0, 0.1, 0.4) * heightPercent; //replace with sin noise
 
 	//Noise Sampling for Wind\\
-	float noiseSample = noise12(vec2(myTime * 0.35 * 0.5) + grassBladeWorldPos.xz);
-	randomLean += noiseSample * windStrength;
-	
-	
+	float noiseSample = noise12(vec2(time * 0.35 * 0.5) + grassBladeWorldPos.xz);
+	randomLean += noiseSample * heightPercent * 0.2;// * windStrength;
 
-	float windNoiseSample = noise12(grassBladeWorldPos.xz * 0.5 + myTime*(windStrength+0.5));
+
+
+	float windNoiseSample = noise12(grassBladeWorldPos.xz * 0.5 + time*(windStrength+0.5));
 	float windLeanAngle = remap(windNoiseSample, -1.0, 1.0, 0.25, 1.0);
 	windLeanAngle = easeIn(windLeanAngle, 2.0) * 1.25;
 	windLeanAngle *= heightPercent;
 	windLeanAngle *= (windStrength+0.5);
-	
-	float windMixValue = 1.0;
-	if(adjustedGrassTotalHeight < 1.0)
-	{
-		windMixValue = adjustedGrassTotalHeight / 5.0;
-	}
-	float windDirectionCombined = mix(randomAngle, windDirection, windMixValue);
+
+	float windHeightMixValue = min(adjustedGrassTotalHeight, 1.0);
+	float windStrengthMix = mix(0.2, 1.0, windStrength+0.5);
+
+	float combinedWindMix = mix(0.0, windHeightMixValue, windStrengthMix);
+	float windDirectionCombined = mix(randomAngle, windDirection, combinedWindMix);
 	vec3 windAxis = vec3(cos(windDirectionCombined), 0.0, sin(windDirectionCombined));
 
 
@@ -204,19 +165,34 @@ void vertex() {
 
 	mat3 grassMat = rotateAxis(windAxis, windLeanAngle) * rotateX(randomLean);
 
-	VERTEX.xyz = grassMat * VERTEX.xyz; 
+	VERTEX.xyz = grassMat * VERTEX.xyz;
 
 
-	VERTEX.y += heightMapSample * 400.0;
+	//heightmap sampling
 
-	vec2 gradient = vec2(h10 - hm1, h01 - h0m1) * 200.0;
-	vSteepness = length(gradient);
-	//color = vec3(grassBladeWorldPos.x / heightParams.x, grassBladeWorldPos.z / heightParams.y, 0.0);
+	vec2 heightmap_uv = vec2((grassBladeWorldPos.x-globalOffset.x+16.0) / heightParams.x, (grassBladeWorldPos.z-globalOffset.y+16.0) / heightParams.y);
+	heightmap_uv = clamp(heightmap_uv, 0.0, 1.0);
+	// Calculate the fractional part of the uv coordinates
+	vec2 f = fract(heightmap_uv * heightParams.xy);
+
+	// Sample the four closest texels
+	float h00 = texture(heightMap, heightmap_uv).r;
+	float h10 = texture(heightMap, heightmap_uv + vec2(1.0, 0.0) / heightParams.xy).r;
+	float h01 = texture(heightMap, heightmap_uv + vec2(0.0, 1.0) / heightParams.xy).r;
+	float h11 = texture(heightMap, heightmap_uv + vec2(1.0, 1.0) / heightParams.xy).r;
+	float hm1 = texture(heightMap, heightmap_uv - vec2(1.0, 0.0) / heightParams.xy).r;
+	float h0m1 = texture(heightMap, heightmap_uv - vec2(0.0, 1.0) / heightParams.xy).r;
+
+	// Interpolate between the samples
+	float heightMapSample = mix(mix(h00, h10, f.x), mix(h01, h11, f.x), f.y);
+
+	//VERTEX.y += heightMapSample * 400.0 - 0.1;
 
 	//get camera and view direction info for later
+	vec3 cameraPosition = INV_VIEW_MATRIX[3].xyz;
 	vec3 viewDir = normalize(cameraPosition - grassBladeWorldPos);
 	vec3 viewDirXZ = normalize(vec3(viewDir.x, 0.0, viewDir.z));
-	
+
 
 //Rounded Normals\\
 	float totalLean = randomLean *  heightPercent + windLeanAngle;
@@ -269,18 +245,13 @@ void vertex() {
 
 void fragment() {
 	float steepnessThreshold = 0.9;  // Adjust this value as needed
-    if (vSteepness > steepnessThreshold) {
-        //ALBEDO = vec3(1,1,1);
-		discard;
-    }
-	
+
 	//AO
 	float density = 0.5;
 	float aoForDensity = mix(1.0, 0.25, density);
 	float ao = mix(aoForDensity, 1.0, easeIn(vGrassParams.x, 1.0));
 
 	//ALBEDO
-	ALBEDO = color;
 	vec3 baseColor = vec3(0.1, 0.15, 0.01);
 	vec3 tipColor = vec3(0.15, 0.30, 0.01);
 	vec3 diffuseColor = mix(baseColor, tipColor, easeIn(vGrassParams.x, 2.0));
@@ -305,7 +276,7 @@ void fragment() {
 
 
 	//ALPHA = alpha;
-    
+
 	//ROUGHNESS
 	//ROUGHNESS = 0.9;
 }

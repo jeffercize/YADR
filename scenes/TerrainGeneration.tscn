@@ -1,30 +1,14 @@
-[gd_scene load_steps=11 format=3 uid="uid://cofnhdcclon1w"]
+[gd_scene load_steps=6 format=3 uid="uid://cofnhdcclon1w"]
 
 [ext_resource type="Script" path="res://scripts/terrain/TerrainGeneration.cs" id="1_btvwy"]
 [ext_resource type="Script" path="res://scripts/terrain/RuntimeNavigationBaker.gd" id="5_445ur"]
 [ext_resource type="PackedScene" uid="uid://domhm87hbhbg1" path="res://components/TerrainPlayer.tscn" id="6_0p1nw"]
-[ext_resource type="Script" path="res://scripts/terrain/GrassMeshMaker.cs" id="8_hyt63"]
 [ext_resource type="Script" path="res://scripts/terrain/WeatherController.cs" id="8_n3tlt"]
-[ext_resource type="Shader" path="res://shaders/terrain/grassShader.gdshader" id="9_07r24"]
 
 [sub_resource type="NavigationMesh" id="NavigationMesh_vs6am"]
 geometry_parsed_geometry_type = 1
 agent_height = 2.0
 agent_max_slope = 30.0
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_dop3f"]
-render_priority = 0
-shader = ExtResource("9_07r24")
-shader_parameter/grassTotalWidth = 0.5
-shader_parameter/grassTotalHeight = 1.0
-shader_parameter/heightParams = null
-
-[sub_resource type="BoxMesh" id="BoxMesh_652tm"]
-material = SubResource("ShaderMaterial_dop3f")
-
-[sub_resource type="MultiMesh" id="MultiMesh_3gj5r"]
-transform_format = 1
-mesh = SubResource("BoxMesh_652tm")
 
 [node name="TerrainGeneration" type="Node3D"]
 script = ExtResource("1_btvwy")
@@ -34,14 +18,8 @@ script = ExtResource("5_445ur")
 enabled = false
 template = SubResource("NavigationMesh_vs6am")
 
-[node name="GrassMeshMaker" type="Node3D" parent="."]
-script = ExtResource("8_hyt63")
-
-[node name="GrassChunk" type="MultiMeshInstance3D" parent="GrassMeshMaker"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -17.3506, 0)
-multimesh = SubResource("MultiMesh_3gj5r")
-
 [node name="World" type="Node3D" parent="."]
 script = ExtResource("8_n3tlt")
 
 [node name="Player" parent="." instance=ExtResource("6_0p1nw")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 477.075, 82.8988, 64.2136)

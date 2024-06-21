@@ -43,7 +43,7 @@ public partial class MainMenu : Control
         Global.worldSim.loadScene("res://components/TerrainPlayer.tscn");
         Global.worldSim.loadScene("res://scenes/TerrainGeneration.tscn");
         TerrainGeneration terrainGenerated = (TerrainGeneration)Global.worldSim.currentScene;
-        terrainGenerated.AddTerrain(true);
+        //terrainGenerated.AddTerrain(true);
         Global.UIManager.clearUI();
     }
 

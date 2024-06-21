@@ -78,10 +78,10 @@ public partial class Global : Node
     {
         //Grab instances of our nodes from the main scene tree.
         instance = this;
-        UIManager = GetNode<UIManager>("../main/UIManager");
-        NetworkManager = GetNode<NetworkManager>("../main/NetworkManager");
-        AudioManager = GetNode<AudioManager>("../main/AudioManager");
-        InputManager = GetNode<InputManager>("../main/InputManager");
+        //UIManager = GetNode<UIManager>("../main/UIManager");
+        //NetworkManager = GetNode<NetworkManager>("../main/NetworkManager");
+        //AudioManager = GetNode<AudioManager>("../main/AudioManager");
+        //InputManager = GetNode<InputManager>("../main/InputManager");
         SteamManager = GetNode<SteamManager>("../SteamManager");
 
     }

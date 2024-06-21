@@ -9,6 +9,8 @@ layout(set = 0, binding = 0) restrict buffer FieldDimensions {
     float chunkHeight;
     float globalPosX;
     float globalPosZ;
+    float heightParamsX;
+    float heightParamsY;
 };
 
 layout(set = 0, binding = 1) restrict buffer IntData {
@@ -31,6 +33,13 @@ layout(set = 0, binding = 3, std430) restrict buffer InstanceDataBuffer {
     float instanceData[];
 };
 
+layout(set = 0, binding = 4) uniform sampler2D heightMap;
+
+layout(set = 0, binding = 5) uniform sampler2D pathMap;
+
+
+
+
 float rand(float n){return fract(sin(n) * 43758.5453123);}
 
 uint murmurHash12(uvec2 src) {
@@ -52,6 +61,7 @@ void main() {
     if (gl_GlobalInvocationID.x >= instanceCount) {
         return;
     }
+
     //add all these random numbers to give us a real random number that is deterministic
     float x_jitter = hash12(vec2(randSeedLocal, gl_GlobalInvocationID.x + globalPosX + globalPosZ));
     float y_jitter = hash12(vec2(randSeedLocal, 1 + gl_GlobalInvocationID.x + globalPosX + globalPosZ));
@@ -86,19 +96,13 @@ void main() {
     // Calculate the direction from the grass blade to the clump point
     vec2 directionToClump = (vec2(closestClumpX, closestClumpY) - vec2(x_loc, y_loc));
 
-    // Move the grass blade towards the clump point (CLUMPING VALUE OF 0.2)
+    // Move the grass blade towards the clump point (CLUMPING VALUE OF 0.1)
     x_loc += directionToClump.x * 0.1;
     y_loc += directionToClump.y * 0.1;
 
-    //this code uses mat4 to create a transform matrix for the grass blade
-    //i believe this will work correctly based on my rough understanding
-    //but this was an idea provided by copilot so i am not sure TODO
-    //currently I have omitted the last column of the matrix as it is 
-    //omitted in the godots transform3D because its is always 0001
-
     // Create a new transform for this instance
     mat4 transform = mat4(1.0); // Identity matrix
-    transform[3] = vec4(x_loc, -chunkHeight, y_loc, 1.0); // Translation
+    transform[3] = vec4(x_loc, -chunkHeight, y_loc, 1.0); // Translation TODO height here
 
     //Rotational Basis
     // Calculate the angle in radians
@@ -118,6 +122,8 @@ void main() {
         transform = rotationalBasis * transform;
     }
 
+
+    //reuse x_jitter as our slope jitter and y_jitter as our control jitter because why not
     // Add the transform data to the array
     instanceData[gl_GlobalInvocationID.x * 16 + 0] = transform[0][0]; // Basis.X.X
     instanceData[gl_GlobalInvocationID.x * 16 + 1] = transform[0][1]; // Basis.X.Y

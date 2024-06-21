@@ -5,6 +5,7 @@ public partial class WeatherController : Node3D
 {
 	DirectionalLight3D mySun;
 	ProceduralSkyMaterial mySkyMaterial;
+    ShaderMaterial mySkyShader;
 	WorldEnvironment myEnvironment;
 
     [Export]
@@ -13,16 +14,16 @@ public partial class WeatherController : Node3D
     public override void _Ready()
 	{
         myEnvironment = new WorldEnvironment();
-        myRainMaker = GetNode<GpuParticles3D>("/root/main/LevelManager/Player/RainGPUParticles");
+        myRainMaker = GetNode<GpuParticles3D>("/root/TerrainGeneration/Player/RainGPUParticles");//"/root/main/LevelManager/Player/RainGPUParticles");
         myEnvironment.Environment = new Godot.Environment();
 		myEnvironment.Environment.BackgroundMode = Godot.Environment.BGMode.Sky;
 
-		mySkyMaterial = new ProceduralSkyMaterial();
-		mySkyMaterial.SkyTopColor = new Color(0.2f, 0.3f, 0.5f);
+        mySkyMaterial = new ProceduralSkyMaterial();
+        mySkyMaterial.SkyTopColor = new Color(0.2f, 0.3f, 0.5f);
         mySkyMaterial.SkyHorizonColor = new Color(0.5f, 0.6f, 0.7f);
         mySkyMaterial.GroundBottomColor = new Color(0.2f, 0.3f, 0.5f);
         mySkyMaterial.GroundHorizonColor = new Color(0.5f, 0.6f, 0.7f);
-		mySkyMaterial.GroundCurve = 0.13f;
+        mySkyMaterial.GroundCurve = 0.13f;
 
         myEnvironment.Environment.Sky = new Sky();
         myEnvironment.Environment.Sky.SkyMaterial = mySkyMaterial;
@@ -30,6 +31,9 @@ public partial class WeatherController : Node3D
 		myEnvironment.Environment.AmbientLightSkyContribution = 0.5f;
 		myEnvironment.Environment.AmbientLightEnergy = 0.2f;
 		myEnvironment.Environment.TonemapMode = Godot.Environment.ToneMapper.Aces;
+        myEnvironment.Environment.SdfgiEnabled = true;
+        myEnvironment.Environment.SsaoEnabled = true;
+        myEnvironment.Environment.ReflectedLightSource = Godot.Environment.ReflectionSource.Sky;
 
         myEnvironment.Environment.VolumetricFogEnabled = true;
         myEnvironment.Environment.VolumetricFogDensity = 0.02f;
@@ -38,11 +42,14 @@ public partial class WeatherController : Node3D
         mySun = new DirectionalLight3D();
 
         mySun.DirectionalShadowMaxDistance = 256.0f;
-        mySun.Rotation = new Vector3(100.0f, 0.0f, 0.0f);
+        mySun.Rotation = new Vector3(0.0f, 0.0f, 0.0f);
         mySun.LightColor = (new Color(0.5f, 0.5f, 0.5f));
         mySun.LightEnergy = 0.2f;
 		mySun.ShadowEnabled = true;
 
+        MakeItSunny();
+        RenderingServer.GlobalShaderParameterSet("windStrength", 0.0);
+        myRainMaker.Emitting = false;
 
         AddChild(myEnvironment);
         AddChild(mySun);
